@@ -1347,6 +1347,161 @@ input, select {
 .page-num:hover:not(.active) { background: var(--color-bg); }
 .page-num.active { background: var(--color-navy); color: #fff; border-color: var(--color-navy); }
 
+/* ─── 13.b DELIVERY RESERVATION (UAE) ────────────────────────── */
+.delivery-section {
+  padding-block: var(--space-16);
+  background: linear-gradient(180deg, #FFF8F1 0%, var(--color-bg) 100%);
+}
+.section-desc {
+  color: var(--color-text-mid);
+  font-size: var(--text-md);
+  max-width: 620px;
+  margin-top: var(--space-3);
+  line-height: 1.6;
+}
+.delivery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+  align-items: start;
+}
+.delivery-zones,
+.delivery-form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+.delivery-subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-navy);
+  margin-bottom: var(--space-5);
+}
+.delivery-subtitle svg { width: 22px; height: 22px; color: var(--color-accent); stroke-width: 2.2; }
+
+.zones-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.zone-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+  border-bottom: 1px dashed var(--color-border);
+}
+.zone-item:last-child { border-bottom: none; }
+.zone-item:hover { background: #FFF8F1; }
+.zone-name {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+.zone-info {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.zone-info strong {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.delivery-note {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  background: var(--color-accent-glow);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  line-height: 1.5;
+}
+.delivery-note svg { width: 20px; height: 20px; color: var(--color-accent); flex-shrink: 0; }
+.delivery-note strong { color: var(--color-accent-dark); font-weight: 700; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.form-field.full { margin-bottom: var(--space-4); }
+.form-field > span {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-mid);
+}
+.form-field input,
+.form-field select {
+  padding: var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  width: 100%;
+}
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-glow);
+}
+.form-field.checkbox-line {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-bg);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1.5px dashed var(--color-border);
+  align-self: end;
+}
+.form-field.checkbox-line input { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.form-field.checkbox-line span {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.delivery-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--space-4);
+  padding-block: var(--space-4);
+  font-size: var(--text-md);
+}
+.delivery-disclaimer {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .delivery-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; gap: var(--space-3); }
+  .form-field.checkbox-line { align-self: stretch; }
+}
+
 /* ─── 14. PROMO BANNER ───────────────────────────────────────── */
 .promo-banner {
   background: var(--color-navy);

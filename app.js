@@ -23,90 +23,132 @@ document.addEventListener('DOMContentLoaded', () => {
   CategoryNavModule.init();
 });
 
-/* ─── 1. PRODUCT DATA ────────────────────────────────────────── */
+/* ─── 1. PRODUCT DATA (Produits africains, prix en AED) ────── */
 const PRODUCTS = [
   {
-    id: 1, name: "iPhone 15 Pro Max 256GB Titane Naturel", brand: "Apple",
-    price: 485000, oldPrice: 620000, discount: 22, rating: 4.8, reviews: 1247,
-    image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&q=80",
-    badge: "Flash", category: "electronique", delivery: "Livraison en 24h",
+    id: 1, name: "Attiéké semoule de manioc précuite 1kg", brand: "AfriFood CI",
+    price: 22, oldPrice: 30, discount: 27, rating: 4.8, reviews: 412,
+    image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400&q=80",
+    badge: "Top", category: "epicerie", delivery: "Livraison 24h Abu Dhabi",
     isNew: false
   },
   {
-    id: 2, name: "Samsung Galaxy S24 Ultra 512GB", brand: "Samsung",
-    price: 420000, oldPrice: 540000, discount: 22, rating: 4.7, reviews: 892,
-    image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&q=80",
-    badge: "Top", category: "electronique", delivery: "Livraison gratuite",
+    id: 2, name: "Beurre de Karité brut bio 500g — Burkina Faso", brand: "KaréNature",
+    price: 45, oldPrice: 65, discount: 31, rating: 4.9, reviews: 837,
+    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80",
+    badge: "Flash", category: "beaute", delivery: "Livraison gratuite dès 150 AED",
     isNew: false
   },
   {
-    id: 3, name: "MacBook Air M3 13 pouces 16GB RAM", brand: "Apple",
-    price: 695000, oldPrice: null, discount: null, rating: 4.9, reviews: 438,
-    image: "https://images.unsplash.com/photo-1611186871525-8b1d1e91c8d4?w=400&q=80",
-    badge: "Nouveau", category: "informatique", delivery: "Livraison en 48h",
+    id: 3, name: "Tissu Wax authentique Ghana 6 yards — Multicolore", brand: "GTP Ghana",
+    price: 135, oldPrice: 180, discount: 25, rating: 4.7, reviews: 256,
+    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&q=80",
+    badge: "Hot", category: "mode", delivery: "Livraison 24h UAE",
+    isNew: false
+  },
+  {
+    id: 4, name: "Huile de Palme rouge naturelle 1L — Cameroun", brand: "NaturaCm",
+    price: 28, oldPrice: 38, discount: 26, rating: 4.6, reviews: 198,
+    image: "https://images.unsplash.com/photo-1620577990281-d68a06fc28b6?w=400&q=80",
+    badge: null, category: "epicerie", delivery: "Livraison 24h Abu Dhabi/Dubai",
+    isNew: false
+  },
+  {
+    id: 5, name: "Bissap fleurs d'hibiscus séchées 250g — Sénégal", brand: "Teranga",
+    price: 18, oldPrice: 26, discount: 31, rating: 4.8, reviews: 624,
+    image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=400&q=80",
+    badge: "Flash", category: "boissons", delivery: "Livraison gratuite dès 150 AED",
+    isNew: false
+  },
+  {
+    id: 6, name: "Café Robusta moulu 500g — Côte d'Ivoire", brand: "Cafe Abidjan",
+    price: 35, oldPrice: 48, discount: 27, rating: 4.7, reviews: 312,
+    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&q=80",
+    badge: "Top", category: "boissons", delivery: "Livraison 24h UAE",
+    isNew: false
+  },
+  {
+    id: 7, name: "Farine de Fonio bio 1kg — Mali", brand: "BioSahel",
+    price: 32, oldPrice: null, discount: null, rating: 4.9, reviews: 145,
+    image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80",
+    badge: "Nouveau", category: "epicerie", delivery: "Livraison gratuite dès 150 AED",
     isNew: true
-  },
-  {
-    id: 4, name: "Robe Wax Africaine Multicolore — Taille S à XL", brand: "AfriStyle",
-    price: 18500, oldPrice: 32000, discount: 42, rating: 4.6, reviews: 326,
-    image: "https://images.unsplash.com/photo-1590735213920-68192a487bc2?w=400&q=80",
-    badge: "Hot", category: "mode", delivery: "Livraison gratuite",
-    isNew: false
-  },
-  {
-    id: 5, name: "Sony WH-1000XM5 Casque Réduction de bruit", brand: "Sony",
-    price: 142000, oldPrice: 185000, discount: 23, rating: 4.8, reviews: 2103,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80",
-    badge: "Flash", category: "electronique", delivery: "Livraison en 24h",
-    isNew: false
-  },
-  {
-    id: 6, name: "Canapé 3 places tissu gris anthracite moderne", brand: "MeublesCM",
-    price: 185000, oldPrice: 240000, discount: 23, rating: 4.3, reviews: 78,
-    image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80",
-    badge: null, category: "maison", delivery: "Livraison express disponible",
-    isNew: false
-  },
-  {
-    id: 7, name: "Nike Air Max 270 React Homme — 40 à 46", brand: "Nike",
-    price: 68000, oldPrice: 92000, discount: 26, rating: 4.7, reviews: 1456,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80",
-    badge: "Flash", category: "mode", delivery: "Livraison gratuite dès 20 000F",
-    isNew: false
   },
   {
     id: 8, name: "Crème hydratante Karité & Aloe Vera 200ml", brand: "NaturaCm",
-    price: 8500, oldPrice: 12000, discount: 29, rating: 4.5, reviews: 567,
+    price: 38, oldPrice: 55, discount: 31, rating: 4.5, reviews: 567,
     image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&q=80",
-    badge: null, category: "beaute", delivery: "Livraison en 48h",
+    badge: null, category: "beaute", delivery: "Livraison 48h tout UAE",
     isNew: false
   },
   {
-    id: 9, name: "iPad Pro M4 11 pouces WiFi 256GB", brand: "Apple",
-    price: 545000, oldPrice: null, discount: null, rating: 4.8, reviews: 234,
-    image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&q=80",
-    badge: "Nouveau", category: "informatique", delivery: "Livraison en 24h",
+    id: 9, name: "Savon noir africain pur 250g — Ghana", brand: "Akan Soap",
+    price: 22, oldPrice: 32, discount: 31, rating: 4.7, reviews: 489,
+    image: "https://images.unsplash.com/photo-1607006344380-b6775a0824a9?w=400&q=80",
+    badge: "Top", category: "beaute", delivery: "Livraison 24h Abu Dhabi",
+    isNew: false
+  },
+  {
+    id: 10, name: "Gari (semoule de manioc fermenté) 1kg", brand: "AfriFood CI",
+    price: 19, oldPrice: 27, discount: 30, rating: 4.6, reviews: 203,
+    image: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400&q=80",
+    badge: "Flash", category: "epicerie", delivery: "Livraison 24h UAE",
+    isNew: false
+  },
+  {
+    id: 11, name: "Boubou traditionnel homme brodé — Tailles M à XXL", brand: "AfriStyle",
+    price: 245, oldPrice: 340, discount: 28, rating: 4.6, reviews: 87,
+    image: "https://images.unsplash.com/photo-1590735213920-68192a487bc2?w=400&q=80",
+    badge: null, category: "mode", delivery: "Livraison 48h tout UAE",
+    isNew: false
+  },
+  {
+    id: 12, name: "Piment Yassa moulu 100g — Sénégal", brand: "Teranga",
+    price: 14, oldPrice: 20, discount: 30, rating: 4.7, reviews: 312,
+    image: "https://images.unsplash.com/photo-1599909533730-3d2dcd64c2c1?w=400&q=80",
+    badge: null, category: "epices", delivery: "Livraison gratuite dès 150 AED",
+    isNew: false
+  },
+  {
+    id: 13, name: "Mortier & Pilon en bois sculpté africain 30cm", brand: "ArtisansCM",
+    price: 165, oldPrice: 220, discount: 25, rating: 4.8, reviews: 56,
+    image: "https://images.unsplash.com/photo-1604908815871-c6b58c7e85f4?w=400&q=80",
+    badge: "Top", category: "cuisine", delivery: "Livraison 48h tout UAE",
+    isNew: false
+  },
+  {
+    id: 14, name: "Chips de plantain frites — salées 200g", brand: "PlanteSnack",
+    price: 12, oldPrice: 16, discount: 25, rating: 4.5, reviews: 421,
+    image: "https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&q=80",
+    badge: "Flash", category: "snacks", delivery: "Livraison 24h Abu Dhabi",
+    isNew: false
+  },
+  {
+    id: 15, name: "Pur Cacao en poudre naturel 500g — Ghana", brand: "GoldenCacao",
+    price: 42, oldPrice: 58, discount: 28, rating: 4.9, reviews: 178,
+    image: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&q=80",
+    badge: "Nouveau", category: "epicerie", delivery: "Livraison gratuite dès 150 AED",
     isNew: true
   },
   {
-    id: 10, name: "Vélo de route Carbone Shimano 105 — 52cm", brand: "BikePro",
-    price: 320000, oldPrice: 420000, discount: 24, rating: 4.6, reviews: 42,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
-    badge: null, category: "sports", delivery: "Livraison express disponible",
+    id: 16, name: "Cube Maggi original — boîte de 60 cubes", brand: "Maggi",
+    price: 28, oldPrice: null, discount: null, rating: 4.8, reviews: 1024,
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80",
+    badge: null, category: "epices", delivery: "Livraison 24h UAE",
     isNew: false
   },
   {
-    id: 11, name: "Parfum Yves Saint Laurent Mon Paris EDP 90ml", brand: "YSL",
-    price: 92000, oldPrice: 115000, discount: 20, rating: 4.7, reviews: 892,
-    image: "https://images.unsplash.com/photo-1541643600914-78b084683702?w=400&q=80",
-    badge: "Top", category: "beaute", delivery: "Livraison en 48h",
+    id: 17, name: "Thé Touba 200g — Sénégal (girofle, poivre)", brand: "Teranga",
+    price: 24, oldPrice: 34, discount: 29, rating: 4.7, reviews: 287,
+    image: "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=400&q=80",
+    badge: "Hot", category: "boissons", delivery: "Livraison 24h Abu Dhabi",
     isNew: false
   },
   {
-    id: 12, name: "Tapis Persan tissé main 200x300cm Bordeaux", brand: "OrientArt",
-    price: 145000, oldPrice: 195000, discount: 26, rating: 4.4, reviews: 31,
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80",
-    badge: null, category: "maison", delivery: "Livraison gratuite",
+    id: 18, name: "Calebasse décorative artisanale grand modèle", brand: "ArtisansCM",
+    price: 95, oldPrice: 130, discount: 27, rating: 4.6, reviews: 42,
+    image: "https://images.unsplash.com/photo-1604908554036-9be17b7c98c0?w=400&q=80",
+    badge: null, category: "cuisine", delivery: "Livraison 48h tout UAE",
     isNew: false
   },
 ];
@@ -120,7 +162,7 @@ const FLASH_PRODUCTS = PRODUCTS.filter(p => p.badge === "Flash").map(p => ({
 /* ─── 2. UTILITIES ───────────────────────────────────────────── */
 const Utils = {
   formatPrice(n) {
-    return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA';
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n) + ' AED';
   },
   renderStars(rating) {
     const full  = Math.floor(rating);
@@ -508,7 +550,7 @@ const ProductsModule = {
   resetFilters() {
     document.getElementById('price-min').value   = '';
     document.getElementById('price-max').value   = '';
-    document.getElementById('price-range').value = 500000;
+    document.getElementById('price-range').value = 1500;
     document.querySelectorAll('#sidebar input[type="checkbox"]').forEach(cb => {
       cb.checked = cb.value === 'tous';
     });
@@ -686,10 +728,10 @@ const SearchModule = {
   input:       null,
   suggestions: null,
   SUGGESTIONS: [
-    "iPhone 15 Pro", "Samsung Galaxy S24", "MacBook Air M3",
-    "Nike Air Max", "Crème hydratante", "Canapé gris",
-    "Sony WH-1000XM5", "Robe Wax", "iPad Pro",
-    "Parfum YSL", "Vélo carbone", "Tapis persan"
+    "Attiéké", "Beurre de Karité", "Tissu Wax", "Bissap hibiscus",
+    "Café Robusta", "Fonio bio", "Huile de palme", "Savon noir",
+    "Gari", "Boubou", "Piment Yassa", "Cacao Ghana", "Cube Maggi",
+    "Chips plantain", "Thé Touba", "Mortier pilon", "Calebasse"
   ],
 
   init() {
@@ -809,6 +851,63 @@ const BackToTopModule = {
 
     this.btn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+};
+
+/* ─── 15. DELIVERY RESERVATION MODULE (UAE) ──────────────────── */
+const DeliveryModule = {
+  init() {
+    const form = document.getElementById('delivery-form');
+    if (!form) return;
+
+    // Default date = tomorrow
+    const dateInput = document.getElementById('deliv-date');
+    if (dateInput) {
+      const tomorrow = new Date(Date.now() + 24 * 3600 * 1000);
+      dateInput.min   = tomorrow.toISOString().split('T')[0];
+      dateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const fields = {
+        name:    document.getElementById('deliv-name').value.trim(),
+        phone:   document.getElementById('deliv-phone').value.trim(),
+        emirate: document.getElementById('deliv-emirate').value,
+        area:    document.getElementById('deliv-area').value.trim(),
+        address: document.getElementById('deliv-address').value.trim(),
+        date:    document.getElementById('deliv-date').value,
+        slot:    document.getElementById('deliv-slot').value,
+      };
+
+      // Validation
+      const missing = Object.entries(fields).filter(([_, v]) => !v).map(([k]) => k);
+      if (missing.length) {
+        Toast.show('Veuillez remplir tous les champs obligatoires', 'error', 'alert-circle');
+        return;
+      }
+
+      if (!/^[+\d\s()-]{8,}$/.test(fields.phone)) {
+        Toast.show('Numéro de téléphone UAE invalide', 'error', 'alert-circle');
+        return;
+      }
+
+      // Success
+      Toast.show(
+        `✅ Livraison réservée à ${fields.emirate} le ${fields.date} (${fields.slot})`,
+        'success',
+        'check-circle',
+        5000
+      );
+      form.reset();
+
+      // Re-init date to tomorrow
+      if (dateInput) {
+        const tomorrow = new Date(Date.now() + 24 * 3600 * 1000);
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+      }
     });
   }
 };

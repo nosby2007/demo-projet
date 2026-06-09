@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="NovaMart – Découvrez des millions de produits au meilleur prix." />
-  <title>NovaMart — Vos emplettes, réinventées</title>
+  <meta name="description" content="LAMYLENOISE – L'épicerie africaine d'Abu Dhabi. Livraison express dans tous les Émirats Arabes Unis." />
+  <title>LAMYLENOISE — L'Afrique livrée à votre porte • Abu Dhabi & UAE</title>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -39,19 +39,19 @@
         <div class="cart-empty">
           <i data-lucide="shopping-bag"></i>
           <p>Votre panier est vide</p>
-          <span>Commencez à ajouter des articles</span>
+          <span>Découvrez nos saveurs d'Afrique</span>
         </div>
       </div>
       <div class="cart-footer" id="cart-footer" style="display:none;">
         <div class="cart-subtotal">
           <span>Sous-total</span>
-          <strong id="cart-total">0 FCFA</strong>
+          <strong id="cart-total">0 AED</strong>
         </div>
         <button class="btn-checkout">
           <i data-lucide="credit-card"></i>
-          Passer la commande
+          Commander • Livraison UAE
         </button>
-        <p class="cart-disclaimer">Livraison gratuite à partir de 25 000 FCFA</p>
+        <p class="cart-disclaimer">Livraison gratuite à partir de 150 AED dans tout l'UAE</p>
       </div>
     </div>
   </div>
@@ -61,11 +61,11 @@
   ═══════════════════════════════════════════ -->
   <div class="topbar">
     <div class="container topbar-inner">
-      <span>🚚 Livraison express disponible — <strong>Douala, Yaoundé, Abidjan</strong></span>
+      <span>🚚 Livraison express dans tout l'UAE — <strong>Abu Dhabi • Dubai • Sharjah • Ajman</strong></span>
       <div class="topbar-links">
-        <a href="#">Aide</a>
-        <a href="#">Télécharger l'app</a>
-        <a href="#">Vendre sur NovaMart</a>
+        <a href="#delivery">Suivre ma livraison</a>
+        <a href="#">WhatsApp +971 50 000 0000</a>
+        <a href="#">Vendre sur BaobabMart</a>
       </div>
     </div>
   </div>
@@ -77,8 +77,8 @@
     <div class="container header-inner">
 
       <!-- Logo -->
-      <a href="#" class="logo" aria-label="NovaMart — Accueil">
-        <span class="logo-nova">Nova</span><span class="logo-mart">Mart</span>
+      <a href="#" class="logo" aria-label="LAMYLENOISE — Accueil">
+        <span class="logo-nova">LAMYLENOISE</span>
         <span class="logo-dot">●</span>
       </a>
 
@@ -87,18 +87,19 @@
         <div class="search-category">
           <select id="search-category" aria-label="Catégorie de recherche">
             <option>Tout</option>
-            <option>Électronique</option>
-            <option>Mode</option>
-            <option>Maison</option>
-            <option>Beauté</option>
-            <option>Sports</option>
+            <option>Épicerie</option>
+            <option>Boissons</option>
+            <option>Épices</option>
+            <option>Mode Wax</option>
+            <option>Beauté Karité</option>
+            <option>Cuisine</option>
           </select>
           <i data-lucide="chevron-down"></i>
         </div>
         <input
           type="search"
           id="search-input"
-          placeholder="Rechercher produits, marques, catégories…"
+          placeholder="Rechercher attiéké, karité, wax, bissap, jollof…"
           autocomplete="off"
           aria-label="Rechercher"
         />
@@ -138,26 +139,26 @@
         <button class="cat-item active" data-cat="tous">
           <i data-lucide="layout-grid"></i> Tout
         </button>
-        <button class="cat-item" data-cat="electronique">
-          <i data-lucide="cpu"></i> Électronique
+        <button class="cat-item" data-cat="epicerie">
+          <i data-lucide="shopping-basket"></i> Épicerie
+        </button>
+        <button class="cat-item" data-cat="boissons">
+          <i data-lucide="coffee"></i> Boissons
+        </button>
+        <button class="cat-item" data-cat="epices">
+          <i data-lucide="flame"></i> Épices
         </button>
         <button class="cat-item" data-cat="mode">
-          <i data-lucide="shirt"></i> Mode
-        </button>
-        <button class="cat-item" data-cat="maison">
-          <i data-lucide="home"></i> Maison
+          <i data-lucide="shirt"></i> Mode Wax
         </button>
         <button class="cat-item" data-cat="beaute">
-          <i data-lucide="sparkles"></i> Beauté
+          <i data-lucide="sparkles"></i> Beauté Karité
         </button>
-        <button class="cat-item" data-cat="sports">
-          <i data-lucide="dumbbell"></i> Sports
+        <button class="cat-item" data-cat="cuisine">
+          <i data-lucide="utensils"></i> Cuisine
         </button>
-        <button class="cat-item" data-cat="informatique">
-          <i data-lucide="monitor"></i> Informatique
-        </button>
-        <button class="cat-item" data-cat="jardin">
-          <i data-lucide="flower-2"></i> Jardin
+        <button class="cat-item" data-cat="snacks">
+          <i data-lucide="cookie"></i> Snacks
         </button>
       </div>
       <span class="cat-indicator" id="cat-indicator"></span>
@@ -169,12 +170,13 @@
         <a href="#" class="mobile-link"><i data-lucide="user"></i> Mon Compte</a>
         <a href="#" class="mobile-link"><i data-lucide="heart"></i> Mes Favoris</a>
         <a href="#" class="mobile-link"><i data-lucide="package"></i> Mes Commandes</a>
+        <a href="#delivery" class="mobile-link"><i data-lucide="truck"></i> Réserver une livraison</a>
         <hr class="mobile-divider"/>
-        <a href="#" class="mobile-link"><i data-lucide="cpu"></i> Électronique</a>
-        <a href="#" class="mobile-link"><i data-lucide="shirt"></i> Mode</a>
-        <a href="#" class="mobile-link"><i data-lucide="home"></i> Maison</a>
-        <a href="#" class="mobile-link"><i data-lucide="sparkles"></i> Beauté</a>
-        <a href="#" class="mobile-link"><i data-lucide="dumbbell"></i> Sports</a>
+        <a href="#" class="mobile-link"><i data-lucide="shopping-basket"></i> Épicerie</a>
+        <a href="#" class="mobile-link"><i data-lucide="coffee"></i> Boissons</a>
+        <a href="#" class="mobile-link"><i data-lucide="flame"></i> Épices</a>
+        <a href="#" class="mobile-link"><i data-lucide="shirt"></i> Mode Wax</a>
+        <a href="#" class="mobile-link"><i data-lucide="sparkles"></i> Beauté Karité</a>
       </div>
     </div>
   </header>
@@ -185,43 +187,43 @@
   <section class="hero" aria-label="Promotion principale">
     <div class="hero-slides" id="hero-slides">
 
-      <div class="hero-slide active" style="--slide-bg: linear-gradient(135deg, #0F1923 0%, #1E3A5F 60%, #0F1923 100%);">
+      <div class="hero-slide active" style="--slide-bg: linear-gradient(135deg, #2A1503 0%, #6B3410 55%, #2A1503 100%);">
         <div class="container hero-content">
           <div class="hero-text">
-            <span class="hero-eyebrow">⚡ Ventes Flash — 24h seulement</span>
-            <h1 class="hero-title">Technologie au<br /><em>meilleur prix</em></h1>
-            <p class="hero-sub">Jusqu'à <strong>-60%</strong> sur les smartphones, laptops et accessoires. Offres limitées.</p>
+            <span class="hero-eyebrow">🌿 Saveurs authentiques d'Afrique</span>
+            <h1 class="hero-title">L'Afrique<br /><em>livrée à votre porte</em></h1>
+            <p class="hero-sub">Attiéké, fonio, karité, bissap, wax… Plus de <strong>800 produits</strong> importés directement du continent, livrés dans tout l'UAE en <strong>24h</strong>.</p>
             <div class="hero-ctas">
-              <a href="#products" class="btn-primary">Voir les offres <i data-lucide="arrow-right"></i></a>
-              <a href="#" class="btn-ghost">Toutes les catégories</a>
+              <a href="#products" class="btn-primary">Découvrir la boutique <i data-lucide="arrow-right"></i></a>
+              <a href="#delivery" class="btn-ghost">Réserver livraison</a>
             </div>
           </div>
           <div class="hero-visual">
             <div class="hero-image-wrap">
-              <img src="https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=600&q=80" alt="Smartphone haut de gamme" loading="eager" />
+              <img src="https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&q=80" alt="Épices et produits africains colorés" loading="eager" />
               <div class="hero-badge-float">
-                <span class="badge-label">Flash</span>
-                <span class="badge-value">-60%</span>
+                <span class="badge-label">Express</span>
+                <span class="badge-value">24h</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #1a0a2e 0%, #4a1a6b 60%, #1a0a2e 100%);">
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #1F0A28 0%, #6B1D6A 55%, #1F0A28 100%);">
         <div class="container hero-content">
           <div class="hero-text">
-            <span class="hero-eyebrow">👗 Nouvelle Collection 2026</span>
-            <h1 class="hero-title">Mode & Style<br /><em>sans compromis</em></h1>
-            <p class="hero-sub">Découvrez les dernières tendances africaines et internationales. Livraison en 48h.</p>
+            <span class="hero-eyebrow">👗 Collection Wax 2026</span>
+            <h1 class="hero-title">Mode Africaine<br /><em>made for UAE</em></h1>
+            <p class="hero-sub">Tissus wax authentiques du Ghana et de Côte d'Ivoire, boubous brodés, accessoires faits main. Style intemporel, livraison express.</p>
             <div class="hero-ctas">
-              <a href="#products" class="btn-primary">Explorer la mode <i data-lucide="arrow-right"></i></a>
+              <a href="#products" class="btn-primary">Explorer le Wax <i data-lucide="arrow-right"></i></a>
               <a href="#" class="btn-ghost">Lookbook 2026</a>
             </div>
           </div>
           <div class="hero-visual">
             <div class="hero-image-wrap">
-              <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&q=80" alt="Collection mode 2026" loading="lazy" />
+              <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80" alt="Tissu wax africain coloré" loading="lazy" />
               <div class="hero-badge-float">
                 <span class="badge-label">Nouveau</span>
                 <span class="badge-value">2026</span>
@@ -231,23 +233,23 @@
         </div>
       </div>
 
-      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #0b2a1a 0%, #1a5c35 60%, #0b2a1a 100%);">
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #0B2A1A 0%, #1A5C35 55%, #0B2A1A 100%);">
         <div class="container hero-content">
           <div class="hero-text">
-            <span class="hero-eyebrow">🏠 Salon & Décoration</span>
-            <h1 class="hero-title">Votre intérieur,<br /><em>votre identité</em></h1>
-            <p class="hero-sub">Des milliers de références pour transformer votre espace. Design et durabilité.</p>
+            <span class="hero-eyebrow">🚚 Livraison dans tout l'UAE</span>
+            <h1 class="hero-title">Abu Dhabi, Dubai,<br /><em>Sharjah & au-delà</em></h1>
+            <p class="hero-sub">Chaîne du froid garantie pour les produits frais. Créneaux de livraison au choix, paiement à la livraison disponible.</p>
             <div class="hero-ctas">
-              <a href="#products" class="btn-primary">Décorer maintenant <i data-lucide="arrow-right"></i></a>
-              <a href="#" class="btn-ghost">Inspirations déco</a>
+              <a href="#delivery" class="btn-primary">Réserver un créneau <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Zones de livraison</a>
             </div>
           </div>
           <div class="hero-visual">
             <div class="hero-image-wrap">
-              <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80" alt="Salon moderne décoré" loading="lazy" />
+              <img src="https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&q=80" alt="Livraison express UAE" loading="lazy" />
               <div class="hero-badge-float">
-                <span class="badge-label">Déco</span>
-                <span class="badge-value">-40%</span>
+                <span class="badge-label">Dès</span>
+                <span class="badge-value">150 AED</span>
               </div>
             </div>
           </div>
@@ -276,29 +278,29 @@
       <div class="trust-item">
         <i data-lucide="shield-check"></i>
         <div>
-          <strong>Paiement sécurisé</strong>
-          <span>SSL 256-bit</span>
+          <strong>Produits authentiques</strong>
+          <span>Importés d'Afrique</span>
         </div>
       </div>
       <div class="trust-item">
         <i data-lucide="truck"></i>
         <div>
-          <strong>Livraison rapide</strong>
-          <span>48h en ville</span>
+          <strong>Livraison 24h</strong>
+          <span>Tout l'UAE</span>
         </div>
       </div>
       <div class="trust-item">
-        <i data-lucide="rotate-ccw"></i>
+        <i data-lucide="snowflake"></i>
         <div>
-          <strong>Retour gratuit</strong>
-          <span>30 jours</span>
+          <strong>Chaîne du froid</strong>
+          <span>Frais garantis</span>
         </div>
       </div>
       <div class="trust-item">
         <i data-lucide="headphones"></i>
         <div>
-          <strong>Support 24/7</strong>
-          <span>WhatsApp & Chat</span>
+          <strong>Support 7j/7</strong>
+          <span>WhatsApp en FR/EN/AR</span>
         </div>
       </div>
     </div>
@@ -352,37 +354,37 @@
         <h2 class="section-title">Explorer par catégorie</h2>
       </div>
       <div class="cat-grid">
-        <a href="#" class="cat-card" style="--cat-color:#1A73E8">
-          <div class="cat-icon-wrap"><i data-lucide="cpu"></i></div>
-          <span>Électronique</span>
+        <a href="#" class="cat-card" style="--cat-color:#D97706">
+          <div class="cat-icon-wrap"><i data-lucide="shopping-basket"></i></div>
+          <span>Épicerie</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#7C2D12">
+          <div class="cat-icon-wrap"><i data-lucide="coffee"></i></div>
+          <span>Boissons</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#DC2626">
+          <div class="cat-icon-wrap"><i data-lucide="flame"></i></div>
+          <span>Épices</span>
         </a>
         <a href="#" class="cat-card" style="--cat-color:#E91E8C">
           <div class="cat-icon-wrap"><i data-lucide="shirt"></i></div>
-          <span>Mode</span>
-        </a>
-        <a href="#" class="cat-card" style="--cat-color:#FF6B2B">
-          <div class="cat-icon-wrap"><i data-lucide="home"></i></div>
-          <span>Maison</span>
+          <span>Mode Wax</span>
         </a>
         <a href="#" class="cat-card" style="--cat-color:#9C27B0">
           <div class="cat-icon-wrap"><i data-lucide="sparkles"></i></div>
-          <span>Beauté</span>
+          <span>Beauté Karité</span>
         </a>
-        <a href="#" class="cat-card" style="--cat-color:#4CAF50">
-          <div class="cat-icon-wrap"><i data-lucide="dumbbell"></i></div>
-          <span>Sports</span>
+        <a href="#" class="cat-card" style="--cat-color:#0F766E">
+          <div class="cat-icon-wrap"><i data-lucide="utensils"></i></div>
+          <span>Cuisine</span>
         </a>
-        <a href="#" class="cat-card" style="--cat-color:#FF9800">
-          <div class="cat-icon-wrap"><i data-lucide="monitor"></i></div>
-          <span>Informatique</span>
+        <a href="#" class="cat-card" style="--cat-color:#F59E0B">
+          <div class="cat-icon-wrap"><i data-lucide="cookie"></i></div>
+          <span>Snacks</span>
         </a>
-        <a href="#" class="cat-card" style="--cat-color:#00BCD4">
-          <div class="cat-icon-wrap"><i data-lucide="baby"></i></div>
-          <span>Enfants</span>
-        </a>
-        <a href="#" class="cat-card" style="--cat-color:#795548">
-          <div class="cat-icon-wrap"><i data-lucide="flower-2"></i></div>
-          <span>Jardin</span>
+        <a href="#" class="cat-card" style="--cat-color:#16A34A">
+          <div class="cat-icon-wrap"><i data-lucide="gift"></i></div>
+          <span>Cadeaux</span>
         </a>
       </div>
     </div>
@@ -432,26 +434,27 @@
             <h3 class="sidebar-title">Catégories</h3>
             <ul class="sidebar-list" id="sidebar-cats">
               <li><label class="checkbox-label"><input type="checkbox" checked value="tous"> Tous les produits <span class="count">124</span></label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="electronique"> Électronique <span class="count">48</span></label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="mode"> Mode <span class="count">32</span></label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="maison"> Maison <span class="count">24</span></label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="beaute"> Beauté <span class="count">12</span></label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="sports"> Sports <span class="count">8</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="epicerie"> Épicerie <span class="count">48</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="boissons"> Boissons <span class="count">22</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="epices"> Épices & Condiments <span class="count">18</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="mode"> Mode Wax <span class="count">16</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="beaute"> Beauté Karité <span class="count">12</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="cuisine"> Cuisine <span class="count">8</span></label></li>
             </ul>
           </div>
 
           <div class="sidebar-section">
-            <h3 class="sidebar-title">Prix (FCFA)</h3>
+            <h3 class="sidebar-title">Prix (AED)</h3>
             <div class="price-range-wrap">
               <div class="price-inputs">
-                <input type="number" id="price-min" placeholder="Min" min="0" max="500000" aria-label="Prix minimum" />
+                <input type="number" id="price-min" placeholder="Min" min="0" max="1500" aria-label="Prix minimum" />
                 <span>—</span>
-                <input type="number" id="price-max" placeholder="Max" min="0" max="500000" aria-label="Prix maximum" />
+                <input type="number" id="price-max" placeholder="Max" min="0" max="1500" aria-label="Prix maximum" />
               </div>
-              <input type="range" id="price-range" min="0" max="500000" value="500000" step="1000" aria-label="Plage de prix" />
+              <input type="range" id="price-range" min="0" max="1500" value="1500" step="10" aria-label="Plage de prix" />
               <div class="price-labels">
                 <span>0</span>
-                <span>500 000 FCFA</span>
+                <span>1 500 AED</span>
               </div>
             </div>
           </div>
@@ -466,10 +469,11 @@
           </div>
 
           <div class="sidebar-section">
-            <h3 class="sidebar-title">Livraison</h3>
+            <h3 class="sidebar-title">Livraison UAE</h3>
             <ul class="sidebar-list">
-              <li><label class="checkbox-label"><input type="checkbox" value="express"> Livraison express</label></li>
-              <li><label class="checkbox-label"><input type="checkbox" value="free"> Livraison gratuite</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="express"> Livraison 24h Abu Dhabi/Dubai</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="free"> Livraison gratuite (dès 150 AED)</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="cold"> Chaîne du froid</label></li>
             </ul>
           </div>
 
@@ -492,27 +496,114 @@
   </section>
 
   <!-- ═══════════════════════════════════════════
-       PROMO BANNER
+       DELIVERY RESERVATION (UAE)
   ═══════════════════════════════════════════ -->
-  <section class="promo-banner" aria-label="Bannière promotionnelle">
-    <div class="container promo-inner">
-      <div class="promo-text">
-        <span class="promo-eyebrow">📱 Application Mobile</span>
-        <h2>Shopping encore plus rapide</h2>
-        <p>Téléchargez l'app NovaMart et bénéficiez de 10% sur votre première commande mobile.</p>
-        <div class="promo-actions">
-          <a href="#" class="btn-store">
-            <i data-lucide="apple"></i> App Store
-          </a>
-          <a href="#" class="btn-store">
-            <i data-lucide="smartphone"></i> Google Play
-          </a>
+  <section class="delivery-section" id="delivery" aria-label="Réservation de livraison UAE">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">🚚 Livraison UAE</span>
+          <h2 class="section-title">Réserver un créneau de livraison</h2>
+          <p class="section-desc">Choisissez votre émirat, votre jour et votre créneau horaire. Chaîne du froid garantie pour les produits frais.</p>
         </div>
       </div>
-      <div class="promo-visual">
-        <div class="phone-mockup">
-          <div class="phone-screen"></div>
+
+      <div class="delivery-grid">
+        <!-- Zones UAE -->
+        <div class="delivery-zones">
+          <h3 class="delivery-subtitle"><i data-lucide="map-pin"></i> Nos zones couvertes</h3>
+          <ul class="zones-list">
+            <li class="zone-item"><span class="zone-name">Abu Dhabi</span><span class="zone-info"><strong>24h</strong> • dès 0 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Dubai</span><span class="zone-info"><strong>24h</strong> • dès 15 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Sharjah</span><span class="zone-info"><strong>24-48h</strong> • dès 20 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Ajman</span><span class="zone-info"><strong>24-48h</strong> • dès 25 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Al Ain</span><span class="zone-info"><strong>48h</strong> • dès 30 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Ras Al Khaimah</span><span class="zone-info"><strong>48-72h</strong> • dès 35 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Fujairah / Umm Al Quwain</span><span class="zone-info"><strong>48-72h</strong> • dès 35 AED</span></li>
+          </ul>
+          <p class="delivery-note"><i data-lucide="gift"></i> Livraison <strong>OFFERTE</strong> partout dans l'UAE pour toute commande dès 150 AED.</p>
         </div>
+
+        <!-- Reservation Form -->
+        <form class="delivery-form" id="delivery-form" novalidate>
+          <h3 class="delivery-subtitle"><i data-lucide="calendar-clock"></i> Réserver mon créneau</h3>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Nom complet</span>
+              <input type="text" id="deliv-name" required placeholder="Aminata Diop" />
+            </label>
+            <label class="form-field">
+              <span>Téléphone (UAE)</span>
+              <input type="tel" id="deliv-phone" required placeholder="+971 50 123 4567" />
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Émirat</span>
+              <select id="deliv-emirate" required>
+                <option value="">Choisir un émirat…</option>
+                <option>Abu Dhabi</option>
+                <option>Dubai</option>
+                <option>Sharjah</option>
+                <option>Ajman</option>
+                <option>Al Ain</option>
+                <option>Ras Al Khaimah</option>
+                <option>Fujairah</option>
+                <option>Umm Al Quwain</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Quartier / Zone</span>
+              <input type="text" id="deliv-area" required placeholder="Khalifa City, Marina…" />
+            </label>
+          </div>
+
+          <label class="form-field full">
+            <span>Adresse complète (bâtiment, villa, n°)</span>
+            <input type="text" id="deliv-address" required placeholder="Villa 12, Street 5, Building 88…" />
+          </label>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Date souhaitée</span>
+              <input type="date" id="deliv-date" required />
+            </label>
+            <label class="form-field">
+              <span>Créneau horaire</span>
+              <select id="deliv-slot" required>
+                <option value="">Sélectionner…</option>
+                <option>09:00 – 12:00</option>
+                <option>12:00 – 15:00</option>
+                <option>15:00 – 18:00</option>
+                <option>18:00 – 21:00</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Mode de paiement</span>
+              <select id="deliv-pay" required>
+                <option>Carte bancaire (Visa / MasterCard)</option>
+                <option>Apple Pay</option>
+                <option>Tabby — 4x sans frais</option>
+                <option>Tamara</option>
+                <option>Cash à la livraison (COD)</option>
+              </select>
+            </label>
+            <label class="form-field checkbox-line">
+              <input type="checkbox" id="deliv-cold" />
+              <span>Commande contient des produits frais (chaîne du froid)</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary delivery-submit">
+            <i data-lucide="check-circle"></i> Confirmer la réservation
+          </button>
+          <p class="delivery-disclaimer">Vous recevrez un SMS et un email de confirmation avec le suivi de votre livreur.</p>
+        </form>
       </div>
     </div>
   </section>
@@ -525,8 +616,8 @@
       <div class="newsletter-text">
         <i data-lucide="mail"></i>
         <div>
-          <h2>Restez informé des meilleures offres</h2>
-          <p>Recevez en avant-première nos promotions, nouveautés et codes exclusifs.</p>
+          <h2>Restez branché sur les nouveautés africaines</h2>
+          <p>Nouveaux arrivages, recettes, codes promo exclusifs UAE — directement dans votre boîte mail.</p>
         </div>
       </div>
       <form class="newsletter-form" id="newsletter-form" novalidate>
@@ -547,13 +638,13 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a href="#" class="logo footer-logo">
-            <span class="logo-nova">Nova</span><span class="logo-mart">Mart</span><span class="logo-dot">●</span>
+            <span class="logo-nova">Baobab</span><span class="logo-mart">Mart</span><span class="logo-dot">●</span>
           </a>
-          <p>La plateforme e-commerce de référence pour l'Afrique francophone. Des millions de produits, livrés partout.</p>
+          <p>L'épicerie africaine de référence à Abu Dhabi. Plus de 800 produits authentiques importés du continent, livrés dans tous les Émirats.</p>
           <div class="social-links">
             <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
             <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
-            <a href="#" aria-label="Twitter / X"><i data-lucide="twitter"></i></a>
+            <a href="#" aria-label="TikTok"><i data-lucide="music-2"></i></a>
             <a href="#" aria-label="WhatsApp"><i data-lucide="message-circle"></i></a>
           </div>
         </div>
@@ -564,7 +655,7 @@
             <li><a href="#">Mon compte</a></li>
             <li><a href="#">Mes commandes</a></li>
             <li><a href="#">Mes favoris</a></li>
-            <li><a href="#">Historique</a></li>
+            <li><a href="#delivery">Réserver livraison</a></li>
           </ul>
         </div>
 
@@ -573,8 +664,8 @@
           <ul>
             <li><a href="#">Centre d'aide</a></li>
             <li><a href="#">Retours & remboursements</a></li>
-            <li><a href="#">Livraison</a></li>
-            <li><a href="#">Contactez-nous</a></li>
+            <li><a href="#delivery">Zones de livraison UAE</a></li>
+            <li><a href="#">WhatsApp +971 50 000 0000</a></li>
           </ul>
         </div>
 
@@ -582,9 +673,9 @@
           <h3>À propos</h3>
           <ul>
             <li><a href="#">Qui sommes-nous</a></li>
-            <li><a href="#">Vendre sur NovaMart</a></li>
-            <li><a href="#">Carrières</a></li>
-            <li><a href="#">Presse</a></li>
+            <li><a href="#">Vendre sur BaobabMart</a></li>
+            <li><a href="#">Devenir livreur UAE</a></li>
+            <li><a href="#">Blog & Recettes</a></li>
           </ul>
         </div>
 
@@ -593,18 +684,19 @@
           <div class="payment-icons">
             <span class="payment-badge">Visa</span>
             <span class="payment-badge">MasterCard</span>
-            <span class="payment-badge">MTN MoMo</span>
-            <span class="payment-badge">Orange Money</span>
-            <span class="payment-badge">Wave</span>
+            <span class="payment-badge">Apple Pay</span>
+            <span class="payment-badge">Tabby</span>
+            <span class="payment-badge">Tamara</span>
+            <span class="payment-badge">COD</span>
           </div>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>© 2026 NovaMart. Tous droits réservés.</p>
+        <p>© 2026 BaobabMart LLC — Abu Dhabi, UAE. Tous droits réservés.</p>
         <div class="footer-legal">
           <a href="#">Confidentialité</a>
-          <a href="#">CGU</a>
+          <a href="#">CGV</a>
           <a href="#">Cookies</a>
         </div>
       </div>
