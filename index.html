@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NovaMart – Découvrez des millions de produits au meilleur prix." />
+  <title>NovaMart — Vos emplettes, réinventées</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       TOAST CONTAINER
+  ═══════════════════════════════════════════ -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ═══════════════════════════════════════════
+       CART DRAWER
+  ═══════════════════════════════════════════ -->
+  <div id="cart-overlay" class="cart-overlay" role="dialog" aria-modal="true" aria-label="Panier d'achat">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <h2>Mon Panier <span id="cart-count-badge" class="cart-badge">0</span></h2>
+        <button id="cart-close" class="icon-btn" aria-label="Fermer le panier">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div id="cart-items" class="cart-items">
+        <div class="cart-empty">
+          <i data-lucide="shopping-bag"></i>
+          <p>Votre panier est vide</p>
+          <span>Commencez à ajouter des articles</span>
+        </div>
+      </div>
+      <div class="cart-footer" id="cart-footer" style="display:none;">
+        <div class="cart-subtotal">
+          <span>Sous-total</span>
+          <strong id="cart-total">0 FCFA</strong>
+        </div>
+        <button class="btn-checkout">
+          <i data-lucide="credit-card"></i>
+          Passer la commande
+        </button>
+        <p class="cart-disclaimer">Livraison gratuite à partir de 25 000 FCFA</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOP BAR
+  ═══════════════════════════════════════════ -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <span>🚚 Livraison express disponible — <strong>Douala, Yaoundé, Abidjan</strong></span>
+      <div class="topbar-links">
+        <a href="#">Aide</a>
+        <a href="#">Télécharger l'app</a>
+        <a href="#">Vendre sur NovaMart</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       HEADER / NAV
+  ═══════════════════════════════════════════ -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+
+      <!-- Logo -->
+      <a href="#" class="logo" aria-label="NovaMart — Accueil">
+        <span class="logo-nova">Nova</span><span class="logo-mart">Mart</span>
+        <span class="logo-dot">●</span>
+      </a>
+
+      <!-- Search Bar -->
+      <div class="search-wrapper" role="search">
+        <div class="search-category">
+          <select id="search-category" aria-label="Catégorie de recherche">
+            <option>Tout</option>
+            <option>Électronique</option>
+            <option>Mode</option>
+            <option>Maison</option>
+            <option>Beauté</option>
+            <option>Sports</option>
+          </select>
+          <i data-lucide="chevron-down"></i>
+        </div>
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Rechercher produits, marques, catégories…"
+          autocomplete="off"
+          aria-label="Rechercher"
+        />
+        <button class="search-btn" aria-label="Lancer la recherche">
+          <i data-lucide="search"></i>
+        </button>
+        <!-- Suggestions Dropdown -->
+        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Suggestions de recherche"></div>
+      </div>
+
+      <!-- Header Actions -->
+      <nav class="header-actions" aria-label="Actions principales">
+        <button class="icon-btn header-action" id="wishlist-btn" aria-label="Liste de souhaits">
+          <i data-lucide="heart"></i>
+          <span class="action-label">Favoris</span>
+        </button>
+        <button class="icon-btn header-action" id="account-btn" aria-label="Mon compte">
+          <i data-lucide="user"></i>
+          <span class="action-label">Compte</span>
+        </button>
+        <button class="icon-btn header-action cart-toggle" id="cart-toggle" aria-label="Panier d'achat">
+          <i data-lucide="shopping-cart"></i>
+          <span id="cart-count" class="cart-count">0</span>
+          <span class="action-label">Panier</span>
+        </button>
+      </nav>
+
+      <!-- Hamburger (mobile) -->
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- ── Category Nav ── -->
+    <nav class="cat-nav" id="cat-nav" aria-label="Catégories">
+      <div class="container cat-nav-inner">
+        <button class="cat-item active" data-cat="tous">
+          <i data-lucide="layout-grid"></i> Tout
+        </button>
+        <button class="cat-item" data-cat="electronique">
+          <i data-lucide="cpu"></i> Électronique
+        </button>
+        <button class="cat-item" data-cat="mode">
+          <i data-lucide="shirt"></i> Mode
+        </button>
+        <button class="cat-item" data-cat="maison">
+          <i data-lucide="home"></i> Maison
+        </button>
+        <button class="cat-item" data-cat="beaute">
+          <i data-lucide="sparkles"></i> Beauté
+        </button>
+        <button class="cat-item" data-cat="sports">
+          <i data-lucide="dumbbell"></i> Sports
+        </button>
+        <button class="cat-item" data-cat="informatique">
+          <i data-lucide="monitor"></i> Informatique
+        </button>
+        <button class="cat-item" data-cat="jardin">
+          <i data-lucide="flower-2"></i> Jardin
+        </button>
+      </div>
+      <span class="cat-indicator" id="cat-indicator"></span>
+    </nav>
+
+    <!-- Mobile Nav Menu -->
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+      <div class="mobile-nav-inner">
+        <a href="#" class="mobile-link"><i data-lucide="user"></i> Mon Compte</a>
+        <a href="#" class="mobile-link"><i data-lucide="heart"></i> Mes Favoris</a>
+        <a href="#" class="mobile-link"><i data-lucide="package"></i> Mes Commandes</a>
+        <hr class="mobile-divider"/>
+        <a href="#" class="mobile-link"><i data-lucide="cpu"></i> Électronique</a>
+        <a href="#" class="mobile-link"><i data-lucide="shirt"></i> Mode</a>
+        <a href="#" class="mobile-link"><i data-lucide="home"></i> Maison</a>
+        <a href="#" class="mobile-link"><i data-lucide="sparkles"></i> Beauté</a>
+        <a href="#" class="mobile-link"><i data-lucide="dumbbell"></i> Sports</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       HERO BANNER
+  ═══════════════════════════════════════════ -->
+  <section class="hero" aria-label="Promotion principale">
+    <div class="hero-slides" id="hero-slides">
+
+      <div class="hero-slide active" style="--slide-bg: linear-gradient(135deg, #0F1923 0%, #1E3A5F 60%, #0F1923 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">⚡ Ventes Flash — 24h seulement</span>
+            <h1 class="hero-title">Technologie au<br /><em>meilleur prix</em></h1>
+            <p class="hero-sub">Jusqu'à <strong>-60%</strong> sur les smartphones, laptops et accessoires. Offres limitées.</p>
+            <div class="hero-ctas">
+              <a href="#products" class="btn-primary">Voir les offres <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Toutes les catégories</a>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=600&q=80" alt="Smartphone haut de gamme" loading="eager" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Flash</span>
+                <span class="badge-value">-60%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #1a0a2e 0%, #4a1a6b 60%, #1a0a2e 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">👗 Nouvelle Collection 2026</span>
+            <h1 class="hero-title">Mode & Style<br /><em>sans compromis</em></h1>
+            <p class="hero-sub">Découvrez les dernières tendances africaines et internationales. Livraison en 48h.</p>
+            <div class="hero-ctas">
+              <a href="#products" class="btn-primary">Explorer la mode <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Lookbook 2026</a>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&q=80" alt="Collection mode 2026" loading="lazy" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Nouveau</span>
+                <span class="badge-value">2026</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #0b2a1a 0%, #1a5c35 60%, #0b2a1a 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">🏠 Salon & Décoration</span>
+            <h1 class="hero-title">Votre intérieur,<br /><em>votre identité</em></h1>
+            <p class="hero-sub">Des milliers de références pour transformer votre espace. Design et durabilité.</p>
+            <div class="hero-ctas">
+              <a href="#products" class="btn-primary">Décorer maintenant <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Inspirations déco</a>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80" alt="Salon moderne décoré" loading="lazy" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Déco</span>
+                <span class="badge-value">-40%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Hero Controls -->
+    <div class="hero-controls">
+      <button class="hero-prev" id="hero-prev" aria-label="Slide précédente"><i data-lucide="chevron-left"></i></button>
+      <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Slides du hero">
+        <button class="hero-dot active" role="tab" aria-selected="true" data-slide="0"></button>
+        <button class="hero-dot" role="tab" aria-selected="false" data-slide="1"></button>
+        <button class="hero-dot" role="tab" aria-selected="false" data-slide="2"></button>
+      </div>
+      <button class="hero-next" id="hero-next" aria-label="Slide suivante"><i data-lucide="chevron-right"></i></button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TRUST STRIP
+  ═══════════════════════════════════════════ -->
+  <div class="trust-strip">
+    <div class="container trust-inner">
+      <div class="trust-item">
+        <i data-lucide="shield-check"></i>
+        <div>
+          <strong>Paiement sécurisé</strong>
+          <span>SSL 256-bit</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="truck"></i>
+        <div>
+          <strong>Livraison rapide</strong>
+          <span>48h en ville</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="rotate-ccw"></i>
+        <div>
+          <strong>Retour gratuit</strong>
+          <span>30 jours</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="headphones"></i>
+        <div>
+          <strong>Support 24/7</strong>
+          <span>WhatsApp & Chat</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FLASH DEALS TIMER
+  ═══════════════════════════════════════════ -->
+  <section class="flash-section" aria-label="Ventes flash">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">⚡ Limité dans le temps</span>
+          <h2 class="section-title">Ventes Flash</h2>
+        </div>
+        <div class="flash-timer" id="flash-timer" aria-live="polite" aria-label="Compte à rebours des ventes flash">
+          <div class="timer-unit">
+            <span id="timer-h">04</span>
+            <label>H</label>
+          </div>
+          <span class="timer-sep">:</span>
+          <div class="timer-unit">
+            <span id="timer-m">23</span>
+            <label>M</label>
+          </div>
+          <span class="timer-sep">:</span>
+          <div class="timer-unit">
+            <span id="timer-s">47</span>
+            <label>S</label>
+          </div>
+        </div>
+        <a href="#" class="see-all-link">Tout voir <i data-lucide="arrow-right"></i></a>
+      </div>
+
+      <div class="products-scroll" id="flash-products" role="list">
+        <!-- Injected by JS -->
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CATEGORY QUICK ACCESS
+  ═══════════════════════════════════════════ -->
+  <section class="quick-cats" aria-label="Accès rapide aux catégories">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Explorer par catégorie</h2>
+      </div>
+      <div class="cat-grid">
+        <a href="#" class="cat-card" style="--cat-color:#1A73E8">
+          <div class="cat-icon-wrap"><i data-lucide="cpu"></i></div>
+          <span>Électronique</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#E91E8C">
+          <div class="cat-icon-wrap"><i data-lucide="shirt"></i></div>
+          <span>Mode</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#FF6B2B">
+          <div class="cat-icon-wrap"><i data-lucide="home"></i></div>
+          <span>Maison</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#9C27B0">
+          <div class="cat-icon-wrap"><i data-lucide="sparkles"></i></div>
+          <span>Beauté</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#4CAF50">
+          <div class="cat-icon-wrap"><i data-lucide="dumbbell"></i></div>
+          <span>Sports</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#FF9800">
+          <div class="cat-icon-wrap"><i data-lucide="monitor"></i></div>
+          <span>Informatique</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#00BCD4">
+          <div class="cat-icon-wrap"><i data-lucide="baby"></i></div>
+          <span>Enfants</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#795548">
+          <div class="cat-icon-wrap"><i data-lucide="flower-2"></i></div>
+          <span>Jardin</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN PRODUCTS GRID
+  ═══════════════════════════════════════════ -->
+  <section class="products-section" id="products" aria-label="Catalogue produits">
+    <div class="container">
+      <div class="section-header products-section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">Catalogue</span>
+          <h2 class="section-title">Nos Produits</h2>
+        </div>
+        <div class="products-toolbar">
+          <!-- Filters -->
+          <div class="filter-chips" id="filter-chips" role="group" aria-label="Filtres actifs"></div>
+          <!-- Sort -->
+          <div class="sort-wrap">
+            <label for="sort-select" class="sr-only">Trier par</label>
+            <select id="sort-select" class="sort-select" aria-label="Trier les produits">
+              <option value="default">Pertinence</option>
+              <option value="price-asc">Prix : croissant</option>
+              <option value="price-desc">Prix : décroissant</option>
+              <option value="rating">Meilleures notes</option>
+              <option value="new">Nouveautés</option>
+            </select>
+            <i data-lucide="chevrons-up-down"></i>
+          </div>
+          <!-- View Toggle -->
+          <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+            <button class="view-btn active" id="view-grid" aria-label="Vue grille" aria-pressed="true">
+              <i data-lucide="layout-grid"></i>
+            </button>
+            <button class="view-btn" id="view-list" aria-label="Vue liste" aria-pressed="false">
+              <i data-lucide="layout-list"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="products-layout">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar" id="sidebar" aria-label="Filtres produits">
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Catégories</h3>
+            <ul class="sidebar-list" id="sidebar-cats">
+              <li><label class="checkbox-label"><input type="checkbox" checked value="tous"> Tous les produits <span class="count">124</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="electronique"> Électronique <span class="count">48</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="mode"> Mode <span class="count">32</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="maison"> Maison <span class="count">24</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="beaute"> Beauté <span class="count">12</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="sports"> Sports <span class="count">8</span></label></li>
+            </ul>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Prix (FCFA)</h3>
+            <div class="price-range-wrap">
+              <div class="price-inputs">
+                <input type="number" id="price-min" placeholder="Min" min="0" max="500000" aria-label="Prix minimum" />
+                <span>—</span>
+                <input type="number" id="price-max" placeholder="Max" min="0" max="500000" aria-label="Prix maximum" />
+              </div>
+              <input type="range" id="price-range" min="0" max="500000" value="500000" step="1000" aria-label="Plage de prix" />
+              <div class="price-labels">
+                <span>0</span>
+                <span>500 000 FCFA</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Évaluation</h3>
+            <ul class="sidebar-list">
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="5"> ★★★★★ <span class="count">18</span></label></li>
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="4"> ★★★★☆ <span class="count">45</span></label></li>
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="3"> ★★★☆☆ <span class="count">30</span></label></li>
+            </ul>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Livraison</h3>
+            <ul class="sidebar-list">
+              <li><label class="checkbox-label"><input type="checkbox" value="express"> Livraison express</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="free"> Livraison gratuite</label></li>
+            </ul>
+          </div>
+
+          <button class="btn-reset-filters" id="reset-filters">Réinitialiser les filtres</button>
+        </aside>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="products-grid" role="list" aria-label="Liste des produits">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <nav class="pagination" aria-label="Pagination des produits">
+        <button class="page-btn prev" id="page-prev" disabled aria-label="Page précédente"><i data-lucide="chevron-left"></i></button>
+        <div class="page-numbers" id="page-numbers" role="list"></div>
+        <button class="page-btn next" id="page-next" aria-label="Page suivante"><i data-lucide="chevron-right"></i></button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       PROMO BANNER
+  ═══════════════════════════════════════════ -->
+  <section class="promo-banner" aria-label="Bannière promotionnelle">
+    <div class="container promo-inner">
+      <div class="promo-text">
+        <span class="promo-eyebrow">📱 Application Mobile</span>
+        <h2>Shopping encore plus rapide</h2>
+        <p>Téléchargez l'app NovaMart et bénéficiez de 10% sur votre première commande mobile.</p>
+        <div class="promo-actions">
+          <a href="#" class="btn-store">
+            <i data-lucide="apple"></i> App Store
+          </a>
+          <a href="#" class="btn-store">
+            <i data-lucide="smartphone"></i> Google Play
+          </a>
+        </div>
+      </div>
+      <div class="promo-visual">
+        <div class="phone-mockup">
+          <div class="phone-screen"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       NEWSLETTER
+  ═══════════════════════════════════════════ -->
+  <section class="newsletter" aria-label="Inscription newsletter">
+    <div class="container newsletter-inner">
+      <div class="newsletter-text">
+        <i data-lucide="mail"></i>
+        <div>
+          <h2>Restez informé des meilleures offres</h2>
+          <p>Recevez en avant-première nos promotions, nouveautés et codes exclusifs.</p>
+        </div>
+      </div>
+      <form class="newsletter-form" id="newsletter-form" novalidate>
+        <div class="input-group">
+          <input type="email" id="newsletter-email" placeholder="votre@email.com" aria-label="Votre adresse email" required />
+          <button type="submit" class="btn-primary">S'abonner</button>
+        </div>
+        <p class="newsletter-disclaimer">Pas de spam. Désabonnement en un clic.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="logo footer-logo">
+            <span class="logo-nova">Nova</span><span class="logo-mart">Mart</span><span class="logo-dot">●</span>
+          </a>
+          <p>La plateforme e-commerce de référence pour l'Afrique francophone. Des millions de produits, livrés partout.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+            <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            <a href="#" aria-label="Twitter / X"><i data-lucide="twitter"></i></a>
+            <a href="#" aria-label="WhatsApp"><i data-lucide="message-circle"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h3>Acheter</h3>
+          <ul>
+            <li><a href="#">Mon compte</a></li>
+            <li><a href="#">Mes commandes</a></li>
+            <li><a href="#">Mes favoris</a></li>
+            <li><a href="#">Historique</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Aide & Support</h3>
+          <ul>
+            <li><a href="#">Centre d'aide</a></li>
+            <li><a href="#">Retours & remboursements</a></li>
+            <li><a href="#">Livraison</a></li>
+            <li><a href="#">Contactez-nous</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>À propos</h3>
+          <ul>
+            <li><a href="#">Qui sommes-nous</a></li>
+            <li><a href="#">Vendre sur NovaMart</a></li>
+            <li><a href="#">Carrières</a></li>
+            <li><a href="#">Presse</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Paiements acceptés</h3>
+          <div class="payment-icons">
+            <span class="payment-badge">Visa</span>
+            <span class="payment-badge">MasterCard</span>
+            <span class="payment-badge">MTN MoMo</span>
+            <span class="payment-badge">Orange Money</span>
+            <span class="payment-badge">Wave</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 NovaMart. Tous droits réservés.</p>
+        <div class="footer-legal">
+          <a href="#">Confidentialité</a>
+          <a href="#">CGU</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Back to top -->
+  <button class="back-to-top" id="back-to-top" aria-label="Retour en haut de page">
+    <i data-lucide="arrow-up"></i>
+  </button>
+
+  <!-- JS -->
+  <script src="app.js"></script>
+</body>
+</html>
