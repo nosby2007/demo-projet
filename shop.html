@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Catalogue LAMYLENOISE — Tous les produits africains livrés dans tout l'UAE." />
+  <title>Boutique — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="shop.html">
+
+  <main class="page">
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb" aria-label="Fil d'Ariane">
+          <a href="index.html">Accueil</a> › <span>Boutique</span>
+        </nav>
+        <h1 class="page-title">Toute la boutique africaine</h1>
+        <p class="page-subtitle">Plus de 800 produits authentiques. Livraison express dans tout l'UAE.</p>
+      </div>
+    </section>
+
+    <section class="shop-section">
+      <div class="container">
+
+        <div class="shop-toolbar">
+          <div class="shop-chips" id="shop-chips"></div>
+          <div class="shop-right">
+            <span class="shop-count" id="shop-count"></span>
+            <div class="sort-wrap">
+              <select id="shop-sort" class="sort-select">
+                <option value="default">Pertinence</option>
+                <option value="price-asc">Prix : croissant</option>
+                <option value="price-desc">Prix : décroissant</option>
+                <option value="rating">Meilleures notes</option>
+                <option value="new">Nouveautés</option>
+              </select>
+              <i data-lucide="chevrons-up-down"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="products-grid" id="shop-grid" role="list"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Créer un compte LAMYLENOISE." />
+  <title>Créer un compte — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="register.html">
+
+  <main class="page auth-page">
+    <section class="auth-section">
+      <div class="container">
+        <div class="auth-card">
+          <a href="index.html" class="logo auth-logo">
+            <span class="logo-nova">LAMYLENOISE</span><span class="logo-dot">●</span>
+          </a>
+          <h1>Créer votre compte</h1>
+          <p class="auth-sub">Bénéficiez de -10 % sur votre première commande dans l'UAE.</p>
+
+          <form id="register-form" class="auth-form" novalidate>
+            <div class="form-row">
+              <label class="form-field"><span>Prénom</span><input type="text" required placeholder="Aminata" /></label>
+              <label class="form-field"><span>Nom</span><input type="text" required placeholder="Diop" /></label>
+            </div>
+            <label class="form-field full"><span>Email</span><input type="email" required placeholder="vous@exemple.ae" /></label>
+            <label class="form-field full"><span>Téléphone (UAE)</span><input type="tel" required placeholder="+971 50 123 4567" /></label>
+            <label class="form-field full"><span>Mot de passe</span><input type="password" required placeholder="Minimum 8 caractères" /></label>
+
+            <label class="checkbox-label small"><input type="checkbox" required /> J'accepte les <a href="legal.html#terms" class="auth-link">CGV</a> et la <a href="legal.html#privacy" class="auth-link">politique de confidentialité</a>.</label>
+            <label class="checkbox-label small"><input type="checkbox" /> Recevoir les offres et nouveautés par email.</label>
+
+            <button type="submit" class="btn-primary auth-submit">
+              <i data-lucide="user-plus"></i> Créer mon compte
+            </button>
+          </form>
+
+          <p class="auth-switch">
+            Déjà inscrit·e ? <a href="login.html">Se connecter</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

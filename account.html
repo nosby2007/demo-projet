@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Mon compte LAMYLENOISE — Commandes, favoris, adresses." />
+  <title>Mon compte — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="account.html">
+
+  <main class="page">
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Mon compte</span></nav>
+        <h1 class="page-title">Bonjour Aminata 👋</h1>
+        <p class="page-subtitle">Gérez vos commandes, favoris et adresses de livraison UAE.</p>
+      </div>
+    </section>
+
+    <section class="account-section">
+      <div class="container">
+        <div class="account-layout" id="account-root">
+
+          <aside class="account-sidebar">
+            <div class="account-user">
+              <div class="account-avatar">AD</div>
+              <div>
+                <strong>Aminata Diop</strong>
+                <p>aminata.d@exemple.ae</p>
+              </div>
+            </div>
+            <nav class="account-tabs">
+              <a href="#dashboard" class="account-tab active" data-target="panel-dashboard"><i data-lucide="layout-dashboard"></i> Tableau de bord</a>
+              <a href="#orders"    class="account-tab"        data-target="panel-orders"   ><i data-lucide="package"></i> Mes commandes</a>
+              <a href="#wishlist"  class="account-tab"        data-target="panel-wishlist" ><i data-lucide="heart"></i> Favoris</a>
+              <a href="#addresses" class="account-tab"        data-target="panel-addresses"><i data-lucide="map-pin"></i> Adresses UAE</a>
+              <a href="#profile"   class="account-tab"        data-target="panel-profile"  ><i data-lucide="user"></i> Profil</a>
+              <a href="#" id="account-logout" class="account-tab logout"><i data-lucide="log-out"></i> Déconnexion</a>
+            </nav>
+          </aside>
+
+          <div class="account-content">
+
+            <div class="account-panel active" id="panel-dashboard">
+              <h2 class="section-title">Tableau de bord</h2>
+              <div class="stats-row">
+                <div class="stat-card"><i data-lucide="package"></i><strong>12</strong><span>Commandes</span></div>
+                <div class="stat-card"><i data-lucide="heart"></i><strong>8</strong><span>Favoris</span></div>
+                <div class="stat-card"><i data-lucide="map-pin"></i><strong>2</strong><span>Adresses</span></div>
+                <div class="stat-card"><i data-lucide="award"></i><strong>540</strong><span>Points fidélité</span></div>
+              </div>
+              <h3 class="account-h3">Dernière commande</h3>
+              <div class="order-card">
+                <div>
+                  <strong>#LYN-A7K3M9</strong>
+                  <p>05 juin 2026 • 3 articles • Abu Dhabi</p>
+                </div>
+                <span class="order-status delivered">Livrée</span>
+                <strong>245 AED</strong>
+              </div>
+            </div>
+
+            <div class="account-panel" id="panel-orders">
+              <h2 class="section-title">Mes commandes</h2>
+              <div class="orders-list">
+                <div class="order-card">
+                  <div><strong>#LYN-A7K3M9</strong><p>05 juin 2026 • Abu Dhabi</p></div>
+                  <span class="order-status delivered">Livrée</span>
+                  <strong>245 AED</strong>
+                  <a href="#" class="btn-link">Voir</a>
+                </div>
+                <div class="order-card">
+                  <div><strong>#LYN-B2H8F1</strong><p>28 mai 2026 • Dubai Marina</p></div>
+                  <span class="order-status shipped">En route</span>
+                  <strong>189 AED</strong>
+                  <a href="delivery.html" class="btn-link">Suivre</a>
+                </div>
+                <div class="order-card">
+                  <div><strong>#LYN-C9M2K7</strong><p>20 mai 2026 • Sharjah</p></div>
+                  <span class="order-status processing">En préparation</span>
+                  <strong>78 AED</strong>
+                  <a href="#" class="btn-link">Voir</a>
+                </div>
+                <div class="order-card">
+                  <div><strong>#LYN-D1P4N6</strong><p>12 mai 2026 • Abu Dhabi</p></div>
+                  <span class="order-status delivered">Livrée</span>
+                  <strong>312 AED</strong>
+                  <a href="#" class="btn-link">Voir</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="account-panel" id="panel-wishlist">
+              <h2 class="section-title">Mes favoris</h2>
+              <div class="empty-state">
+                <i data-lucide="heart"></i>
+                <h3>Aucun favori pour l'instant</h3>
+                <p>Cliquez sur le ❤️ d'un produit pour l'ajouter ici.</p>
+                <a href="shop.html" class="btn-primary">Découvrir la boutique</a>
+              </div>
+            </div>
+
+            <div class="account-panel" id="panel-addresses">
+              <h2 class="section-title">Mes adresses UAE</h2>
+              <div class="addresses-grid">
+                <div class="address-card">
+                  <span class="address-tag">Principale</span>
+                  <strong>Domicile</strong>
+                  <p>Villa 12, Street 5<br/>Khalifa City A<br/>Abu Dhabi, UAE</p>
+                  <p class="address-phone">+971 50 123 4567</p>
+                  <div class="address-actions">
+                    <button class="btn-link"><i data-lucide="edit"></i> Modifier</button>
+                    <button class="btn-link danger"><i data-lucide="trash-2"></i> Supprimer</button>
+                  </div>
+                </div>
+                <div class="address-card">
+                  <strong>Bureau</strong>
+                  <p>Office 504, Building 88<br/>Sheikh Zayed Road<br/>Dubai, UAE</p>
+                  <p class="address-phone">+971 50 123 4567</p>
+                  <div class="address-actions">
+                    <button class="btn-link"><i data-lucide="edit"></i> Modifier</button>
+                    <button class="btn-link danger"><i data-lucide="trash-2"></i> Supprimer</button>
+                  </div>
+                </div>
+                <button class="address-card add-address">
+                  <i data-lucide="plus-circle"></i>
+                  <span>Ajouter une adresse</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="account-panel" id="panel-profile">
+              <h2 class="section-title">Mon profil</h2>
+              <form class="form-block">
+                <div class="form-row">
+                  <label class="form-field"><span>Prénom</span><input type="text" value="Aminata" /></label>
+                  <label class="form-field"><span>Nom</span><input type="text" value="Diop" /></label>
+                </div>
+                <div class="form-row">
+                  <label class="form-field"><span>Email</span><input type="email" value="aminata.d@exemple.ae" /></label>
+                  <label class="form-field"><span>Téléphone</span><input type="tel" value="+971 50 123 4567" /></label>
+                </div>
+                <label class="form-field full"><span>Langue préférée</span>
+                  <select><option>Français</option><option>English</option><option>العربية</option></select>
+                </label>
+                <button type="button" class="btn-primary">Enregistrer les modifications</button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

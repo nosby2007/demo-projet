@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Connexion à LAMYLENOISE." />
+  <title>Connexion — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="login.html">
+
+  <main class="page auth-page">
+    <section class="auth-section">
+      <div class="container">
+        <div class="auth-card">
+          <a href="index.html" class="logo auth-logo">
+            <span class="logo-nova">LAMYLENOISE</span><span class="logo-dot">●</span>
+          </a>
+          <h1>Bon retour parmi nous</h1>
+          <p class="auth-sub">Connectez-vous pour accéder à vos commandes et favoris.</p>
+
+          <form id="login-form" class="auth-form" novalidate>
+            <label class="form-field full">
+              <span>Email</span>
+              <input type="email" required placeholder="vous@exemple.ae" />
+            </label>
+            <label class="form-field full">
+              <span>Mot de passe</span>
+              <input type="password" required placeholder="••••••••" />
+            </label>
+            <div class="auth-meta">
+              <label class="checkbox-label"><input type="checkbox" /> Se souvenir de moi</label>
+              <a href="#" class="auth-link">Mot de passe oublié ?</a>
+            </div>
+            <button type="submit" class="btn-primary auth-submit">
+              <i data-lucide="log-in"></i> Se connecter
+            </button>
+          </form>
+
+          <div class="auth-divider"><span>ou</span></div>
+
+          <div class="auth-social">
+            <button class="btn-social"><i data-lucide="chrome"></i> Continuer avec Google</button>
+            <button class="btn-social"><i data-lucide="apple"></i> Continuer avec Apple</button>
+          </div>
+
+          <p class="auth-switch">
+            Pas encore de compte ? <a href="register.html">Créer un compte</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

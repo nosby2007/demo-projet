@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Finaliser ma commande — LAMYLENOISE." />
+  <title>Commande — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="checkout.html">
+
+  <main class="page">
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <a href="shop.html">Boutique</a> › <span>Commande</span></nav>
+        <h1 class="page-title">Finaliser ma commande</h1>
+        <p class="page-subtitle">Livraison sécurisée dans tout l'UAE — Cash, Tabby, Tamara, Apple Pay acceptés.</p>
+      </div>
+    </section>
+
+    <section class="checkout-section">
+      <div class="container" id="checkout-root">
+        <div class="co-grid">
+
+          <form class="checkout-form" id="checkout-form" novalidate>
+            <div class="co-card">
+              <h3 class="co-step"><span class="co-step-num">1</span> Informations de contact</h3>
+              <div class="form-row">
+                <label class="form-field"><span>Prénom</span><input type="text" required placeholder="Aminata" /></label>
+                <label class="form-field"><span>Nom</span><input type="text" required placeholder="Diop" /></label>
+              </div>
+              <div class="form-row">
+                <label class="form-field"><span>Email</span><input type="email" required placeholder="vous@exemple.com" /></label>
+                <label class="form-field"><span>Téléphone (UAE)</span><input type="tel" required placeholder="+971 50 123 4567" /></label>
+              </div>
+            </div>
+
+            <div class="co-card">
+              <h3 class="co-step"><span class="co-step-num">2</span> Adresse de livraison</h3>
+              <div class="form-row">
+                <label class="form-field">
+                  <span>Émirat</span>
+                  <select id="co-emirate" required>
+                    <option value="">Choisir…</option>
+                    <option>Abu Dhabi</option><option>Dubai</option><option>Sharjah</option>
+                    <option>Ajman</option><option>Al Ain</option><option>Ras Al Khaimah</option>
+                    <option>Fujairah</option><option>Umm Al Quwain</option>
+                  </select>
+                </label>
+                <label class="form-field"><span>Quartier / Zone</span><input type="text" required placeholder="Khalifa City, Marina…" /></label>
+              </div>
+              <label class="form-field full"><span>Adresse complète</span><input type="text" required placeholder="Villa 12, Street 5, Building 88" /></label>
+              <div class="form-row">
+                <label class="form-field"><span>Date souhaitée</span><input type="date" required /></label>
+                <label class="form-field">
+                  <span>Créneau</span>
+                  <select required>
+                    <option value="">Sélectionner…</option>
+                    <option>09:00 – 12:00</option>
+                    <option>12:00 – 15:00</option>
+                    <option>15:00 – 18:00</option>
+                    <option>18:00 – 21:00</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
+            <div class="co-card">
+              <h3 class="co-step"><span class="co-step-num">3</span> Mode de paiement</h3>
+              <div class="pay-options">
+                <label class="pay-option"><input type="radio" name="pay" value="card" checked /> <i data-lucide="credit-card"></i> Carte (Visa / MasterCard)</label>
+                <label class="pay-option"><input type="radio" name="pay" value="apple" /> <i data-lucide="apple"></i> Apple Pay</label>
+                <label class="pay-option"><input type="radio" name="pay" value="tabby" /> <i data-lucide="layers"></i> Tabby — 4× sans frais</label>
+                <label class="pay-option"><input type="radio" name="pay" value="tamara" /> <i data-lucide="calendar"></i> Tamara</label>
+                <label class="pay-option"><input type="radio" name="pay" value="cod" /> <i data-lucide="banknote"></i> Cash à la livraison (COD)</label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary co-submit">
+              <i data-lucide="check-circle"></i> Confirmer & Payer
+            </button>
+          </form>
+
+          <aside class="co-summary">
+            <h3 class="co-summary-title">Récapitulatif</h3>
+            <div class="co-items" id="co-items"></div>
+            <div class="co-totals">
+              <div class="co-line"><span>Sous-total</span><strong id="co-subtotal">0 AED</strong></div>
+              <div class="co-line"><span>Livraison</span><strong id="co-shipping">—</strong></div>
+              <div class="co-line co-total-line"><span>Total</span><strong id="co-total">0 AED</strong></div>
+            </div>
+            <p class="co-note"><i data-lucide="shield-check"></i> Paiement 100% sécurisé. Vos données sont protégées.</p>
+          </aside>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

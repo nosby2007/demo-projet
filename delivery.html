@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Livraison LAMYLENOISE — Réservation, suivi et zones couvertes dans l'UAE." />
+  <title>Livraison UAE — LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="delivery.html">
+
+  <main class="page">
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Livraison</span></nav>
+        <h1 class="page-title">Livraison dans tout l'UAE</h1>
+        <p class="page-subtitle">Cha&icirc;ne du froid garantie, suivi en temps r&eacute;el, paiement &agrave; la livraison disponible.</p>
+      </div>
+    </section>
+
+    <!-- Tracker -->
+    <section class="tracker-section">
+      <div class="container">
+        <div class="tracker-card">
+          <h2 class="section-title">Suivre ma commande</h2>
+          <form class="tracker-form" onsubmit="event.preventDefault(); document.getElementById('tracker-result').style.display='block';">
+            <input type="text" placeholder="N&deg; de commande (ex: LYN-A7K3M9)" required />
+            <button type="submit" class="btn-primary"><i data-lucide="search"></i> Suivre</button>
+          </form>
+          <div class="tracker-result" id="tracker-result" style="display:none;">
+            <p class="tracker-id">Commande <strong>#LYN-A7K3M9</strong> &mdash; Destination Abu Dhabi</p>
+            <ol class="tracker-steps">
+              <li class="done"><i data-lucide="check"></i><div><strong>Commande re&ccedil;ue</strong><span>05 juin 2026 &middot; 09:23</span></div></li>
+              <li class="done"><i data-lucide="check"></i><div><strong>En pr&eacute;paration</strong><span>05 juin 2026 &middot; 11:40</span></div></li>
+              <li class="done"><i data-lucide="check"></i><div><strong>Exp&eacute;di&eacute;e &mdash; Entrep&ocirc;t Mussafah</strong><span>05 juin 2026 &middot; 14:15</span></div></li>
+              <li class="active"><i data-lucide="truck"></i><div><strong>En route avec le livreur</strong><span>Arriv&eacute;e estim&eacute;e : 18:00 &ndash; 21:00</span></div></li>
+              <li><i data-lucide="home"></i><div><strong>Livr&eacute;e</strong><span>&mdash;</span></div></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Zones + Form (reuses delivery-section markup) -->
+    <section class="delivery-section" id="delivery">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-title-group">
+            <span class="section-eyebrow">&#128666; Livraison UAE</span>
+            <h2 class="section-title">R&eacute;server un cr&eacute;neau de livraison</h2>
+            <p class="section-desc">Choisissez votre &eacute;mirat, votre jour et votre cr&eacute;neau horaire. Cha&icirc;ne du froid garantie pour les produits frais.</p>
+          </div>
+        </div>
+
+        <div class="delivery-grid">
+          <div class="delivery-zones">
+            <h3 class="delivery-subtitle"><i data-lucide="map-pin"></i> Nos zones couvertes</h3>
+            <ul class="zones-list">
+              <li class="zone-item"><span class="zone-name">Abu Dhabi</span><span class="zone-info"><strong>24h</strong> &middot; d&egrave;s 0 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Dubai</span><span class="zone-info"><strong>24h</strong> &middot; d&egrave;s 15 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Sharjah</span><span class="zone-info"><strong>24-48h</strong> &middot; d&egrave;s 20 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Ajman</span><span class="zone-info"><strong>24-48h</strong> &middot; d&egrave;s 25 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Al Ain</span><span class="zone-info"><strong>48h</strong> &middot; d&egrave;s 30 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Ras Al Khaimah</span><span class="zone-info"><strong>48-72h</strong> &middot; d&egrave;s 35 AED</span></li>
+              <li class="zone-item"><span class="zone-name">Fujairah / Umm Al Quwain</span><span class="zone-info"><strong>48-72h</strong> &middot; d&egrave;s 35 AED</span></li>
+            </ul>
+            <p class="delivery-note"><i data-lucide="gift"></i> Livraison <strong>OFFERTE</strong> partout dans l'UAE pour toute commande d&egrave;s 150 AED.</p>
+          </div>
+
+          <form class="delivery-form" id="delivery-form" novalidate>
+            <h3 class="delivery-subtitle"><i data-lucide="calendar-clock"></i> R&eacute;server mon cr&eacute;neau</h3>
+            <div class="form-row">
+              <label class="form-field"><span>Nom complet</span><input type="text" id="deliv-name" required placeholder="Aminata Diop" /></label>
+              <label class="form-field"><span>T&eacute;l&eacute;phone (UAE)</span><input type="tel" id="deliv-phone" required placeholder="+971 50 123 4567" /></label>
+            </div>
+            <div class="form-row">
+              <label class="form-field">
+                <span>&Eacute;mirat</span>
+                <select id="deliv-emirate" required>
+                  <option value="">Choisir un &eacute;mirat&hellip;</option>
+                  <option>Abu Dhabi</option><option>Dubai</option><option>Sharjah</option>
+                  <option>Ajman</option><option>Al Ain</option><option>Ras Al Khaimah</option>
+                  <option>Fujairah</option><option>Umm Al Quwain</option>
+                </select>
+              </label>
+              <label class="form-field"><span>Quartier / Zone</span><input type="text" id="deliv-area" required placeholder="Khalifa City, Marina&hellip;" /></label>
+            </div>
+            <label class="form-field full"><span>Adresse compl&egrave;te</span><input type="text" id="deliv-address" required placeholder="Villa 12, Street 5, Building 88&hellip;" /></label>
+            <div class="form-row">
+              <label class="form-field"><span>Date souhait&eacute;e</span><input type="date" id="deliv-date" required /></label>
+              <label class="form-field">
+                <span>Cr&eacute;neau horaire</span>
+                <select id="deliv-slot" required>
+                  <option value="">S&eacute;lectionner&hellip;</option>
+                  <option>09:00 &ndash; 12:00</option><option>12:00 &ndash; 15:00</option>
+                  <option>15:00 &ndash; 18:00</option><option>18:00 &ndash; 21:00</option>
+                </select>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-field">
+                <span>Mode de paiement</span>
+                <select id="deliv-pay" required>
+                  <option>Carte bancaire (Visa / MasterCard)</option>
+                  <option>Apple Pay</option>
+                  <option>Tabby &mdash; 4x sans frais</option>
+                  <option>Tamara</option>
+                  <option>Cash &agrave; la livraison (COD)</option>
+                </select>
+              </label>
+              <label class="form-field checkbox-line">
+                <input type="checkbox" id="deliv-cold" />
+                <span>Produits frais (cha&icirc;ne du froid)</span>
+              </label>
+            </div>
+            <button type="submit" class="btn-primary delivery-submit"><i data-lucide="check-circle"></i> Confirmer la r&eacute;servation</button>
+            <p class="delivery-disclaimer">Vous recevrez un SMS et un email de confirmation avec le suivi de votre livreur.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

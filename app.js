@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   NOVAMART — app.js
-   Engineer: Google Web Design / Innovacare Software
+   LAMYLENOISE — app.js
+   Épicerie africaine à Abu Dhabi · Livraison UAE
    Architecture: Modular vanilla JS, zero dependencies
    ═══════════════════════════════════════════════════════════════ */
 
@@ -8,10 +8,15 @@
 
 /* ─── 0. WAIT FOR LUCIDE + DOM ──────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize Lucide icons
+  // 1) First, inject shared chrome (header/footer/cart/topbar/toast/back-to-top)
+  //    on pages that opt-in via <body data-shell="...">. Index doesn't opt-in
+  //    because its chrome is already in markup.
+  if (typeof Layout !== 'undefined') Layout.mount();
+
+  // 2) Initialize Lucide icons
   if (typeof lucide !== 'undefined') lucide.createIcons();
 
-  // Boot all modules
+  // 3) Boot all modules (each module silently no-ops if its DOM root is missing)
   HeaderModule.init();
   HeroModule.init();
   TimerModule.init();
@@ -21,6 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
   NewsletterModule.init();
   BackToTopModule.init();
   CategoryNavModule.init();
+  DeliveryModule.init();
+  if (typeof ProductDetailModule !== 'undefined') ProductDetailModule.init();
+  if (typeof ShopModule !== 'undefined')          ShopModule.init();
+  if (typeof CheckoutModule !== 'undefined')      CheckoutModule.init();
+  if (typeof ContactModule !== 'undefined')       ContactModule.init();
+  if (typeof AccountModule !== 'undefined')       AccountModule.init();
+  if (typeof AuthModule !== 'undefined')          AuthModule.init();
 });
 
 /* ─── 1. PRODUCT DATA (Produits africains, prix en AED) ────── */
@@ -340,7 +352,9 @@ const CardRenderer = {
     return `
       <article class="product-card" role="listitem" data-id="${product.id}" data-cat="${product.category}">
         <div class="product-img-wrap">
-          <img src="${product.image}" alt="${product.name}" loading="lazy" />
+          <a href="product.html?id=${product.id}" class="product-img-link" aria-label="Voir ${product.name}">
+            <img src="${product.image}" alt="${product.name}" loading="lazy" />
+          </a>
           ${product.badge ? `<span class="product-badge ${badgeClass}">${product.badge}</span>` : ''}
           <button class="product-wishlist" data-id="${product.id}" aria-label="Ajouter aux favoris ${product.name}" aria-pressed="false">
             <i data-lucide="heart"></i>
@@ -348,7 +362,7 @@ const CardRenderer = {
         </div>
         <div class="product-body">
           <p class="product-brand">${product.brand}</p>
-          <h3 class="product-name">${product.name}</h3>
+          <h3 class="product-name"><a href="product.html?id=${product.id}">${product.name}</a></h3>
           <div class="product-rating">
             <span class="stars" aria-label="${product.rating} sur 5">${Utils.renderStars(product.rating)}</span>
             <span class="review-count">(${product.reviews.toLocaleString('fr-FR')})</span>
@@ -432,6 +446,7 @@ const ProductsModule = {
 
   init() {
     this.grid = document.getElementById('products-grid');
+    if (!this.grid) return;  // not on this page
 
     // Sort
     document.getElementById('sort-select').addEventListener('change', e => {
@@ -908,6 +923,601 @@ const DeliveryModule = {
         const tomorrow = new Date(Date.now() + 24 * 3600 * 1000);
         dateInput.value = tomorrow.toISOString().split('T')[0];
       }
+    });
+  }
+};
+
+/* ─── 16. LAYOUT MODULE — Shared chrome for sub-pages ───────── */
+const Layout = {
+  // Pages opt-in via <body data-shell="full">.
+  // index.html already has its chrome inline → does NOT opt-in.
+  mount() {
+    const body = document.body;
+    if (!body || body.dataset.shell !== 'full') return;
+
+    const active = body.dataset.page || '';
+    const main   = body.querySelector('main');
+
+    const chromeBefore = `
+      <!-- TOAST -->
+      <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+      <!-- CART DRAWER -->
+      <div id="cart-overlay" class="cart-overlay" role="dialog" aria-modal="true" aria-label="Panier d'achat">
+        <div class="cart-drawer">
+          <div class="cart-header">
+            <h2>Mon Panier <span id="cart-count-badge" class="cart-badge">0</span></h2>
+            <button id="cart-close" class="icon-btn" aria-label="Fermer le panier">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div id="cart-items" class="cart-items">
+            <div class="cart-empty">
+              <i data-lucide="shopping-bag"></i>
+              <p>Votre panier est vide</p>
+              <span>Découvrez nos saveurs d'Afrique</span>
+            </div>
+          </div>
+          <div class="cart-footer" id="cart-footer" style="display:none;">
+            <div class="cart-subtotal">
+              <span>Sous-total</span>
+              <strong id="cart-total">0 AED</strong>
+            </div>
+            <a href="checkout.html" class="btn-checkout" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:.5rem;">
+              <i data-lucide="credit-card"></i>
+              Commander • Livraison UAE
+            </a>
+            <p class="cart-disclaimer">Livraison gratuite à partir de 150 AED dans tout l'UAE</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="container topbar-inner">
+          <span>🚚 Livraison express dans tout l'UAE — <strong>Abu Dhabi • Dubai • Sharjah • Ajman</strong></span>
+          <div class="topbar-links">
+            <a href="delivery.html">Suivre ma livraison</a>
+            <a href="contact.html">WhatsApp +971 50 000 0000</a>
+            <a href="about.html">Vendre sur LAMYLENOISE</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <header class="site-header" id="site-header">
+        <div class="container header-inner">
+          <a href="index.html" class="logo" aria-label="LAMYLENOISE — Accueil">
+            <span class="logo-nova">LAMYLENOISE</span>
+            <span class="logo-dot">●</span>
+          </a>
+
+          <div class="search-wrapper" role="search">
+            <div class="search-category">
+              <select id="search-category" aria-label="Catégorie de recherche">
+                <option>Tout</option>
+                <option>Épicerie</option>
+                <option>Boissons</option>
+                <option>Épices</option>
+                <option>Mode Wax</option>
+                <option>Beauté Karité</option>
+                <option>Cuisine</option>
+              </select>
+              <i data-lucide="chevron-down"></i>
+            </div>
+            <input type="search" id="search-input" placeholder="Rechercher attiéké, karité, wax, bissap…" autocomplete="off" aria-label="Rechercher" />
+            <button class="search-btn" aria-label="Lancer la recherche"><i data-lucide="search"></i></button>
+            <div id="search-suggestions" class="search-suggestions" role="listbox"></div>
+          </div>
+
+          <nav class="header-actions" aria-label="Actions principales">
+            <a class="icon-btn header-action" href="account.html#wishlist" aria-label="Favoris">
+              <i data-lucide="heart"></i><span class="action-label">Favoris</span>
+            </a>
+            <a class="icon-btn header-action" href="account.html" aria-label="Mon compte">
+              <i data-lucide="user"></i><span class="action-label">Compte</span>
+            </a>
+            <button class="icon-btn header-action cart-toggle" id="cart-toggle" aria-label="Panier">
+              <i data-lucide="shopping-cart"></i>
+              <span id="cart-count" class="cart-count">0</span>
+              <span class="action-label">Panier</span>
+            </button>
+          </nav>
+
+          <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+
+        <nav class="cat-nav" aria-label="Navigation principale">
+          <div class="container cat-nav-inner">
+            ${Layout._navLink('index.html',     'home',            'Accueil',        active)}
+            ${Layout._navLink('shop.html',      'layout-grid',     'Boutique',       active)}
+            ${Layout._navLink('shop.html?cat=epicerie', 'shopping-basket', 'Épicerie', active)}
+            ${Layout._navLink('shop.html?cat=boissons', 'coffee',  'Boissons',       active)}
+            ${Layout._navLink('shop.html?cat=epices',   'flame',   'Épices',         active)}
+            ${Layout._navLink('shop.html?cat=mode',     'shirt',   'Mode Wax',       active)}
+            ${Layout._navLink('shop.html?cat=beaute',   'sparkles','Beauté',         active)}
+            ${Layout._navLink('blog.html',     'book-open',        'Recettes',       active)}
+            ${Layout._navLink('delivery.html', 'truck',            'Livraison',      active)}
+            ${Layout._navLink('about.html',    'info',             'À propos',       active)}
+            ${Layout._navLink('contact.html',  'phone',            'Contact',        active)}
+          </div>
+        </nav>
+
+        <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+          <div class="mobile-nav-inner">
+            <a href="account.html"    class="mobile-link"><i data-lucide="user"></i> Mon Compte</a>
+            <a href="account.html#wishlist" class="mobile-link"><i data-lucide="heart"></i> Mes Favoris</a>
+            <a href="account.html#orders" class="mobile-link"><i data-lucide="package"></i> Mes Commandes</a>
+            <a href="delivery.html"   class="mobile-link"><i data-lucide="truck"></i> Réserver livraison</a>
+            <hr class="mobile-divider"/>
+            <a href="shop.html"       class="mobile-link"><i data-lucide="layout-grid"></i> Boutique complète</a>
+            <a href="blog.html"       class="mobile-link"><i data-lucide="book-open"></i> Recettes & blog</a>
+            <a href="about.html"      class="mobile-link"><i data-lucide="info"></i> À propos</a>
+            <a href="faq.html"        class="mobile-link"><i data-lucide="help-circle"></i> FAQ</a>
+            <a href="contact.html"    class="mobile-link"><i data-lucide="phone"></i> Contact</a>
+          </div>
+        </div>
+      </header>
+    `;
+
+    const chromeAfter = `
+      <!-- FOOTER -->
+      <footer class="site-footer" role="contentinfo">
+        <div class="container">
+          <div class="footer-grid">
+            <div class="footer-brand">
+              <a href="index.html" class="logo footer-logo">
+                <span class="logo-nova">LAMYLENOISE</span><span class="logo-dot">●</span>
+              </a>
+              <p>L'épicerie africaine de référence à Abu Dhabi. Plus de 800 produits authentiques importés du continent, livrés dans tous les Émirats.</p>
+              <div class="social-links">
+                <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+                <a href="#" aria-label="TikTok"><i data-lucide="music-2"></i></a>
+                <a href="contact.html" aria-label="WhatsApp"><i data-lucide="message-circle"></i></a>
+              </div>
+            </div>
+            <div class="footer-col">
+              <h3>Acheter</h3>
+              <ul>
+                <li><a href="account.html">Mon compte</a></li>
+                <li><a href="account.html#orders">Mes commandes</a></li>
+                <li><a href="shop.html">Catalogue complet</a></li>
+                <li><a href="delivery.html">Réserver livraison</a></li>
+              </ul>
+            </div>
+            <div class="footer-col">
+              <h3>Aide & Support</h3>
+              <ul>
+                <li><a href="faq.html">FAQ</a></li>
+                <li><a href="contact.html">Contactez-nous</a></li>
+                <li><a href="delivery.html">Zones de livraison UAE</a></li>
+                <li><a href="contact.html">WhatsApp +971 50 000 0000</a></li>
+              </ul>
+            </div>
+            <div class="footer-col">
+              <h3>À propos</h3>
+              <ul>
+                <li><a href="about.html">Qui sommes-nous</a></li>
+                <li><a href="about.html#sell">Vendre sur LAMYLENOISE</a></li>
+                <li><a href="about.html#driver">Devenir livreur UAE</a></li>
+                <li><a href="blog.html">Blog & Recettes</a></li>
+              </ul>
+            </div>
+            <div class="footer-col">
+              <h3>Paiements acceptés</h3>
+              <div class="payment-icons">
+                <span class="payment-badge">Visa</span>
+                <span class="payment-badge">MasterCard</span>
+                <span class="payment-badge">Apple Pay</span>
+                <span class="payment-badge">Tabby</span>
+                <span class="payment-badge">Tamara</span>
+                <span class="payment-badge">COD</span>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <p>© 2026 LAMYLENOISE LLC — Abu Dhabi, UAE. Tous droits réservés.</p>
+            <div class="footer-legal">
+              <a href="legal.html#privacy">Confidentialité</a>
+              <a href="legal.html#terms">CGV</a>
+              <a href="legal.html#cookies">Cookies</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <button class="back-to-top" id="back-to-top" aria-label="Retour en haut">
+        <i data-lucide="arrow-up"></i>
+      </button>
+    `;
+
+    // Inject before and after <main>
+    if (main) {
+      main.insertAdjacentHTML('beforebegin', chromeBefore);
+      main.insertAdjacentHTML('afterend',  chromeAfter);
+    } else {
+      body.insertAdjacentHTML('afterbegin', chromeBefore);
+      body.insertAdjacentHTML('beforeend',  chromeAfter);
+    }
+  },
+
+  _navLink(href, icon, label, activePage) {
+    // Match by file name (without query)
+    const hrefFile = href.split('?')[0];
+    const isActive = activePage && (activePage === hrefFile || activePage === href);
+    return `
+      <a href="${href}" class="cat-item ${isActive ? 'active' : ''}">
+        <i data-lucide="${icon}"></i> ${label}
+      </a>
+    `;
+  }
+};
+
+/* ─── 17. SHOP MODULE — full catalogue page ─────────────────── */
+const ShopModule = {
+  init() {
+    const grid = document.getElementById('shop-grid');
+    if (!grid) return;
+
+    // Read ?cat= and ?q= from URL
+    const params = new URLSearchParams(window.location.search);
+    const cat    = params.get('cat');
+    const q      = (params.get('q') || '').toLowerCase();
+
+    let items = [...PRODUCTS];
+    if (cat) items = items.filter(p => p.category === cat);
+    if (q)   items = items.filter(p =>
+      p.name.toLowerCase().includes(q)  ||
+      p.brand.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    );
+
+    // Categories filter
+    const cats = ['tous','epicerie','boissons','epices','mode','beaute','cuisine','snacks'];
+    const labels = {
+      tous: 'Tout', epicerie: 'Épicerie', boissons: 'Boissons', epices: 'Épices',
+      mode: 'Mode Wax', beaute: 'Beauté', cuisine: 'Cuisine', snacks: 'Snacks'
+    };
+    const chips = document.getElementById('shop-chips');
+    if (chips) {
+      chips.innerHTML = cats.map(c => {
+        const active = (c === 'tous' && !cat) || c === cat;
+        const href = c === 'tous' ? 'shop.html' : `shop.html?cat=${c}`;
+        return `<a href="${href}" class="shop-chip ${active ? 'active' : ''}">${labels[c]}</a>`;
+      }).join('');
+    }
+
+    // Counter
+    const counter = document.getElementById('shop-count');
+    if (counter) counter.textContent = `${items.length} produit${items.length > 1 ? 's' : ''}`;
+
+    // Render
+    if (items.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <i data-lucide="package-x"></i>
+          <h3>Aucun produit trouvé</h3>
+          <p>Essayez d'élargir vos filtres ou <a href="shop.html">voir tout le catalogue</a>.</p>
+        </div>`;
+    } else {
+      grid.innerHTML = items.map(p => CardRenderer.render(p)).join('');
+      CardRenderer.bindCardEvents(grid);
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [grid] });
+
+    // Sort
+    const sortSel = document.getElementById('shop-sort');
+    if (sortSel) {
+      sortSel.addEventListener('change', () => {
+        const sorters = {
+          'price-asc':  (a,b) => a.price - b.price,
+          'price-desc': (a,b) => b.price - a.price,
+          'rating':     (a,b) => b.rating - a.rating,
+          'new':        (a,b) => Number(b.isNew) - Number(a.isNew),
+          'default':    () => 0
+        };
+        items.sort(sorters[sortSel.value] || sorters.default);
+        grid.innerHTML = items.map(p => CardRenderer.render(p)).join('');
+        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [grid] });
+        CardRenderer.bindCardEvents(grid);
+      });
+    }
+  }
+};
+
+/* ─── 18. PRODUCT DETAIL MODULE ──────────────────────────────── */
+const ProductDetailModule = {
+  init() {
+    const root = document.getElementById('product-detail');
+    if (!root) return;
+
+    const id = parseInt(new URLSearchParams(window.location.search).get('id'), 10);
+    const product = PRODUCTS.find(p => p.id === id);
+
+    if (!product) {
+      root.innerHTML = `
+        <div class="empty-state">
+          <i data-lucide="package-x"></i>
+          <h3>Produit introuvable</h3>
+          <p><a href="shop.html">Retour au catalogue</a></p>
+        </div>`;
+      if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
+      return;
+    }
+
+    document.title = `${product.name} — LAMYLENOISE`;
+
+    const hasDiscount = product.discount && product.oldPrice;
+    const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+
+    root.innerHTML = `
+      <nav class="breadcrumb" aria-label="Fil d'Ariane">
+        <a href="index.html">Accueil</a> ›
+        <a href="shop.html">Boutique</a> ›
+        <a href="shop.html?cat=${product.category}">${product.category}</a> ›
+        <span>${product.name}</span>
+      </nav>
+
+      <div class="pd-grid">
+        <div class="pd-gallery">
+          <div class="pd-main-img">
+            <img src="${product.image}" alt="${product.name}" />
+            ${product.badge ? `<span class="product-badge ${product.badge.toLowerCase()}">${product.badge}</span>` : ''}
+          </div>
+          <div class="pd-thumbs">
+            <button class="pd-thumb active"><img src="${product.image}" alt="" /></button>
+            <button class="pd-thumb"><img src="${product.image}&blur=40" alt="" /></button>
+            <button class="pd-thumb"><img src="${product.image}&sat=-100" alt="" /></button>
+          </div>
+        </div>
+
+        <div class="pd-info">
+          <p class="pd-brand">${product.brand}</p>
+          <h1 class="pd-title">${product.name}</h1>
+          <div class="product-rating" style="margin:0 0 1rem;">
+            <span class="stars">${Utils.renderStars(product.rating)}</span>
+            <span class="review-count">(${product.reviews.toLocaleString('fr-FR')} avis)</span>
+          </div>
+
+          <div class="pd-price-row">
+            <span class="price-current pd-price">${Utils.formatPrice(product.price)}</span>
+            ${hasDiscount ? `<span class="price-old">${Utils.formatPrice(product.oldPrice)}</span>` : ''}
+            ${hasDiscount ? `<span class="price-discount">-${product.discount}%</span>` : ''}
+          </div>
+
+          <p class="pd-delivery"><i data-lucide="truck"></i> ${product.delivery}</p>
+
+          <div class="pd-desc">
+            <h3>Description</h3>
+            <p>Produit authentique importé directement d'Afrique de l'Ouest. Sélectionné par nos équipes pour sa qualité et son origine garantie. Livré dans tout l'UAE avec respect de la chaîne du froid si nécessaire.</p>
+            <ul>
+              <li><i data-lucide="check"></i> 100% authentique, origine garantie</li>
+              <li><i data-lucide="check"></i> Livraison express 24h Abu Dhabi & Dubai</li>
+              <li><i data-lucide="check"></i> Paiement à la livraison disponible</li>
+              <li><i data-lucide="check"></i> Échange & remboursement sous 14 jours</li>
+            </ul>
+          </div>
+
+          <div class="pd-qty-row">
+            <div class="pd-qty">
+              <button id="pd-dec" aria-label="Diminuer">−</button>
+              <span id="pd-qty-val">1</span>
+              <button id="pd-inc" aria-label="Augmenter">+</button>
+            </div>
+            <button class="btn-primary pd-add" id="pd-add">
+              <i data-lucide="shopping-cart"></i> Ajouter au panier
+            </button>
+            <a href="checkout.html" class="btn-ghost-dark pd-buy" id="pd-buy">
+              <i data-lucide="zap"></i> Acheter maintenant
+            </a>
+          </div>
+        </div>
+      </div>
+
+      ${related.length ? `
+        <section class="pd-related">
+          <h2 class="section-title">Produits similaires</h2>
+          <div class="products-scroll" id="related-scroll" role="list">
+            ${related.map(p => CardRenderer.render(p)).join('')}
+          </div>
+        </section>
+      ` : ''}
+    `;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
+    CardRenderer.bindCardEvents(root);
+
+    // Quantity
+    let qty = 1;
+    const qtyEl = document.getElementById('pd-qty-val');
+    document.getElementById('pd-dec').addEventListener('click', () => { qty = Math.max(1, qty - 1); qtyEl.textContent = qty; });
+    document.getElementById('pd-inc').addEventListener('click', () => { qty = Math.min(99, qty + 1); qtyEl.textContent = qty; });
+
+    // Add to cart with selected qty
+    document.getElementById('pd-add').addEventListener('click', () => {
+      for (let i = 0; i < qty; i++) CartModule.addItem(product);
+    });
+    document.getElementById('pd-buy').addEventListener('click', () => {
+      for (let i = 0; i < qty; i++) CartModule.addItem(product);
+    });
+
+    // Thumb switcher
+    root.querySelectorAll('.pd-thumb').forEach(t => {
+      t.addEventListener('click', () => {
+        root.querySelectorAll('.pd-thumb').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const img = root.querySelector('.pd-main-img img');
+        if (img) img.src = t.querySelector('img').src;
+      });
+    });
+  }
+};
+
+/* ─── 19. CHECKOUT MODULE ────────────────────────────────────── */
+const CheckoutModule = {
+  init() {
+    const root = document.getElementById('checkout-root');
+    if (!root) return;
+
+    const itemsEl = document.getElementById('co-items');
+    const subEl   = document.getElementById('co-subtotal');
+    const shipEl  = document.getElementById('co-shipping');
+    const totEl   = document.getElementById('co-total');
+    const form    = document.getElementById('checkout-form');
+
+    const SHIP_BY_EMIRATE = {
+      'Abu Dhabi':       0,  'Dubai':         15, 'Sharjah':       20,
+      'Ajman':          25,  'Al Ain':        30, 'Ras Al Khaimah':35,
+      'Fujairah':       35,  'Umm Al Quwain': 35
+    };
+
+    const render = () => {
+      // Items
+      if (CartModule.items.length === 0) {
+        itemsEl.innerHTML = `
+          <div class="empty-state" style="padding:2rem">
+            <i data-lucide="shopping-bag"></i>
+            <h3>Votre panier est vide</h3>
+            <p><a href="shop.html" class="btn-primary">Découvrir la boutique</a></p>
+          </div>`;
+      } else {
+        itemsEl.innerHTML = CartModule.items.map(it => `
+          <div class="co-item">
+            <img src="${it.image}" alt="${it.name}" />
+            <div class="co-item-info">
+              <p class="co-item-name">${it.name}</p>
+              <p class="co-item-brand">${it.brand}</p>
+            </div>
+            <div class="co-item-qty">×${it.qty}</div>
+            <div class="co-item-price">${Utils.formatPrice(it.price * it.qty)}</div>
+          </div>
+        `).join('');
+      }
+
+      // Totals
+      const subtotal = CartModule.getTotal();
+      const emirate  = document.getElementById('co-emirate')?.value;
+      const shipping = subtotal >= 150 ? 0 : (SHIP_BY_EMIRATE[emirate] || 0);
+      const total    = subtotal + shipping;
+
+      subEl.textContent  = Utils.formatPrice(subtotal);
+      shipEl.textContent = shipping === 0 ? 'GRATUITE' : Utils.formatPrice(shipping);
+      totEl.textContent  = Utils.formatPrice(total);
+
+      if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [itemsEl] });
+    };
+
+    render();
+    document.getElementById('co-emirate')?.addEventListener('change', render);
+
+    form?.addEventListener('submit', e => {
+      e.preventDefault();
+      if (CartModule.items.length === 0) {
+        Toast.show('Votre panier est vide', 'error', 'alert-circle');
+        return;
+      }
+      // Fake order id
+      const orderId = 'LYN-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      Toast.show(`Commande ${orderId} confirmée ✅`, 'success', 'check-circle', 5000);
+      CartModule.items = [];
+      CartModule.render();
+      setTimeout(() => { window.location.href = `account.html?order=${orderId}`; }, 1500);
+    });
+  }
+};
+
+/* ─── 20. CONTACT MODULE ─────────────────────────────────────── */
+const ContactModule = {
+  init() {
+    const form = document.getElementById('contact-form');
+    if (!form) return;
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const name  = document.getElementById('ct-name').value.trim();
+      const email = document.getElementById('ct-email').value.trim();
+      const msg   = document.getElementById('ct-msg').value.trim();
+
+      if (!name || !email || !msg) {
+        Toast.show('Veuillez remplir tous les champs', 'error', 'alert-circle');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        Toast.show('Email invalide', 'error', 'alert-circle');
+        return;
+      }
+      Toast.show('Message envoyé ! Nous répondons sous 24h.', 'success', 'mail-check', 4000);
+      form.reset();
+    });
+  }
+};
+
+/* ─── 21. ACCOUNT MODULE (demo, no real auth) ────────────────── */
+const AccountModule = {
+  init() {
+    const root = document.getElementById('account-root');
+    if (!root) return;
+
+    // Tab nav
+    root.querySelectorAll('.account-tab').forEach(tab => {
+      tab.addEventListener('click', e => {
+        e.preventDefault();
+        const target = tab.dataset.target;
+        root.querySelectorAll('.account-tab').forEach(t => t.classList.remove('active'));
+        root.querySelectorAll('.account-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        root.querySelector(`#${target}`)?.classList.add('active');
+        history.replaceState(null, '', `#${target.replace('panel-', '')}`);
+      });
+    });
+
+    // Open tab from hash
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const tab = root.querySelector(`.account-tab[data-target="panel-${hash}"]`);
+      if (tab) tab.click();
+    }
+
+    // Logout demo
+    root.querySelector('#account-logout')?.addEventListener('click', () => {
+      Toast.show('Déconnecté avec succès', 'success', 'log-out');
+      setTimeout(() => { window.location.href = 'login.html'; }, 800);
+    });
+  }
+};
+
+/* ─── 22. AUTH MODULE (login / register, demo) ───────────────── */
+const AuthModule = {
+  init() {
+    const login = document.getElementById('login-form');
+    const reg   = document.getElementById('register-form');
+
+    login?.addEventListener('submit', e => {
+      e.preventDefault();
+      const email = login.querySelector('input[type=email]').value.trim();
+      const pwd   = login.querySelector('input[type=password]').value;
+      if (!email || !pwd) {
+        Toast.show('Email et mot de passe requis', 'error', 'alert-circle');
+        return;
+      }
+      Toast.show('Connexion réussie 👋', 'success', 'log-in');
+      setTimeout(() => { window.location.href = 'account.html'; }, 800);
+    });
+
+    reg?.addEventListener('submit', e => {
+      e.preventDefault();
+      const inputs = reg.querySelectorAll('input[required]');
+      for (const i of inputs) {
+        if (!i.value.trim()) {
+          Toast.show('Veuillez remplir tous les champs', 'error', 'alert-circle');
+          return;
+        }
+      }
+      Toast.show('Compte créé 🎉 Bienvenue !', 'success', 'user-check');
+      setTimeout(() => { window.location.href = 'account.html'; }, 1000);
     });
   }
 };
