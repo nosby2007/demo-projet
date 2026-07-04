@@ -1,0 +1,62 @@
+.seller-request {
+  min-height: 100vh;
+  padding: 48px clamp(16px, 4vw, 56px);
+  background: #f6f8fb;
+}
+
+.intro {
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: #122033;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1;
+  margin: 0 0 14px;
+}
+
+.intro p:last-child {
+  color: #526174;
+  font-size: 18px;
+  margin: 0;
+}
+
+mat-card {
+  border-radius: 8px;
+  max-width: 980px;
+  padding: 24px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+button mat-icon {
+  margin-right: 8px;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,61 @@
+<section class="seller-dashboard" *ngIf="vm$ | async as vm">
+  <header>
+    <div>
+      <p class="eyebrow">Seller workspace</p>
+      <h1>{{ vm.seller?.businessName || 'Seller account' }}</h1>
+      <p>{{ vm.seller?.contactName }} <span *ngIf="vm.seller?.email">- {{ vm.seller?.email }}</span></p>
+    </div>
+    <a mat-raised-button color="primary" routerLink="/seller/products">
+      <mat-icon>inventory_2</mat-icon>
+      Manage products
+    </a>
+  </header>
+
+  <div class="stats">
+    <mat-card>
+      <span>Active products</span>
+      <strong>{{ vm.activeProducts }}</strong>
+    </mat-card>
+    <mat-card>
+      <span>Open deliveries</span>
+      <strong>{{ vm.openDeliveries }}</strong>
+    </mat-card>
+    <mat-card>
+      <span>Clients to relaunch</span>
+      <strong>{{ vm.clientsToFollowUp.length }}</strong>
+    </mat-card>
+  </div>
+
+  <mat-card class="panel">
+    <div class="panel-title">
+      <h2>Deliveries and customer follow-up</h2>
+      <mat-chip>{{ vm.orders.length }} orders</mat-chip>
+    </div>
+
+    <div class="order-list" *ngIf="vm.orders.length; else emptyOrders">
+      <article class="order" *ngFor="let order of vm.orders">
+        <div>
+          <h3>{{ order.customerName }}</h3>
+          <p>{{ order.productSummary || 'Products ordered' }}</p>
+          <small>{{ order.customerPhone || order.customerEmail || 'No customer contact saved' }}</small>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Delivery</mat-label>
+          <mat-select [value]="order.deliveryStatus" (selectionChange)="updateDelivery(order, $event.value)">
+            <mat-option *ngFor="let status of deliveryStatuses" [value]="status">{{ status }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" (click)="followUp(order)">
+          <mat-icon>phone_forwarded</mat-icon>
+          Relaunch client
+        </button>
+      </article>
+    </div>
+
+    <ng-template #emptyOrders>
+      <p class="empty">No seller orders yet.</p>
+    </ng-template>
+  </mat-card>
+</section>

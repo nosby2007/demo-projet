@@ -1,0 +1,58 @@
+<section class="seller-request">
+  <div class="intro">
+    <p class="eyebrow">Vendor onboarding</p>
+    <h1>Request a seller account</h1>
+    <p>Submit your business details. The admin team reviews the request, creates your seller status, then sends your login credentials.</p>
+  </div>
+
+  <mat-card>
+    <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Business name</mat-label>
+          <input matInput formControlName="businessName">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contact person</mat-label>
+          <input matInput formControlName="contactName">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phone">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>City / service area</mat-label>
+          <input matInput formControlName="city">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Product categories</mat-label>
+          <mat-select formControlName="productCategories" multiple>
+            <mat-option *ngFor="let category of categories" [value]="category">{{ category }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Message to admin</mat-label>
+        <textarea matInput rows="4" formControlName="message"></textarea>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+          <mat-icon>send</mat-icon>
+          Submit request
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</section>

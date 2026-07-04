@@ -2,18 +2,68 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function hasRole(role) {
+      return signedIn() && (
+        request.auth.token.role == role ||
+        (request.auth.token.roles is list && role in request.auth.token.roles) ||
+        (exists(userPath(request.auth.uid)) && (
+          get(userPath(request.auth.uid)).data.role == role ||
+          (get(userPath(request.auth.uid)).data.roles is list && role in get(userPath(request.auth.uid)).data.roles)
+        ))
+      );
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isSeller() {
+      return hasRole('seller');
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /sellerRequests/{requestId} {
+      allow create: if request.resource.data.status == 'pending';
+      allow read: if isAdmin() || (
+        signedIn() &&
+        request.auth.token.email != null &&
+        resource.data.email == request.auth.token.email
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    match /sellers/{sellerId} {
+      allow read: if isAdmin() || (isSeller() && request.auth.uid == sellerId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.status == 'active' || isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+      allow create: if isSeller() && request.resource.data.sellerId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+    }
+
+    match /sellerOrders/{orderId} {
+      allow read: if isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isSeller() && resource.data.sellerId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2024, 12, 24);
+      allow read, write: if isAdmin();
     }
   }
 }

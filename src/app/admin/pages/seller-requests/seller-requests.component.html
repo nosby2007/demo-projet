@@ -1,0 +1,75 @@
+<section class="seller-requests">
+  <header>
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Seller requests</h1>
+      <p>Review vendor applications, create their seller status, and track credentials sent to the vendor.</p>
+    </div>
+  </header>
+
+  <div class="requests" *ngIf="requests$ | async as requests">
+    <mat-card *ngFor="let request of requests" class="request-card">
+      <mat-progress-bar *ngIf="loadingId === request.id" mode="indeterminate"></mat-progress-bar>
+
+      <div class="request-head">
+        <div>
+          <mat-chip>{{ request.status }}</mat-chip>
+          <h2>{{ request.businessName }}</h2>
+          <p>{{ request.contactName }} - {{ request.email }} - {{ request.phone }}</p>
+          <small>{{ request.city || 'No city provided' }}</small>
+        </div>
+        <button *ngIf="request.credentials && !request.credentials.sent" mat-stroked-button type="button" (click)="markSent(request)">
+          <mat-icon>mark_email_read</mat-icon>
+          Mark credentials sent
+        </button>
+      </div>
+
+      <p class="message" *ngIf="request.message">{{ request.message }}</p>
+
+      <div class="chips">
+        <mat-chip *ngFor="let category of request.productCategories">{{ category }}</mat-chip>
+      </div>
+
+      <div class="approval" *ngIf="request.status === 'pending' || request.status === 'approved'">
+        <mat-form-field appearance="outline">
+          <mat-label>Firebase Auth UID</mat-label>
+          <input matInput [(ngModel)]="formFor(request).authUid" [ngModelOptions]="{standalone: true}">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Login email</mat-label>
+          <input matInput [(ngModel)]="formFor(request).loginEmail" [ngModelOptions]="{standalone: true}">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Temporary password to send</mat-label>
+          <input matInput [(ngModel)]="formFor(request).temporaryPassword" [ngModelOptions]="{standalone: true}">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Admin notes</mat-label>
+          <textarea matInput rows="2" [(ngModel)]="formFor(request).adminNotes" [ngModelOptions]="{standalone: true}"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="credentials" *ngIf="request.credentials">
+        <strong>Credentials:</strong>
+        <span>{{ request.credentials.loginEmail }}</span>
+        <span>{{ request.credentials.sent ? 'Sent' : 'Not sent yet' }}</span>
+      </div>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" type="button" (click)="approve(request)" [disabled]="loadingId === request.id">
+          <mat-icon>verified_user</mat-icon>
+          Approve seller
+        </button>
+        <button mat-button type="button" (click)="reject(request)" [disabled]="loadingId === request.id || request.status === 'rejected'">
+          <mat-icon>block</mat-icon>
+          Reject
+        </button>
+      </div>
+    </mat-card>
+
+    <mat-card *ngIf="!requests.length" class="empty">No seller request yet.</mat-card>
+  </div>
+</section>

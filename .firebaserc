@@ -1,7 +1,8 @@
 {
   "projects": {
-    "default": "woundapp-261e6",
-    "innovacare-app": "woundapp-261e6"
+    "default": "nursehome-7dc3f",
+    "nursehome": "nursehome-7dc3f",
+    "innovacare-app": "nursehome-7dc3f"
   },
   "targets": {},
   "etags": {}

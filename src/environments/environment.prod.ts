@@ -1,13 +1,13 @@
 export const environment = {
   firebase: {
-    apiKey: "AIzaSyBtvHyPefDjhWiWvcz2mJEL9EXZ7YqEb7A",
-  authDomain: "woundapp-261e6.firebaseapp.com",
-  projectId: "woundapp-261e6",
-  storageBucket: "woundapp-261e6.firebasestorage.app",
-  messagingSenderId: "43052843352",
-  appId: "1:43052843352:web:ee55589f67c31750eca52d",
-  measurementId: "G-HJZG1QZ6FW"
+    apiKey: "AIzaSyBByAA76jI7hHup-mFQWx1u9rHEkRtfEwE",
+    authDomain: "nursehome-7dc3f.firebaseapp.com",
+    databaseURL: "https://nursehome-7dc3f-default-rtdb.firebaseio.com",
+    projectId: "nursehome-7dc3f",
+    storageBucket: "nursehome-7dc3f.firebasestorage.app",
+    messagingSenderId: "1098942563500",
+    appId: "1:1098942563500:web:c04f64d60ccd50a9f04b09"
   },
-  apiBase: 'https://us-central1-woundapp-261e6.cloudfunctions.net/api',
+  apiBase: 'https://us-central1-nursehome-7dc3f.cloudfunctions.net/api',
   production: true
 };

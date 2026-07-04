@@ -26,6 +26,7 @@ import { AdminDashbordComponent } from './pages/admin-dashboard/admin-dashbord/a
 import { AdminGuard } from './guards/admin.guard';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { SellerRequestsComponent } from './pages/seller-requests/seller-requests.component';
 
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -35,7 +36,7 @@ import * as echarts from 'echarts';
 
 
 @NgModule({
-  declarations: [AdminUserListComponent, AddUserDialogComponent, AdminShellComponent, AdminDashbordComponent],
+  declarations: [AdminUserListComponent, AddUserDialogComponent, AdminShellComponent, AdminDashbordComponent, SellerRequestsComponent],
   imports: [
     CommonModule,
     RouterModule,

@@ -27,6 +27,7 @@ const routes: Routes = [
   { path: 'skin-wound', loadChildren: () => import('./features/skin-wound/skin-wound.module').then(m => m.SkinWoundModule) },
   { path: 'admin', loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule) },
   { path: 'nurse', loadChildren: () => import('./nurse/nurse.module').then(m => m.NurseModule) },
+  { path: 'seller', loadChildren: () => import('./seller/seller.module').then(m => m.SellerModule) },
    // ===== Global modules =====
   { path: 'finance', loadChildren: () => import('./modules/finance/finance.module').then(m => m.FinanceModule) },
   { path: 'housekeeping', loadChildren: () => import('./modules/housekeeping/housekeeping.module').then(m => m.HousekeepingModule) },

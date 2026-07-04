@@ -6,6 +6,7 @@ import { AdminGuard } from './guards/admin.guard';
 import { AdminShellComponent } from './shell/admin-shell/admin-shell.component';
 // ⚠️ importe le BON composant que tu déclares réellement
 import { AdminDashbordComponent } from './pages/admin-dashboard/admin-dashbord/admin-dashbord.component';
+import { SellerRequestsComponent } from './pages/seller-requests/seller-requests.component';
 
 const routes: Routes = [
   {
@@ -17,6 +18,7 @@ const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: AdminDashbordComponent },
       { path: 'users', component: AdminUserListComponent },
+      { path: 'seller-requests', component: SellerRequestsComponent },
       
     ],
   },
