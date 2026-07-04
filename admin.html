@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Command center admin AFROMARKET." />
+  <title>Admin Command Center - LAMYLENOISE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-shell="full" data-page="admin.html">
+  <main class="page">
+    <section class="page-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Admin</span></nav>
+        <h1 class="page-title">Command center admin</h1>
+        <p class="page-subtitle">Validation des vendeurs/livreurs, produits, commandes et commissions.</p>
+      </div>
+    </section>
+    <section class="role-section">
+      <div class="container" id="admin-command-root" data-role-page="admin"></div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="marketplace.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

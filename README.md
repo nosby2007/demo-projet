@@ -10,7 +10,12 @@
 - **Panier** : drawer latéral avec gestion quantités, sous-total en **AED**, persistance.
 - **Tunnel de commande** : récap, frais auto par émirat, paiement carte / Apple Pay / Tabby / Tamara / COD.
 - **Compte client** : tableau de bord, historique commandes, favoris, adresses UAE, profil.
-- **Authentification** : pages login / register avec validation.
+- **Authentification Firebase** : email / mot de passe, profil client par defaut, redirection selon role.
+- **Modules RBAC** : vendeur, livreur, client et admin command center.
+- **Demandes vendeur/livreur** : formulaire public, validation admin, statut et instructions d'identifiants.
+- **Marketplace vendeur** : creation de produits/services, suivi commandes, clients et relances.
+- **Livraison livreur** : commandes a recuperer, adresse client et ouverture Google Maps.
+- **Commissions** : repartition automatique plateforme 15 %, livreur 10 %, vendeur 75 %.
 - **Livraison** : suivi temps réel par n° de commande, réservation de créneaux, zones couvertes UAE.
 - **Pages support** : FAQ, blog recettes africaines, contact (WhatsApp / email / téléphone), à propos, mentions légales (CGV, RGPD, cookies), page 404 personnalisée.
 - **Hero slider**, ventes flash, trust strip, newsletter.
@@ -33,6 +38,7 @@
 - HTML5 sémantique
 - CSS3 (custom properties, mobile-first)
 - Vanilla JS modulaire (zero dépendance)
+- Firebase Auth + Realtime Database (`nursehome-7dc3f`)
 - [Lucide Icons](https://lucide.dev/) via CDN
 - [Google Fonts — Inter](https://fonts.google.com/specimen/Inter)
 
@@ -53,6 +59,11 @@ shop.html       # Catalogue complet avec filtres et tri
 product.html    # Fiche produit détaillée (?id=N)
 checkout.html   # Tunnel de commande
 account.html    # Compte client (tableau de bord, commandes, favoris, adresses)
+customer.html   # Module client securise par role
+seller.html     # Module vendeur securise par role
+courier.html    # Module livreur securise par role
+admin.html      # Command center admin securise par role
+request.html    # Demande vendeur / livreur
 login.html      # Connexion
 register.html   # Inscription
 delivery.html   # Zones, réservation de créneau, suivi de commande
@@ -66,7 +77,22 @@ legal.html      # CGV, RGPD, cookies, mentions
 style.css       # Design tokens + tous les composants
 app.js          # Modules JS (Layout, Cart, Products, Shop, ProductDetail,
                 #            Checkout, Account, Auth, Contact, Delivery…)
+firebase-config.js   # Configuration Firebase du projet nursehome-7dc3f
+marketplace.js       # Services role-based et workflows marketplace
+database.rules.json  # Regles RTDB RBAC
+firebase.json        # Config Firebase Hosting / Database
 ```
+
+## 🔐 Firebase / RBAC
+
+Les nouveaux flux utilisent Firebase Auth et Realtime Database :
+
+- `profiles/{uid}` : role `customer`, `seller`, `courier` ou `admin`.
+- `roleRequests/{id}` : demandes vendeur/livreur en attente ou approuvees.
+- `products/{id}` : produits catalogue et produits vendeur actifs.
+- `orders/{id}` : commandes, statut paiement/livraison et repartition 15/10/75.
+
+Important : une app statique cote client ne peut pas creer de comptes Auth pour d'autres utilisateurs de facon totalement securisee. Le command center genere donc le statut et les instructions; pour l'envoi automatique de vrais identifiants, ajouter ensuite une Cloud Function Firebase avec Admin SDK.
 
 ## 🧩 Architecture JS
 

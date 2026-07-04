@@ -170,6 +170,7 @@ const FLASH_PRODUCTS = PRODUCTS.filter(p => p.badge === "Flash").map(p => ({
   ...p,
   discount: Math.min((p.discount || 0) + 15, 70)
 }));
+window.PRODUCTS = PRODUCTS;
 
 /* ─── 2. UTILITIES ───────────────────────────────────────────── */
 const Utils = {
@@ -260,12 +261,12 @@ const CartModule = {
   },
 
   removeItem(id) {
-    this.items = this.items.filter(i => i.id !== id);
+    this.items = this.items.filter(i => String(i.id) !== String(id));
     this.render();
   },
 
   changeQty(id, delta) {
-    const item = this.items.find(i => i.id === id);
+    const item = this.items.find(i => String(i.id) === String(id));
     if (!item) return;
     item.qty = Utils.clamp(item.qty + delta, 1, 99);
     if (item.qty === 0) this.removeItem(id);
@@ -327,13 +328,13 @@ const CartModule = {
     // Bind qty & remove actions
     this.itemsContainer.querySelectorAll('.qty-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id     = parseInt(btn.dataset.id);
+        const id     = btn.dataset.id;
         const delta  = btn.dataset.action === 'inc' ? 1 : -1;
         this.changeQty(id, delta);
       });
     });
     this.itemsContainer.querySelectorAll('.cart-item-remove').forEach(btn => {
-      btn.addEventListener('click', () => this.removeItem(parseInt(btn.dataset.id)));
+      btn.addEventListener('click', () => this.removeItem(btn.dataset.id));
     });
   }
 };
@@ -389,9 +390,11 @@ const CardRenderer = {
     container.querySelectorAll('.btn-add-cart').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const id = parseInt(btn.dataset.id);
-        const product = PRODUCTS.find(p => p.id === id)
-                     || FLASH_PRODUCTS.find(p => p.id === id);
+        const id = btn.dataset.id;
+        const source = window.MarketplaceCatalog || PRODUCTS;
+        const product = source.find(p => String(p.id) === String(id))
+                     || PRODUCTS.find(p => String(p.id) === String(id))
+                     || FLASH_PRODUCTS.find(p => String(p.id) === String(id));
         if (product) CartModule.addItem(product);
       });
     });
@@ -979,7 +982,7 @@ const Layout = {
           <div class="topbar-links">
             <a href="delivery.html">Suivre ma livraison</a>
             <a href="contact.html">WhatsApp +971 50 000 0000</a>
-            <a href="about.html">Vendre sur LAMYLENOISE</a>
+            <a href="request.html">Vendre / Livrer</a>
           </div>
         </div>
       </div>
@@ -1040,6 +1043,8 @@ const Layout = {
             ${Layout._navLink('shop.html?cat=beaute',   'sparkles','Beauté',         active)}
             ${Layout._navLink('blog.html',     'book-open',        'Recettes',       active)}
             ${Layout._navLink('delivery.html', 'truck',            'Livraison',      active)}
+            ${Layout._navLink('request.html',  'badge-check',      'Vendeur/Livreur',active)}
+            ${Layout._navLink('customer.html', 'user-round',        'Client',         active)}
             ${Layout._navLink('about.html',    'info',             'À propos',       active)}
             ${Layout._navLink('contact.html',  'phone',            'Contact',        active)}
           </div>
@@ -1050,6 +1055,11 @@ const Layout = {
             <a href="account.html"    class="mobile-link"><i data-lucide="user"></i> Mon Compte</a>
             <a href="account.html#wishlist" class="mobile-link"><i data-lucide="heart"></i> Mes Favoris</a>
             <a href="account.html#orders" class="mobile-link"><i data-lucide="package"></i> Mes Commandes</a>
+            <a href="customer.html"   class="mobile-link"><i data-lucide="user-round"></i> Espace client</a>
+            <a href="seller.html"     class="mobile-link"><i data-lucide="store"></i> Espace vendeur</a>
+            <a href="courier.html"    class="mobile-link"><i data-lucide="truck"></i> Espace livreur</a>
+            <a href="admin.html"      class="mobile-link"><i data-lucide="shield"></i> Admin</a>
+            <a href="request.html"    class="mobile-link"><i data-lucide="badge-check"></i> Demande d'acces</a>
             <a href="delivery.html"   class="mobile-link"><i data-lucide="truck"></i> Réserver livraison</a>
             <hr class="mobile-divider"/>
             <a href="shop.html"       class="mobile-link"><i data-lucide="layout-grid"></i> Boutique complète</a>
@@ -1101,8 +1111,9 @@ const Layout = {
               <h3>À propos</h3>
               <ul>
                 <li><a href="about.html">Qui sommes-nous</a></li>
-                <li><a href="about.html#sell">Vendre sur LAMYLENOISE</a></li>
-                <li><a href="about.html#driver">Devenir livreur UAE</a></li>
+                <li><a href="request.html">Vendre sur LAMYLENOISE</a></li>
+                <li><a href="request.html">Devenir livreur UAE</a></li>
+                <li><a href="admin.html">Command center admin</a></li>
                 <li><a href="blog.html">Blog & Recettes</a></li>
               </ul>
             </div>
@@ -1158,7 +1169,7 @@ const Layout = {
 
 /* ─── 17. SHOP MODULE — full catalogue page ─────────────────── */
 const ShopModule = {
-  init() {
+  async init() {
     const grid = document.getElementById('shop-grid');
     if (!grid) return;
 
@@ -1167,7 +1178,10 @@ const ShopModule = {
     const cat    = params.get('cat');
     const q      = (params.get('q') || '').toLowerCase();
 
-    let items = [...PRODUCTS];
+    let items = window.MarketplaceData
+      ? await window.MarketplaceData.getProducts(PRODUCTS)
+      : [...PRODUCTS];
+    window.MarketplaceCatalog = items;
     if (cat) items = items.filter(p => p.category === cat);
     if (q)   items = items.filter(p =>
       p.name.toLowerCase().includes(q)  ||
@@ -1413,18 +1427,63 @@ const CheckoutModule = {
     render();
     document.getElementById('co-emirate')?.addEventListener('change', render);
 
-    form?.addEventListener('submit', e => {
+    form?.addEventListener('submit', async e => {
       e.preventDefault();
       if (CartModule.items.length === 0) {
         Toast.show('Votre panier est vide', 'error', 'alert-circle');
         return;
       }
-      // Fake order id
-      const orderId = 'LYN-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-      Toast.show(`Commande ${orderId} confirmée ✅`, 'success', 'check-circle', 5000);
-      CartModule.items = [];
-      CartModule.render();
-      setTimeout(() => { window.location.href = `account.html?order=${orderId}`; }, 1500);
+      const user = window.MarketplaceData ? await MarketplaceData.currentUser() : null;
+      if (window.AfroMarketFirebase && !user) {
+        Toast.show('Connectez-vous avant de confirmer la commande', 'error', 'log-in');
+        setTimeout(() => { window.location.href = 'login.html?next=checkout.html'; }, 900);
+        return;
+      }
+
+      const required = [...form.querySelectorAll('[required]')];
+      if (required.some(field => !field.value.trim())) {
+        Toast.show('Veuillez remplir toutes les informations de commande', 'error', 'alert-circle');
+        return;
+      }
+
+      const subtotal = CartModule.getTotal();
+      const emirate  = document.getElementById('co-emirate')?.value;
+      const shipping = subtotal >= 150 ? 0 : (SHIP_BY_EMIRATE[emirate] || 0);
+      const total    = subtotal + shipping;
+      const firstItem = CartModule.items[0] || {};
+      const inputs = form.querySelectorAll('input');
+      const customerName = `${inputs[0]?.value || ''} ${inputs[1]?.value || ''}`.trim();
+      const address = [...form.querySelectorAll('input')]
+        .slice(4, 6)
+        .map(input => input.value)
+        .filter(Boolean)
+        .join(', ');
+
+      try {
+        const orderId = window.MarketplaceData
+          ? await MarketplaceData.createOrder({
+              customerName,
+              email: form.querySelector('input[type=email]')?.value || '',
+              phone: form.querySelector('input[type=tel]')?.value || '',
+              emirate,
+              address,
+              items: CartModule.items,
+              subtotal,
+              shipping,
+              total,
+              sellerUid: firstItem.sellerUid || 'catalog',
+              sellerName: firstItem.sellerName || firstItem.brand || 'AFROMARKET',
+              paymentMethod: form.querySelector('input[name=pay]:checked')?.value || 'card'
+            })
+          : 'LYN-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+
+        Toast.show(`Commande ${orderId} confirmee`, 'success', 'check-circle', 5000);
+        CartModule.items = [];
+        CartModule.render();
+        setTimeout(() => { window.location.href = `customer.html?order=${orderId}`; }, 1500);
+      } catch (err) {
+        Toast.show(err.message || 'Commande non enregistree', 'error', 'alert-circle');
+      }
     });
   }
 };
@@ -1481,8 +1540,9 @@ const AccountModule = {
       if (tab) tab.click();
     }
 
-    // Logout demo
-    root.querySelector('#account-logout')?.addEventListener('click', () => {
+    // Logout
+    root.querySelector('#account-logout')?.addEventListener('click', async () => {
+      if (window.AfroMarketFirebase) await AfroMarketFirebase.auth.signOut();
       Toast.show('Déconnecté avec succès', 'success', 'log-out');
       setTimeout(() => { window.location.href = 'login.html'; }, 800);
     });
@@ -1495,7 +1555,7 @@ const AuthModule = {
     const login = document.getElementById('login-form');
     const reg   = document.getElementById('register-form');
 
-    login?.addEventListener('submit', e => {
+    login?.addEventListener('submit', async e => {
       e.preventDefault();
       const email = login.querySelector('input[type=email]').value.trim();
       const pwd   = login.querySelector('input[type=password]').value;
@@ -1503,11 +1563,25 @@ const AuthModule = {
         Toast.show('Email et mot de passe requis', 'error', 'alert-circle');
         return;
       }
-      Toast.show('Connexion réussie 👋', 'success', 'log-in');
-      setTimeout(() => { window.location.href = 'account.html'; }, 800);
+      try {
+        if (window.AfroMarketFirebase) {
+          const credential = await AfroMarketFirebase.auth.signInWithEmailAndPassword(email, pwd);
+          const profile = await MarketplaceData.getProfile(credential.user.uid);
+          const next = new URLSearchParams(window.location.search).get('next');
+          Toast.show('Connexion reussie', 'success', 'log-in');
+          setTimeout(() => {
+            window.location.href = next || MarketplaceData.roleHome(profile?.role || 'customer');
+          }, 800);
+          return;
+        }
+        Toast.show('Connexion réussie', 'success', 'log-in');
+        setTimeout(() => { window.location.href = 'account.html'; }, 800);
+      } catch (err) {
+        Toast.show(err.message || 'Connexion impossible', 'error', 'alert-circle');
+      }
     });
 
-    reg?.addEventListener('submit', e => {
+    reg?.addEventListener('submit', async e => {
       e.preventDefault();
       const inputs = reg.querySelectorAll('input[required]');
       for (const i of inputs) {
@@ -1516,8 +1590,33 @@ const AuthModule = {
           return;
         }
       }
-      Toast.show('Compte créé 🎉 Bienvenue !', 'success', 'user-check');
-      setTimeout(() => { window.location.href = 'account.html'; }, 1000);
+      try {
+        if (window.AfroMarketFirebase) {
+          const firstName = reg.querySelectorAll('input[type=text]')[0]?.value.trim() || '';
+          const lastName = reg.querySelectorAll('input[type=text]')[1]?.value.trim() || '';
+          const email = reg.querySelector('input[type=email]')?.value.trim();
+          const phone = reg.querySelector('input[type=tel]')?.value.trim();
+          const password = reg.querySelector('input[type=password]')?.value;
+          const credential = await AfroMarketFirebase.auth.createUserWithEmailAndPassword(email, password);
+          await credential.user.updateProfile({ displayName: `${firstName} ${lastName}`.trim() });
+          await MarketplaceData.saveProfile(credential.user.uid, {
+            role: 'customer',
+            status: 'active',
+            name: `${firstName} ${lastName}`.trim(),
+            firstName,
+            lastName,
+            email,
+            phone
+          });
+          Toast.show('Compte client cree', 'success', 'user-check');
+          setTimeout(() => { window.location.href = 'customer.html'; }, 1000);
+          return;
+        }
+        Toast.show('Compte créé. Bienvenue !', 'success', 'user-check');
+        setTimeout(() => { window.location.href = 'account.html'; }, 1000);
+      } catch (err) {
+        Toast.show(err.message || 'Creation du compte impossible', 'error', 'alert-circle');
+      }
     });
   }
 };
