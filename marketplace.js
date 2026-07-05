@@ -332,6 +332,8 @@ const MarketplacePages = {
 
   async renderAdmin(root, session = { mode: 'demo' }) {
     let [requests, products, orders, users] = await Promise.all([
+  async renderAdmin(root) {
+    const [requests, products, orders, users] = await Promise.all([
       MarketplaceData.list('roleRequests', MarketplaceData.localKeys.requests),
       MarketplaceData.getProducts([]),
       MarketplaceData.list('orders', MarketplaceData.localKeys.orders),
@@ -346,6 +348,7 @@ const MarketplacePages = {
 
     const metrics = this.adminMetrics({ requests, products, orders, users });
     const isDemo = session.mode !== 'live';
+    const metrics = this.adminMetrics({ requests, products, orders, users });
     root.innerHTML = `
       <div class="admin-shell">
         <aside class="admin-sidebar" aria-label="Navigation admin">
@@ -353,6 +356,9 @@ const MarketplacePages = {
             <span class="admin-badge">${isDemo ? 'Demo' : 'Live admin'}</span>
             <strong>Command Center</strong>
             <small>${isDemo ? 'Apercu enterprise avec donnees exemple' : 'Operations ecommerce centralisees'}</small>
+            <span class="admin-badge">Admin</span>
+            <strong>Command Center</strong>
+            <small>Operations ecommerce centralisees</small>
           </div>
           <button class="admin-tab active" data-admin-tab="overview"><i data-lucide="layout-dashboard"></i> Vue globale</button>
           <button class="admin-tab" data-admin-tab="orders"><i data-lucide="receipt-text"></i> Commandes</button>
@@ -376,6 +382,7 @@ const MarketplacePages = {
               <p class="eyebrow">LAMYLENOISE back office</p>
               <h2>Pilotage centralise de la marketplace</h2>
               <span>Commandes, paiements, utilisateurs, vendeurs, livreurs, catalogue, SLA et risques en temps reel.</span>
+              <span>Commandes, paiements, utilisateurs, vendeurs, livreurs, catalogue et SLA.</span>
             </div>
             <div class="admin-actions">
               <button class="btn-secondary" id="admin-export"><i data-lucide="download"></i> Export JSON</button>
@@ -486,6 +493,7 @@ const MarketplacePages = {
       ],
       products: demoItems.slice(0, 8).map(product => MarketplaceData.normalizeProduct(product, product.id))
     };
+    this.bindAdminActions(root, { requests, products, orders, users });
   },
 
   adminMetrics({ requests, orders, users }) {
@@ -543,6 +551,18 @@ const MarketplacePages = {
       await MarketplaceData.seedProducts(window.PRODUCTS || PRODUCTS || []);
       Toast.show('Produits existants publies dans Firebase', 'success', 'database');
       this.renderAdmin(root, { mode: 'live' });
+    });
+
+    root.querySelector('#admin-export')?.addEventListener('click', () => {
+      const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...context }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lamylenoise-admin-export-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      Toast.show('Export admin prepare', 'success', 'download');
     });
 
     root.querySelector('#admin-export')?.addEventListener('click', () => {
@@ -660,6 +680,22 @@ const MarketplacePages = {
         </div>
         <select class="admin-select" data-order-status="${o.id}">${this.statusOptions(o.status || 'paid', ['paid', 'preparing', 'ready', 'in_transit', 'delivered', 'cancelled'])}</select>
         <a class="btn-link" target="_blank" rel="noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.address || o.emirate || 'Abu Dhabi')}">Carte</a>
+      </article>`;
+  },
+
+  paymentRow(o) {
+    const payout = o.payout || MarketplaceData.buildPayout(o.total);
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${o.id} - ${MarketplaceData.money(o.total)}</strong>
+          <p>${o.paymentMethod || 'card'} | Client: ${o.customerName || 'Client'}</p>
+          <small>Plateforme ${MarketplaceData.money(payout.platform)} | Livreur ${MarketplaceData.money(payout.courier)} | Vendeur ${MarketplaceData.money(payout.seller)}</small>
+        </div>
+        <select class="admin-select" data-payment-status="${o.id}">${this.statusOptions(o.paymentStatus || 'paid', ['pending', 'paid', 'failed', 'refund_requested', 'refunded'])}</select>
+      </article>`;
+  },
+
       </article>`;
   },
 
