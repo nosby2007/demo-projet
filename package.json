@@ -1,0 +1,16 @@
+{
+  "name": "lamylenoise-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LAMYLENOISE static ecommerce frontend for Firebase Hosting.",
+  "scripts": {
+    "build": "node scripts/validate-static-site.mjs",
+    "deploy": "firebase deploy --project nursehome-7dc3f --only hosting,database"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "firebase-tools": "latest"
+  }
+}
