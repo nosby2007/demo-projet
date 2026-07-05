@@ -248,10 +248,28 @@ const MarketplaceData = {
   async update(path, id, data) {
     const db = this.db();
     if (db) return db.ref(`${path}/${id}`).update({ ...data, updatedAt: this.ts() });
-    const key = path === 'roleRequests' ? this.localKeys.requests : this.localKeys.orders;
+    const keyByPath = {
+      roleRequests: this.localKeys.requests,
+      orders: this.localKeys.orders,
+      products: this.localKeys.products,
+      profiles: this.localKeys.profile
+    };
+    const key = keyByPath[path] || this.localKeys.orders;
     const rows = this.readLocal(key);
-    rows[id] = { ...rows[id], ...data, updatedAt: Date.now() };
+    rows[id] = { ...(rows[id] || {}), ...data, updatedAt: Date.now() };
     this.writeLocal(key, rows);
+  },
+
+  async listProfiles() {
+    const db = this.db();
+    if (db) {
+      const snap = await db.ref('profiles').once('value');
+      const rows = [];
+      snap.forEach(child => rows.push({ id: child.key, uid: child.key, ...child.val() }));
+      return rows.reverse();
+    }
+    const profile = this.readLocal(this.localKeys.profile);
+    return profile?.role ? [{ id: 'local-profile', uid: 'local-profile', ...profile }] : [];
   }
 };
 
@@ -295,41 +313,192 @@ const MarketplacePages = {
   },
 
   async renderAdmin(root) {
-    const [requests, products, orders] = await Promise.all([
+    const [requests, products, orders, users] = await Promise.all([
       MarketplaceData.list('roleRequests', MarketplaceData.localKeys.requests),
       MarketplaceData.getProducts([]),
-      MarketplaceData.list('orders', MarketplaceData.localKeys.orders)
+      MarketplaceData.list('orders', MarketplaceData.localKeys.orders),
+      MarketplaceData.listProfiles()
     ]);
-    const revenue = orders.reduce((sum, order) => sum + Number(order.payout?.platform || 0), 0);
+
+    const metrics = this.adminMetrics({ requests, products, orders, users });
     root.innerHTML = `
-      <div class="role-kpis">
-        <div class="stat-card"><i data-lucide="inbox"></i><strong>${requests.length}</strong><span>Demandes</span></div>
-        <div class="stat-card"><i data-lucide="package"></i><strong>${products.length}</strong><span>Produits actifs</span></div>
-        <div class="stat-card"><i data-lucide="receipt"></i><strong>${orders.length}</strong><span>Commandes</span></div>
-        <div class="stat-card"><i data-lucide="percent"></i><strong>${MarketplaceData.money(revenue)}</strong><span>Commission 15%</span></div>
-      </div>
-      <div class="ops-grid">
-        <section class="ops-panel">
-          <div class="ops-heading"><h2>Demandes vendeur / livreur</h2><button class="btn-primary" id="seed-products"><i data-lucide="database"></i> Creer les produits catalogue</button></div>
-          <div class="ops-table">${requests.map(r => this.requestRow(r)).join('') || '<p class="muted">Aucune demande.</p>'}</div>
-        </section>
-        <section class="ops-panel">
-          <h2>Commandes et repartition</h2>
-          <div class="ops-table">${orders.map(o => this.orderRow(o)).join('') || '<p class="muted">Aucune commande.</p>'}</div>
+      <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Navigation admin">
+          <div class="admin-sidebar-head">
+            <span class="admin-badge">Admin</span>
+            <strong>Command Center</strong>
+            <small>Operations ecommerce centralisees</small>
+          </div>
+          <button class="admin-tab active" data-admin-tab="overview"><i data-lucide="layout-dashboard"></i> Vue globale</button>
+          <button class="admin-tab" data-admin-tab="orders"><i data-lucide="receipt-text"></i> Commandes</button>
+          <button class="admin-tab" data-admin-tab="payments"><i data-lucide="credit-card"></i> Paiements</button>
+          <button class="admin-tab" data-admin-tab="users"><i data-lucide="users"></i> Utilisateurs</button>
+          <button class="admin-tab" data-admin-tab="catalog"><i data-lucide="package-search"></i> Catalogue</button>
+          <button class="admin-tab" data-admin-tab="access"><i data-lucide="shield-check"></i> Acces & roles</button>
+          <button class="admin-tab" data-admin-tab="ops"><i data-lucide="activity"></i> Operations</button>
+        </aside>
+
+        <section class="admin-workspace">
+          <div class="admin-toolbar">
+            <div>
+              <p class="eyebrow">LAMYLENOISE back office</p>
+              <h2>Pilotage centralise de la marketplace</h2>
+              <span>Commandes, paiements, utilisateurs, vendeurs, livreurs, catalogue et SLA.</span>
+            </div>
+            <div class="admin-actions">
+              <button class="btn-secondary" id="admin-export"><i data-lucide="download"></i> Export JSON</button>
+              <button class="btn-primary" id="seed-products"><i data-lucide="database"></i> Publier catalogue</button>
+            </div>
+          </div>
+
+          <div class="role-kpis admin-kpis">
+            <div class="stat-card"><i data-lucide="shopping-cart"></i><strong>${orders.length}</strong><span>Commandes totales</span></div>
+            <div class="stat-card"><i data-lucide="banknote"></i><strong>${MarketplaceData.money(metrics.gmv)}</strong><span>GMV brut</span></div>
+            <div class="stat-card"><i data-lucide="percent"></i><strong>${MarketplaceData.money(metrics.platformRevenue)}</strong><span>Commission plateforme</span></div>
+            <div class="stat-card"><i data-lucide="alert-triangle"></i><strong>${metrics.needsAttention}</strong><span>Actions urgentes</span></div>
+          </div>
+
+          <div class="admin-panel active" data-admin-panel="overview">
+            <div class="ops-grid admin-overview-grid">
+              <section class="ops-panel">
+                <h2>Resume temps reel</h2>
+                <div class="admin-metric-list">
+                  <div><span>Commandes payees</span><strong>${metrics.paidOrders}</strong></div>
+                  <div><span>En preparation / transit</span><strong>${metrics.activeFulfillment}</strong></div>
+                  <div><span>Livrees</span><strong>${metrics.deliveredOrders}</strong></div>
+                  <div><span>Demandes en attente</span><strong>${metrics.pendingRequests}</strong></div>
+                </div>
+              </section>
+              <section class="ops-panel">
+                <h2>Repartition revenus</h2>
+                <div class="payout-bars">
+                  ${this.payoutBar('Plateforme', metrics.platformRevenue, metrics.gmv)}
+                  ${this.payoutBar('Vendeurs', metrics.sellerRevenue, metrics.gmv)}
+                  ${this.payoutBar('Livreurs', metrics.courierRevenue, metrics.gmv)}
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="orders">
+            <section class="ops-panel">
+              <div class="ops-heading"><h2>Gestion des commandes</h2><span class="status-pill ${metrics.activeFulfillment ? 'pending' : 'approved'}">${metrics.activeFulfillment} actives</span></div>
+              <div class="ops-table admin-table">${orders.map(o => this.adminOrderRow(o)).join('') || '<p class="muted">Aucune commande.</p>'}</div>
+            </section>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="payments">
+            <section class="ops-panel">
+              <h2>Paiements, remboursements et commissions</h2>
+              <div class="ops-table admin-table">${orders.map(o => this.paymentRow(o)).join('') || '<p class="muted">Aucun paiement.</p>'}</div>
+            </section>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="users">
+            <section class="ops-panel">
+              <h2>Utilisateurs et comptes</h2>
+              <div class="ops-table admin-table">${users.map(u => this.userRow(u)).join('') || '<p class="muted">Aucun profil utilisateur.</p>'}</div>
+            </section>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="catalog">
+            <section class="ops-panel">
+              <div class="ops-heading"><h2>Catalogue et vendeurs</h2><span class="muted">${products.length} produits actifs</span></div>
+              <div class="ops-table admin-table">${products.map(p => this.productAdminRow(p)).join('') || '<p class="muted">Aucun produit actif.</p>'}</div>
+            </section>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="access">
+            <section class="ops-panel">
+              <h2>Demandes vendeur / livreur</h2>
+              <div class="ops-table admin-table">${requests.map(r => this.requestRow(r)).join('') || '<p class="muted">Aucune demande.</p>'}</div>
+            </section>
+          </div>
+
+          <div class="admin-panel" data-admin-panel="ops">
+            <section class="ops-panel">
+              <h2>SLA, risques et operations</h2>
+              <div class="ops-table admin-table">
+                ${this.opsAlert('Commandes a traiter', `${metrics.activeFulfillment} commande(s) non livree(s)`, metrics.activeFulfillment ? 'pending' : 'approved')}
+                ${this.opsAlert('Paiements a verifier', `${metrics.paymentReview} paiement(s) en revue`, metrics.paymentReview ? 'pending' : 'approved')}
+                ${this.opsAlert('Acces en attente', `${metrics.pendingRequests} demande(s) vendeur/livreur`, metrics.pendingRequests ? 'pending' : 'approved')}
+                ${this.opsAlert('Catalogue', `${products.length} reference(s) publiee(s)`, 'approved')}
+              </div>
+            </section>
+          </div>
         </section>
       </div>`;
     if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
 
+    this.bindAdminTabs(root);
+    this.bindAdminActions(root, { requests, products, orders, users });
+  },
+
+  adminMetrics({ requests, orders, users }) {
+    const gmv = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const payout = orders.reduce((sum, order) => {
+      const p = order.payout || MarketplaceData.buildPayout(order.total);
+      sum.platform += Number(p.platform || 0);
+      sum.courier += Number(p.courier || 0);
+      sum.seller += Number(p.seller || 0);
+      return sum;
+    }, { platform: 0, courier: 0, seller: 0 });
+    const pendingRequests = requests.filter(r => (r.status || 'pending') === 'pending').length;
+    const activeFulfillment = orders.filter(o => !['delivered', 'cancelled', 'refunded'].includes(o.status || 'paid')).length;
+    const paymentReview = orders.filter(o => ['pending', 'failed', 'refund_requested'].includes(o.paymentStatus || '')).length;
+    return {
+      gmv,
+      platformRevenue: payout.platform,
+      courierRevenue: payout.courier,
+      sellerRevenue: payout.seller,
+      paidOrders: orders.filter(o => (o.paymentStatus || 'paid') === 'paid').length,
+      deliveredOrders: orders.filter(o => o.status === 'delivered').length,
+      activeFulfillment,
+      pendingRequests,
+      paymentReview,
+      users: users.length,
+      needsAttention: pendingRequests + activeFulfillment + paymentReview
+    };
+  },
+
+  payoutBar(label, value, total) {
+    const pct = total ? Math.round((Number(value || 0) / total) * 100) : 0;
+    return `<div class="payout-bar"><div><span>${label}</span><strong>${MarketplaceData.money(value)}</strong></div><progress value="${pct}" max="100"></progress><small>${pct}% du GMV</small></div>`;
+  },
+
+  bindAdminTabs(root) {
+    root.querySelectorAll('[data-admin-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.adminTab;
+        root.querySelectorAll('[data-admin-tab]').forEach(item => item.classList.toggle('active', item === tab));
+        root.querySelectorAll('[data-admin-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.adminPanel === target));
+      });
+    });
+  },
+
+  bindAdminActions(root, context) {
     root.querySelector('#seed-products')?.addEventListener('click', async () => {
       await MarketplaceData.seedProducts(window.PRODUCTS || PRODUCTS || []);
       Toast.show('Produits existants publies dans Firebase', 'success', 'database');
       this.renderAdmin(root);
     });
 
+    root.querySelector('#admin-export')?.addEventListener('click', () => {
+      const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...context }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lamylenoise-admin-export-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      Toast.show('Export admin prepare', 'success', 'download');
+    });
+
     root.querySelectorAll('[data-approve]').forEach(button => {
       button.addEventListener('click', async () => {
         const id = button.dataset.approve;
-        const request = requests.find(row => row.id === id) || {};
+        const request = context.requests.find(row => row.id === id) || {};
         const type = button.dataset.type;
         const role = type === 'courier' ? 'courier' : 'seller';
         const tempPassword = `Afro-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -350,7 +519,39 @@ const MarketplacePages = {
             city: request.city || ''
           });
         }
-        Toast.show(`Statut approuve et identifiants generes`, 'success', 'shield-check');
+        Toast.show('Statut approuve et identifiants generes', 'success', 'shield-check');
+        this.renderAdmin(root);
+      });
+    });
+
+    root.querySelectorAll('[data-order-status]').forEach(select => {
+      select.addEventListener('change', async () => {
+        await MarketplaceData.update('orders', select.dataset.orderStatus, { status: select.value });
+        Toast.show('Statut commande mis a jour', 'success', 'refresh-cw');
+        this.renderAdmin(root);
+      });
+    });
+
+    root.querySelectorAll('[data-payment-status]').forEach(select => {
+      select.addEventListener('change', async () => {
+        await MarketplaceData.update('orders', select.dataset.paymentStatus, { paymentStatus: select.value });
+        Toast.show('Statut paiement mis a jour', 'success', 'credit-card');
+        this.renderAdmin(root);
+      });
+    });
+
+    root.querySelectorAll('[data-product-status]').forEach(select => {
+      select.addEventListener('change', async () => {
+        await MarketplaceData.update('products', select.dataset.productStatus, { status: select.value });
+        Toast.show('Produit mis a jour', 'success', 'package-check');
+        this.renderAdmin(root);
+      });
+    });
+
+    root.querySelectorAll('[data-user-role]').forEach(select => {
+      select.addEventListener('change', async () => {
+        await MarketplaceData.update('profiles', select.dataset.userRole, { role: select.value });
+        Toast.show('Role utilisateur mis a jour', 'success', 'user-cog');
         this.renderAdmin(root);
       });
     });
@@ -358,11 +559,11 @@ const MarketplacePages = {
 
   requestRow(r) {
     return `
-      <article class="ops-row">
+      <article class="ops-row admin-row">
         <div>
           <strong>${r.businessName || r.name || 'Demande'}</strong>
           <p>${r.type || 'seller'} - ${r.email || ''} - ${r.phone || ''}</p>
-          <small>${r.city || ''} ${r.vehicle ? '- ' + r.vehicle : ''}</small>
+          <small>${r.city || ''} ${r.vehicle ? '- ' + r.vehicle : ''} ${r.loginInstructions ? '- ' + r.loginInstructions : ''}</small>
         </div>
         <span class="status-pill ${r.status || 'pending'}">${r.status || 'pending'}</span>
         <button class="btn-link" data-approve="${r.id}" data-type="${r.type || 'seller'}">Approuver</button>
@@ -378,8 +579,66 @@ const MarketplacePages = {
           <p>${o.customerName || 'Client'} - ${o.status || 'paid'} - ${MarketplaceData.money(o.total)}</p>
           <small>Plateforme ${MarketplaceData.money(payout.platform)} | Livreur ${MarketplaceData.money(payout.courier)} | Vendeur ${MarketplaceData.money(payout.seller)}</small>
         </div>
-        <span class="status-pill paid">${o.paymentStatus || 'paid'}</span>
+        <span class="status-pill ${o.paymentStatus || 'paid'}">${o.paymentStatus || 'paid'}</span>
       </article>`;
+  },
+
+  adminOrderRow(o) {
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${o.id}</strong>
+          <p>${o.customerName || 'Client'} - ${o.phone || 'tel indisponible'} - ${o.emirate || 'UAE'}</p>
+          <small>${o.address || 'Adresse a confirmer'} | ${MarketplaceData.money(o.total)} | ${o.items?.length || 0} article(s)</small>
+        </div>
+        <select class="admin-select" data-order-status="${o.id}">${this.statusOptions(o.status || 'paid', ['paid', 'preparing', 'ready', 'in_transit', 'delivered', 'cancelled'])}</select>
+        <a class="btn-link" target="_blank" rel="noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.address || o.emirate || 'Abu Dhabi')}">Carte</a>
+      </article>`;
+  },
+
+  paymentRow(o) {
+    const payout = o.payout || MarketplaceData.buildPayout(o.total);
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${o.id} - ${MarketplaceData.money(o.total)}</strong>
+          <p>${o.paymentMethod || 'card'} | Client: ${o.customerName || 'Client'}</p>
+          <small>Plateforme ${MarketplaceData.money(payout.platform)} | Livreur ${MarketplaceData.money(payout.courier)} | Vendeur ${MarketplaceData.money(payout.seller)}</small>
+        </div>
+        <select class="admin-select" data-payment-status="${o.id}">${this.statusOptions(o.paymentStatus || 'paid', ['pending', 'paid', 'failed', 'refund_requested', 'refunded'])}</select>
+      </article>`;
+  },
+
+  userRow(u) {
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${u.businessName || u.name || u.email || u.uid}</strong>
+          <p>${u.email || 'email indisponible'} - ${u.phone || 'tel indisponible'}</p>
+          <small>${u.city || 'UAE'} | statut: ${u.status || 'active'} | uid: ${u.uid || u.id}</small>
+        </div>
+        <select class="admin-select" data-user-role="${u.uid || u.id}">${this.statusOptions(u.role || 'customer', ['customer', 'seller', 'courier', 'admin'])}</select>
+      </article>`;
+  },
+
+  productAdminRow(p) {
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${p.name}</strong>
+          <p>${p.brand || p.sellerName || 'Vendeur'} - ${p.category || 'epicerie'} - ${MarketplaceData.money(p.price)}</p>
+          <small>${p.delivery || 'Livraison UAE'} | vendeur: ${p.sellerName || p.sellerUid || 'catalogue'}</small>
+        </div>
+        <select class="admin-select" data-product-status="${p.id}">${this.statusOptions(p.status || 'active', ['active', 'paused', 'rejected', 'archived'])}</select>
+      </article>`;
+  },
+
+  opsAlert(title, body, status) {
+    return `<article class="ops-row admin-row"><div><strong>${title}</strong><p>${body}</p></div><span class="status-pill ${status}">${status === 'approved' ? 'OK' : 'A traiter'}</span></article>`;
+  },
+
+  statusOptions(current, options) {
+    return options.map(option => `<option value="${option}" ${option === current ? 'selected' : ''}>${option}</option>`).join('');
   },
 
   async initSeller() {
