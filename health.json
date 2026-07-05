@@ -1,0 +1,11 @@
+{
+  "status": "ok",
+  "service": "lamylenoise-web",
+  "version": "1.0.0",
+  "region": "uae",
+  "checks": {
+    "static_assets": "ok",
+    "firebase_hosting": "configured",
+    "realtime_database_rules": "configured"
+  }
+}

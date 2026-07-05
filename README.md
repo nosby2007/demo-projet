@@ -20,6 +20,8 @@
 - **Pages support** : FAQ, blog recettes africaines, contact (WhatsApp / email / téléphone), à propos, mentions légales (CGV, RGPD, cookies), page 404 personnalisée.
 - **Hero slider**, ventes flash, trust strip, newsletter.
 - **Responsive** : mobile / tablet / desktop.
+- **Enterprise readiness** : PWA installable, cache offline, health check JSON, sitemap/robots et headers Firebase de sécurité.
+- **Observabilité front** : collecte locale des métriques LCP/CLS via événement `lamylenoise:metric` pour branchement analytics.
 
 ## 🚚 Zones de livraison
 
@@ -81,7 +83,19 @@ firebase-config.js   # Configuration Firebase du projet nursehome-7dc3f
 marketplace.js       # Services role-based et workflows marketplace
 database.rules.json  # Regles RTDB RBAC
 firebase.json        # Config Firebase Hosting / Database
+app.webmanifest      # Installation PWA et métadonnées application
+service-worker.js    # Cache offline de l'app shell
+health.json          # Endpoint de santé statique (/health via Firebase)
+robots.txt           # Directives SEO crawlers
+sitemap.xml          # Sitemap public des pages principales
 ```
+
+## 🏢 Socle entreprise
+
+- Firebase Hosting applique des headers anti-clickjacking, anti-MIME sniffing, politique de permissions, referrer policy et CSP.
+- `/health` expose un statut statique prêt pour uptime monitoring.
+- Le service worker met en cache l'app shell critique pour améliorer la résilience réseau.
+- Toutes les pages HTML déclarent le manifeste PWA et la couleur de thème.
 
 ## 🔐 Firebase / RBAC
 
