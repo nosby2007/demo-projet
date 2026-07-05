@@ -3481,3 +3481,34 @@ input, select {
     align-items: stretch;
   }
 }
+
+/* ─── ENTERPRISE TRUST STRIP ───────────────────────────────── */
+.enterprise-trust-strip {
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-mid) 100%);
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.enterprise-trust-grid {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+}
+.enterprise-trust-grid div {
+  display: grid;
+  gap: .15rem;
+  padding: var(--space-3);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--radius-lg);
+}
+.enterprise-trust-grid strong {
+  font-size: var(--text-sm);
+  letter-spacing: .01em;
+}
+.enterprise-trust-grid span {
+  color: rgba(255,255,255,.78);
+  font-size: var(--text-xs);
+}
+@media (min-width: 768px) {
+  .enterprise-trust-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

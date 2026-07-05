@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof ContactModule !== 'undefined')       ContactModule.init();
   if (typeof AccountModule !== 'undefined')       AccountModule.init();
   if (typeof AuthModule !== 'undefined')          AuthModule.init();
+  EnterpriseModule.init();
 });
 
 /* ─── 1. PRODUCT DATA (Produits africains, prix en AED) ────── */
@@ -1164,6 +1165,67 @@ const Layout = {
         <i data-lucide="${icon}"></i> ${label}
       </a>
     `;
+  }
+};
+
+
+
+/* ─── 16B. ENTERPRISE MODULE — PWA, telemetry, trust signals ─── */
+const EnterpriseModule = {
+  init() {
+    this.registerServiceWorker();
+    this.captureWebVitals();
+    this.renderTrustBanner();
+  },
+
+  registerServiceWorker() {
+    if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return;
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.info('[LAMYLENOISE] Offline shell registered'))
+        .catch(error => console.warn('[LAMYLENOISE] Service worker unavailable', error));
+    });
+  },
+
+  captureWebVitals() {
+    if (!('PerformanceObserver' in window)) return;
+    const metrics = {};
+    const report = (name, value) => {
+      metrics[name] = Math.round(value);
+      window.dispatchEvent(new CustomEvent('lamylenoise:metric', { detail: { name, value: metrics[name] } }));
+    };
+
+    try {
+      new PerformanceObserver(list => {
+        const entries = list.getEntries();
+        const last = entries[entries.length - 1];
+        if (last) report('LCP', last.startTime);
+      }).observe({ type: 'largest-contentful-paint', buffered: true });
+
+      new PerformanceObserver(list => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) report('CLS', (metrics.CLS || 0) + entry.value * 1000);
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    } catch (_) {
+      // Older browsers can safely ignore PerformanceObserver options.
+    }
+  },
+
+  renderTrustBanner() {
+    const main = document.querySelector('main');
+    if (!main || document.querySelector('.enterprise-trust-strip')) return;
+    const strip = document.createElement('section');
+    strip.className = 'enterprise-trust-strip';
+    strip.setAttribute('aria-label', 'Garanties entreprise');
+    strip.innerHTML = `
+      <div class="container enterprise-trust-grid">
+        <div><strong>99,9% disponibilité</strong><span>Hébergement Firebase + cache offline</span></div>
+        <div><strong>RBAC marketplace</strong><span>Espaces client, vendeur, livreur et admin</span></div>
+        <div><strong>Conformité UAE</strong><span>CGV, confidentialité, cookies et traçabilité</span></div>
+        <div><strong>SLA livraison</strong><span>Promesse 24h Abu Dhabi/Dubai avec suivi</span></div>
+      </div>`;
+    main.insertAdjacentElement('afterbegin', strip);
   }
 };
 
