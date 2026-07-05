@@ -53,6 +53,22 @@ python -m http.server 8000
 # puis http://localhost:8000
 ```
 
+### Build & validation
+
+Le projet reste statique, mais le build exécute une validation de production avant déploiement :
+
+```bash
+npm run build
+```
+
+### Déploiement Firebase
+
+Le projet pointe par défaut vers Firebase `nursehome-7dc3f` via `.firebaserc`. Déployer après authentification Firebase CLI :
+
+```bash
+npm run deploy
+```
+
 ## 📁 Structure
 
 ```
