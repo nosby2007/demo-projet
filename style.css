@@ -3753,3 +3753,57 @@ input, select {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
+
+.admin-loading,
+.admin-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.admin-loading i {
+  color: var(--color-accent);
+  animation: spin 900ms linear infinite;
+}
+
+.admin-mode-banner {
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFE8D5 100%);
+  border: 1px solid #FED7AA;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-mode-banner > i {
+  flex: 0 0 auto;
+  color: var(--color-accent);
+}
+
+.admin-mode-banner div {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.admin-mode-banner strong {
+  color: var(--color-navy);
+}
+
+.admin-mode-banner span {
+  color: var(--color-text-mid);
+  font-size: var(--text-sm);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 720px) {
+  .admin-loading,
+  .admin-mode-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

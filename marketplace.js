@@ -307,11 +307,31 @@ const MarketplacePages = {
   async initAdmin() {
     const root = document.getElementById('admin-command-root');
     if (!root) return;
-    const session = await MarketplaceData.requireRole('admin');
-    if (!session) return;
-    await this.renderAdmin(root);
+    root.innerHTML = this.adminLoadingState();
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
+
+    const user = await MarketplaceData.currentUser();
+    const profile = user ? await MarketplaceData.getProfile(user.uid) : null;
+    const session = profile?.role === 'admin'
+      ? { user, profile, mode: 'live' }
+      : { user, profile, mode: 'demo' };
+
+    await this.renderAdmin(root, session);
   },
 
+  adminLoadingState() {
+    return `
+      <div class="admin-loading ops-panel">
+        <i data-lucide="loader-2"></i>
+        <div>
+          <strong>Chargement du command center</strong>
+          <p>Synchronisation commandes, paiements, utilisateurs, catalogue et operations.</p>
+        </div>
+      </div>`;
+  },
+
+  async renderAdmin(root, session = { mode: 'demo' }) {
+    let [requests, products, orders, users] = await Promise.all([
   async renderAdmin(root) {
     const [requests, products, orders, users] = await Promise.all([
       MarketplaceData.list('roleRequests', MarketplaceData.localKeys.requests),
@@ -320,11 +340,22 @@ const MarketplacePages = {
       MarketplaceData.listProfiles()
     ]);
 
+    const demo = this.adminDemoData();
+    if (!requests.length) requests = demo.requests;
+    if (!orders.length) orders = demo.orders;
+    if (!users.length) users = demo.users;
+    if (!products.length) products = demo.products;
+
+    const metrics = this.adminMetrics({ requests, products, orders, users });
+    const isDemo = session.mode !== 'live';
     const metrics = this.adminMetrics({ requests, products, orders, users });
     root.innerHTML = `
       <div class="admin-shell">
         <aside class="admin-sidebar" aria-label="Navigation admin">
           <div class="admin-sidebar-head">
+            <span class="admin-badge">${isDemo ? 'Demo' : 'Live admin'}</span>
+            <strong>Command Center</strong>
+            <small>${isDemo ? 'Apercu enterprise avec donnees exemple' : 'Operations ecommerce centralisees'}</small>
             <span class="admin-badge">Admin</span>
             <strong>Command Center</strong>
             <small>Operations ecommerce centralisees</small>
@@ -339,10 +370,18 @@ const MarketplacePages = {
         </aside>
 
         <section class="admin-workspace">
+          ${isDemo ? `
+          <div class="admin-mode-banner">
+            <i data-lucide="shield-alert"></i>
+            <div><strong>Mode demonstration visible</strong><span>Connectez-vous avec un compte admin Firebase pour piloter les vraies donnees. Cette vue montre le niveau enterprise attendu au lieu d'un ecran vide.</span></div>
+            <a class="btn-secondary" href="login.html?next=admin.html">Connexion admin</a>
+          </div>` : ''}
+
           <div class="admin-toolbar">
             <div>
               <p class="eyebrow">LAMYLENOISE back office</p>
               <h2>Pilotage centralise de la marketplace</h2>
+              <span>Commandes, paiements, utilisateurs, vendeurs, livreurs, catalogue, SLA et risques en temps reel.</span>
               <span>Commandes, paiements, utilisateurs, vendeurs, livreurs, catalogue et SLA.</span>
             </div>
             <div class="admin-actions">
@@ -431,6 +470,29 @@ const MarketplacePages = {
     if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
 
     this.bindAdminTabs(root);
+    this.bindAdminActions(root, { requests, products, orders, users, isDemo });
+  },
+
+  adminDemoData() {
+    const demoItems = window.PRODUCTS || [];
+    return {
+      requests: [
+        { id: 'REQ-DEMO-1', type: 'seller', status: 'pending', businessName: 'Teranga Market', name: 'Awa Diop', email: 'seller@demo.ae', phone: '+971 50 111 2222', city: 'Abu Dhabi' },
+        { id: 'REQ-DEMO-2', type: 'courier', status: 'pending', name: 'Koffi Delivery', email: 'courier@demo.ae', phone: '+971 55 333 4444', city: 'Dubai', vehicle: 'Moto' }
+      ],
+      orders: [
+        { id: 'LYN-90041', customerName: 'Mariam C.', phone: '+971 50 000 1001', emirate: 'Abu Dhabi', address: 'Al Reem Island, Abu Dhabi', total: 286, status: 'preparing', paymentStatus: 'paid', paymentMethod: 'card', items: [{ qty: 2 }], payout: MarketplaceData.buildPayout(286), sellerName: 'AfriFood CI' },
+        { id: 'LYN-90042', customerName: 'Jean K.', phone: '+971 50 000 1002', emirate: 'Dubai', address: 'Business Bay, Dubai', total: 415, status: 'in_transit', paymentStatus: 'paid', paymentMethod: 'apple-pay', items: [{ qty: 3 }], payout: MarketplaceData.buildPayout(415), sellerName: 'Teranga' },
+        { id: 'LYN-90043', customerName: 'Fatou B.', phone: '+971 50 000 1003', emirate: 'Sharjah', address: 'Al Majaz, Sharjah', total: 128, status: 'paid', paymentStatus: 'pending', paymentMethod: 'cod', items: [{ qty: 1 }], payout: MarketplaceData.buildPayout(128), sellerName: 'KaréNature' },
+        { id: 'LYN-90044', customerName: 'Admin QA', phone: '+971 50 000 1004', emirate: 'Abu Dhabi', address: 'Yas Island, Abu Dhabi', total: 640, status: 'delivered', paymentStatus: 'paid', paymentMethod: 'tabby', items: [{ qty: 4 }], payout: MarketplaceData.buildPayout(640), sellerName: 'GTP Ghana' }
+      ],
+      users: [
+        { id: 'USR-DEMO-1', uid: 'USR-DEMO-1', role: 'customer', status: 'active', name: 'Mariam C.', email: 'customer@demo.ae', phone: '+971 50 000 1001', city: 'Abu Dhabi' },
+        { id: 'USR-DEMO-2', uid: 'USR-DEMO-2', role: 'seller', status: 'active', businessName: 'Teranga Market', email: 'seller@demo.ae', phone: '+971 50 111 2222', city: 'Abu Dhabi' },
+        { id: 'USR-DEMO-3', uid: 'USR-DEMO-3', role: 'courier', status: 'active', name: 'Koffi Delivery', email: 'courier@demo.ae', phone: '+971 55 333 4444', city: 'Dubai' }
+      ],
+      products: demoItems.slice(0, 8).map(product => MarketplaceData.normalizeProduct(product, product.id))
+    };
     this.bindAdminActions(root, { requests, products, orders, users });
   },
 
@@ -477,10 +539,30 @@ const MarketplacePages = {
   },
 
   bindAdminActions(root, context) {
+    const blockDemoWrite = () => {
+      if (!context.isDemo) return false;
+      Toast.show('Connectez-vous comme admin pour modifier les donnees live', 'error', 'shield-alert', 4500);
+      setTimeout(() => this.renderAdmin(root, { mode: 'demo' }), 250);
+      return true;
+    };
+
     root.querySelector('#seed-products')?.addEventListener('click', async () => {
+      if (blockDemoWrite()) return;
       await MarketplaceData.seedProducts(window.PRODUCTS || PRODUCTS || []);
       Toast.show('Produits existants publies dans Firebase', 'success', 'database');
-      this.renderAdmin(root);
+      this.renderAdmin(root, { mode: 'live' });
+    });
+
+    root.querySelector('#admin-export')?.addEventListener('click', () => {
+      const payload = JSON.stringify({ exportedAt: new Date().toISOString(), ...context }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lamylenoise-admin-export-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      Toast.show('Export admin prepare', 'success', 'download');
     });
 
     root.querySelector('#admin-export')?.addEventListener('click', () => {
@@ -502,6 +584,7 @@ const MarketplacePages = {
         const type = button.dataset.type;
         const role = type === 'courier' ? 'courier' : 'seller';
         const tempPassword = `Afro-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        if (blockDemoWrite()) return;
         await MarketplaceData.update('roleRequests', id, {
           status: 'approved',
           assignedRole: role,
@@ -526,6 +609,7 @@ const MarketplacePages = {
 
     root.querySelectorAll('[data-order-status]').forEach(select => {
       select.addEventListener('change', async () => {
+        if (blockDemoWrite()) return;
         await MarketplaceData.update('orders', select.dataset.orderStatus, { status: select.value });
         Toast.show('Statut commande mis a jour', 'success', 'refresh-cw');
         this.renderAdmin(root);
@@ -534,6 +618,7 @@ const MarketplacePages = {
 
     root.querySelectorAll('[data-payment-status]').forEach(select => {
       select.addEventListener('change', async () => {
+        if (blockDemoWrite()) return;
         await MarketplaceData.update('orders', select.dataset.paymentStatus, { paymentStatus: select.value });
         Toast.show('Statut paiement mis a jour', 'success', 'credit-card');
         this.renderAdmin(root);
@@ -542,6 +627,7 @@ const MarketplacePages = {
 
     root.querySelectorAll('[data-product-status]').forEach(select => {
       select.addEventListener('change', async () => {
+        if (blockDemoWrite()) return;
         await MarketplaceData.update('products', select.dataset.productStatus, { status: select.value });
         Toast.show('Produit mis a jour', 'success', 'package-check');
         this.renderAdmin(root);
@@ -550,6 +636,7 @@ const MarketplacePages = {
 
     root.querySelectorAll('[data-user-role]').forEach(select => {
       select.addEventListener('change', async () => {
+        if (blockDemoWrite()) return;
         await MarketplaceData.update('profiles', select.dataset.userRole, { role: select.value });
         Toast.show('Role utilisateur mis a jour', 'success', 'user-cog');
         this.renderAdmin(root);
@@ -593,6 +680,22 @@ const MarketplacePages = {
         </div>
         <select class="admin-select" data-order-status="${o.id}">${this.statusOptions(o.status || 'paid', ['paid', 'preparing', 'ready', 'in_transit', 'delivered', 'cancelled'])}</select>
         <a class="btn-link" target="_blank" rel="noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.address || o.emirate || 'Abu Dhabi')}">Carte</a>
+      </article>`;
+  },
+
+  paymentRow(o) {
+    const payout = o.payout || MarketplaceData.buildPayout(o.total);
+    return `
+      <article class="ops-row admin-row admin-row-wide">
+        <div>
+          <strong>${o.id} - ${MarketplaceData.money(o.total)}</strong>
+          <p>${o.paymentMethod || 'card'} | Client: ${o.customerName || 'Client'}</p>
+          <small>Plateforme ${MarketplaceData.money(payout.platform)} | Livreur ${MarketplaceData.money(payout.courier)} | Vendeur ${MarketplaceData.money(payout.seller)}</small>
+        </div>
+        <select class="admin-select" data-payment-status="${o.id}">${this.statusOptions(o.paymentStatus || 'paid', ['pending', 'paid', 'failed', 'refund_requested', 'refunded'])}</select>
+      </article>`;
+  },
+
       </article>`;
   },
 
