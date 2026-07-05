@@ -1,6 +1,5 @@
 /* LAMYLENOISE enterprise offline shell */
 const CACHE_VERSION = 'lamylenoise-v1.1.0';
-const CACHE_VERSION = 'lamylenoise-v1.0.0';
 const APP_SHELL = [
   '/',
   '/index.html',
