@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "nursehome-7dc3f"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

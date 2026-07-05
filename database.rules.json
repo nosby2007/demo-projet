@@ -10,6 +10,7 @@
       }
     },
     "profiles": {
+      ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
         ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer') || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val()))))"
@@ -17,12 +18,14 @@
     },
     "products": {
       ".read": true,
+      ".indexOn": ["status", "sellerUid"],
       "$productId": {
         ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (root.child('profiles').child(auth.uid).child('role').val() == 'seller' && newData.child('sellerUid').val() == auth.uid && (!data.exists() || data.child('sellerUid').val() == auth.uid)))",
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
       }
     },
     "orders": {
+      ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
       "$orderId": {
         ".read": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || data.child('customerUid').val() == auth.uid || data.child('sellerUid').val() == auth.uid || data.child('courierUid').val() == auth.uid)",
         ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || !data.exists() || data.child('customerUid').val() == auth.uid || data.child('sellerUid').val() == auth.uid || data.child('courierUid').val() == auth.uid)",
