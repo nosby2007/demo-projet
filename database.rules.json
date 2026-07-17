@@ -33,6 +33,11 @@
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
       }
     },
+    "checkoutReservations": {
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["expiresAt", "tenantId", "customerUid"]
+    },
     "orders": {
       ".read": false,
       ".write": false,
