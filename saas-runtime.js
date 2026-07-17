@@ -67,10 +67,10 @@
   MarketplaceData.update = async function updateSecure(path, id, data) {
     if (path === 'orders') {
       try {
-        const response = await callable('transitionOrder')({
-          orderId: id,
-          status: data?.status
-        });
+        const isCourierClaim = data?.status === 'in_transit' && Boolean(data?.courierUid);
+        const response = isCourierClaim
+          ? await callable('claimDeliveryJob')({ orderId: id })
+          : await callable('transitionOrder')({ orderId: id, status: data?.status });
         return response.data;
       } catch (error) {
         throw new Error(messageFrom(error, 'Le statut de la commande n’a pas été modifié.'));
