@@ -8,6 +8,7 @@ const [
   tracking,
   main,
   rulesSource,
+  firebaseSource,
   runtime,
   checkoutLocation,
   checkoutRuntime,
@@ -21,6 +22,7 @@ const [
   read('functions/tracking.js'),
   read('functions/main.js'),
   read('database.rules.json'),
+  read('firebase.json'),
   read('tracking-runtime.js'),
   read('checkout-location-runtime.js'),
   read('checkout-runtime-v5.js'),
@@ -42,7 +44,11 @@ for (const [name, source] of [
 }
 
 const rules = JSON.parse(rulesSource).rules || {};
+const firebaseConfig = JSON.parse(firebaseSource);
 const trackingRule = rules.orderTracking?.['$orderId'] || {};
+const contentSecurityPolicy = firebaseConfig.hosting?.headers
+  ?.flatMap(group => group.headers || [])
+  ?.find(header => header.key === 'Content-Security-Policy')?.value || '';
 
 for (const exportName of ['syncOrderTracking', 'setDeliveryDestination', 'updateCourierLocation']) {
   if (!tracking.includes(`exports.${exportName}`)) errors.push(`Tracking backend is missing ${exportName}.`);
@@ -71,6 +77,7 @@ for (const required of ['customerUid', 'courierUid', "role').val() == 'admin'", 
 if (!runtime.includes("backend.db.ref(`orderTracking/${orderId}`)")) errors.push('Customer tracking must subscribe to the private realtime path.');
 if (!runtime.includes('navigator.geolocation.watchPosition')) errors.push('Courier tracking must use watchPosition after explicit activation.');
 if (!runtime.includes('navigator.geolocation.clearWatch')) errors.push('Courier tracking must stop GPS watches.');
+if (!runtime.includes('reconcileCourierWatches(activeOrderIds)')) errors.push('Courier GPS watches must stop when a delivery is no longer active.');
 if (!runtime.includes("callable('updateCourierLocation')")) errors.push('Courier GPS updates must use the trusted callable.');
 if (!runtime.includes('document.createElement')) errors.push('Tracking UI must render dynamic data with DOM APIs.');
 if (!checkoutLocation.includes('navigator.geolocation.getCurrentPosition')) errors.push('Checkout location selection must require browser consent.');
@@ -79,6 +86,12 @@ if (!checkoutRuntime.includes("httpsCallable('setDeliveryDestination')")) errors
 for (const html of [customerHtml, checkoutHtml]) {
   if (!html.includes('leaflet@1.9.4')) errors.push('Map pages must pin Leaflet 1.9.4.');
   if (!html.includes('integrity="sha256-')) errors.push('Leaflet CDN assets must use subresource integrity.');
+}
+if (!contentSecurityPolicy.includes('style-src') || !contentSecurityPolicy.includes('https://unpkg.com')) {
+  errors.push('Content Security Policy must permit the pinned Leaflet stylesheet and script host.');
+}
+if (!contentSecurityPolicy.includes('https://*.tile.openstreetmap.org')) {
+  errors.push('Content Security Policy must permit OpenStreetMap tile images.');
 }
 if (!customerHtml.includes('<script src="tracking-runtime.js"')) errors.push('Customer workspace must load tracking-runtime.js.');
 if (!courierHtml.includes('<script src="tracking-runtime.js"')) errors.push('Courier workspace must load tracking-runtime.js.');
