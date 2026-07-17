@@ -19,7 +19,12 @@ const requiredFiles = [
   'firebase.json',
   'database.rules.json',
   'functions/package.json',
+  'functions/main.js',
   'functions/index.js',
+  'functions/marketplace-v2.js',
+  'functions/commerce.js',
+  'functions/test/commerce.test.js',
+  'functions/test/database.rules.test.js',
   'app.webmanifest',
   'service-worker.js',
   'health.json',
@@ -41,7 +46,13 @@ const jsFiles = [
   'firebase-config.js',
   'firebase-functions-config.js',
   'service-worker.js',
-  'functions/index.js'
+  'functions/main.js',
+  'functions/index.js',
+  'functions/safe-claims.js',
+  'functions/marketplace-v2.js',
+  'functions/commerce.js',
+  'functions/test/commerce.test.js',
+  'functions/test/database.rules.test.js'
 ];
 const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
 const errors = [];
@@ -105,12 +116,32 @@ async function validateDatabaseRules() {
   }
 }
 
+async function validateEmploymentBackend() {
+  const backend = await readFile('functions/marketplace-v2.js', 'utf8');
+  const runtime = await readFile('saas-runtime.js', 'utf8');
+  for (const functionName of [
+    'createOrderDraft',
+    'claimDeliveryJob',
+    'completeDelivery',
+    'reviewProduct',
+    'updateInventory'
+  ]) {
+    if (!backend.includes(`exports.${functionName}`)) errors.push(`Backend is missing ${functionName}`);
+  }
+  if (!backend.includes("order.status === 'ready_for_pickup'")) errors.push('Courier claim must require a ready order');
+  if (!backend.includes('deliveryCodeHash')) errors.push('Backend is missing OTP delivery proof');
+  if (!runtime.includes('data-product-review')) errors.push('Admin product review controls are missing');
+  if (!runtime.includes('data-stock-save')) errors.push('Seller stock controls are missing');
+  if (!runtime.includes('data-complete')) errors.push('Courier delivery completion control is missing');
+}
+
 await Promise.all(requiredFiles.map(assertReadable));
 await Promise.all(jsonFiles.map(validateJson));
 await Promise.all(jsFiles.map(validateJavaScript));
 await validateHtmlPages();
 await validateFirebaseConfig();
 await validateDatabaseRules();
+await validateEmploymentBackend();
 
 if (errors.length) {
   console.error('Static build validation failed:');
@@ -118,4 +149,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Trusted marketplace bundle is ready for emulator testing.');
+console.log('Static build validation passed. Inventory, review, atomic courier assignment and OTP proof are present.');
