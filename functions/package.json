@@ -1,0 +1,17 @@
+{
+  "name": "lamylenoise-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Trusted backend for LAMYLENOISE marketplace and employment workflows.",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  }
+}
