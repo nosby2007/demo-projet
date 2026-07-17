@@ -37,6 +37,9 @@ jobs:
       - name: Validate audit and traceability stack
         run: node scripts/validate-audit-stack.mjs
 
+      - name: Validate live order tracking stack
+        run: node scripts/validate-tracking-stack.mjs
+
       - name: Install backend test dependencies
         working-directory: functions
         run: npm install --ignore-scripts
