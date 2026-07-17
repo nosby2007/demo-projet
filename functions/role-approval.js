@@ -21,6 +21,69 @@ function throwFailure(problem, fallback) {
   throw new HttpsError(problem?.code || 'aborted', problem?.message || fallback);
 }
 
+async function syncClaims(requestId, approved) {
+  try {
+    await getAuth().setCustomUserClaims(approved.uid, {
+      role: approved.role,
+      tenantId: approved.tenantId
+    });
+    await db.ref(`roleRequests/${requestId}`).update({
+      claimsSyncStatus: 'complete',
+      claimsSyncError: null,
+      claimsSyncedAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    return { ...approved, claimsSyncStatus: 'complete' };
+  } catch (error) {
+    await db.ref(`roleRequests/${requestId}`).update({
+      claimsSyncStatus: 'failed',
+      claimsSyncError: clean(error?.message || 'Unknown claims error', 300),
+      updatedAt: Date.now()
+    });
+    throw new HttpsError('internal', 'Rôle approuvé, mais la synchronisation Auth doit être relancée depuis l’administration.');
+  }
+}
+
+async function validateApprovedRequest(adminUid, requestId, requestedTenant) {
+  const [adminSnapshot, requestSnapshot] = await Promise.all([
+    db.ref(`profiles/${adminUid}`).get(),
+    db.ref(`roleRequests/${requestId}`).get()
+  ]);
+  const adminProfile = adminSnapshot.val();
+  const roleRequest = requestSnapshot.val();
+  if (!adminProfile || adminProfile.role !== 'admin' || adminProfile.status === 'disabled') {
+    throw new HttpsError('permission-denied', 'Compte administrateur non autorisé.');
+  }
+  const adminTenant = clean(adminProfile.tenantId || DEFAULT_TENANT, 80);
+  if (requestedTenant !== adminTenant) {
+    throw new HttpsError('permission-denied', 'Organisation non autorisée.');
+  }
+  if (!roleRequest || roleRequest.status !== 'approved') {
+    throw new HttpsError('failed-precondition', 'La candidature doit déjà être approuvée.');
+  }
+  if (!['seller', 'courier'].includes(roleRequest.assignedRole)) {
+    throw new HttpsError('failed-precondition', 'Rôle approuvé invalide.');
+  }
+  const tenantId = clean(roleRequest.tenantId || DEFAULT_TENANT, 80);
+  if (tenantId !== adminTenant) {
+    throw new HttpsError('permission-denied', 'Candidature rattachée à une autre organisation.');
+  }
+  const candidateUid = clean(roleRequest.requesterUid, 160);
+  const candidateSnapshot = await db.ref(`profiles/${candidateUid}`).get();
+  const candidate = candidateSnapshot.val();
+  if (!candidate || candidate.status === 'disabled') {
+    throw new HttpsError('failed-precondition', 'Profil candidat absent ou désactivé.');
+  }
+  if (candidate.role !== roleRequest.assignedRole || clean(candidate.tenantId || DEFAULT_TENANT, 80) !== tenantId) {
+    throw new HttpsError('failed-precondition', 'Le profil ne correspond pas au rôle approuvé.');
+  }
+  return {
+    uid: candidateUid,
+    role: roleRequest.assignedRole,
+    tenantId
+  };
+}
+
 exports.approveRoleRequest = onCall(async request => {
   const adminUid = request.auth?.uid;
   if (!adminUid) throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
@@ -96,6 +159,7 @@ exports.approveRoleRequest = onCall(async request => {
     roleRequest.approvedAt = now;
     roleRequest.updatedAt = now;
     roleRequest.claimsSyncStatus = 'pending';
+    roleRequest.claimsSyncError = null;
 
     candidate.role = role;
     candidate.status = 'active';
@@ -111,23 +175,18 @@ exports.approveRoleRequest = onCall(async request => {
     throwFailure(problem, 'La candidature n’a pas pu être approuvée.');
   }
 
-  try {
-    await getAuth().setCustomUserClaims(approved.uid, {
-      role: approved.role,
-      tenantId: approved.tenantId
-    });
-    await db.ref(`roleRequests/${requestId}`).update({
-      claimsSyncStatus: 'complete',
-      claimsSyncedAt: Date.now()
-    });
-  } catch (error) {
-    await db.ref(`roleRequests/${requestId}`).update({
-      claimsSyncStatus: 'failed',
-      claimsSyncError: clean(error?.message || 'Unknown claims error', 300),
-      updatedAt: Date.now()
-    });
-    throw new HttpsError('internal', 'Rôle approuvé, mais la synchronisation Auth doit être relancée par un administrateur.');
-  }
+  const synced = await syncClaims(requestId, approved);
+  return { ...synced, activation: 'existing-account-updated' };
+});
 
-  return { ...approved, activation: 'existing-account-updated' };
+exports.resyncRoleClaims = onCall(async request => {
+  const adminUid = request.auth?.uid;
+  if (!adminUid) throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
+  const requestId = clean(request.data?.requestId, 160);
+  const requestedTenant = clean(request.data?.tenantId || DEFAULT_TENANT, 80);
+  if (!requestId) throw new HttpsError('invalid-argument', 'Candidature manquante.');
+
+  const approved = await validateApprovedRequest(adminUid, requestId, requestedTenant);
+  const synced = await syncClaims(requestId, approved);
+  return { ...synced, activation: 'claims-resynchronized' };
 });
