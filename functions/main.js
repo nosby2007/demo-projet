@@ -6,6 +6,7 @@ const catalog = require('./catalog-v5');
 const roleApproval = require('./role-approval');
 const audit = require('./audit');
 const tracking = require('./tracking');
+const notifications = require('./notifications');
 
 module.exports = {
   ...marketplace,
@@ -22,5 +23,9 @@ module.exports = {
   listOrdersForRole: tracking.listOrdersForRole,
   syncOrderTracking: tracking.syncOrderTracking,
   setDeliveryDestination: tracking.setDeliveryDestination,
-  updateCourierLocation: tracking.updateCourierLocation
+  updateCourierLocation: tracking.updateCourierLocation,
+  notifyOrderChanges: notifications.notifyOrderChanges,
+  notifyCourierNearby: notifications.notifyCourierNearby,
+  markNotificationRead: notifications.markNotificationRead,
+  markAllNotificationsRead: notifications.markAllNotificationsRead
 };
