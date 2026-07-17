@@ -1,15 +1,15 @@
 {
   "name": "sokiva-functions",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
-  "description": "Trusted backend for SOKIVA marketplace, employment, audit and live tracking workflows.",
+  "description": "Trusted backend for SOKIVA marketplace, employment, audit, live tracking and private notification workflows.",
   "main": "main.js",
   "engines": {
     "node": "20"
   },
   "scripts": {
-    "test:syntax": "node --check commerce.js && node --check marketplace-v3.js && node --check checkout-v5.js && node --check checkout-v4.js && node --check catalog-v5.js && node --check catalog-v4.js && node --check role-approval.js && node --check audit.js && node --check tracking.js && node --check marketplace-v2.js && node --check index.js && node --check safe-claims.js && node --check main.js",
-    "test:unit": "node --test test/commerce.test.js test/audit.test.js test/tracking.test.js",
+    "test:syntax": "node --check commerce.js && node --check marketplace-v3.js && node --check checkout-v5.js && node --check checkout-v4.js && node --check catalog-v5.js && node --check catalog-v4.js && node --check role-approval.js && node --check audit.js && node --check tracking.js && node --check notifications.js && node --check marketplace-v2.js && node --check index.js && node --check safe-claims.js && node --check main.js",
+    "test:unit": "node --test test/commerce.test.js test/audit.test.js test/tracking.test.js test/notifications.test.js",
     "test:rules": "node --test --test-concurrency=1 test/*.rules.test.js",
     "test": "npm run test:syntax && npm run test:unit"
   },
