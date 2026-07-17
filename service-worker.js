@@ -1,5 +1,5 @@
-/* SOKIVA resilient offline shell */
-const CACHE_VERSION = 'sokiva-v1.8.0';
+/* SOKIVA resilient offline shell and notification navigation */
+const CACHE_VERSION = 'sokiva-v1.9.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -17,6 +17,7 @@ const APP_SHELL = [
   '/style.css',
   '/audit.css',
   '/tracking.css',
+  '/notifications.css',
   '/app.js',
   '/marketplace.js',
   '/saas-runtime.js',
@@ -25,6 +26,7 @@ const APP_SHELL = [
   '/checkout-runtime-v5.js',
   '/checkout-location-runtime.js',
   '/tracking-runtime.js',
+  '/notifications-runtime.js',
   '/role-sync-runtime.js',
   '/audit-runtime.js',
   '/firebase-config.js',
@@ -32,6 +34,7 @@ const APP_SHELL = [
   '/app.webmanifest',
   '/404.html'
 ];
+const NOTIFICATION_PAGES = new Set(['customer.html', 'seller.html', 'courier.html', 'admin.html']);
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_VERSION).then(cache => cache.addAll(APP_SHELL)));
@@ -52,6 +55,33 @@ function navigationCacheKey(pathname) {
   if (/\.[a-z0-9]+$/i.test(pathname)) return pathname;
   return `${pathname}.html`;
 }
+
+function safeNotificationUrl(value) {
+  try {
+    const url = new URL(String(value || 'customer.html'), self.location.origin);
+    const page = url.pathname.split('/').filter(Boolean).pop() || '';
+    if (url.origin !== self.location.origin || !NOTIFICATION_PAGES.has(page)) {
+      return new URL('/customer.html', self.location.origin).href;
+    }
+    return url.href;
+  } catch {
+    return new URL('/customer.html', self.location.origin).href;
+  }
+}
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = safeNotificationUrl(event.notification.data?.deepLink);
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if (new URL(client.url).origin !== self.location.origin) continue;
+      if ('navigate' in client) await client.navigate(targetUrl);
+      return client.focus();
+    }
+    return self.clients.openWindow(targetUrl);
+  })());
+});
 
 self.addEventListener('fetch', event => {
   const request = event.request;
