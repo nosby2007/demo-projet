@@ -1,3 +1,3 @@
 'use strict';
 
-module.exports = require('./marketplace-v2');
+module.exports = require('./marketplace-v3');
