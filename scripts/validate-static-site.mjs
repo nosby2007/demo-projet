@@ -25,6 +25,7 @@ const requiredFiles = [
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js',
+  'scripts/deploy-safe.mjs',
   'app.webmanifest',
   'service-worker.js',
   'health.json',
@@ -46,6 +47,7 @@ const jsFiles = [
   'firebase-config.js',
   'firebase-functions-config.js',
   'service-worker.js',
+  'scripts/deploy-safe.mjs',
   'functions/main.js',
   'functions/index.js',
   'functions/safe-claims.js',
@@ -118,6 +120,7 @@ async function validateDatabaseRules() {
 
 async function validateEmploymentBackend() {
   const backend = await readFile('functions/marketplace-v2.js', 'utf8');
+  const commerce = await readFile('functions/commerce.js', 'utf8');
   const runtime = await readFile('saas-runtime.js', 'utf8');
   for (const functionName of [
     'createOrderDraft',
@@ -128,7 +131,9 @@ async function validateEmploymentBackend() {
   ]) {
     if (!backend.includes(`exports.${functionName}`)) errors.push(`Backend is missing ${functionName}`);
   }
-  if (!backend.includes("order.status === 'ready_for_pickup'")) errors.push('Courier claim must require a ready order');
+  if (!backend.includes('isClaimableDelivery(order, job, tenantId)')) errors.push('Courier claim must use the shared atomic claim invariant');
+  if (!commerce.includes("order.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready order');
+  if (!commerce.includes("job.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready delivery job');
   if (!backend.includes('deliveryCodeHash')) errors.push('Backend is missing OTP delivery proof');
   if (!runtime.includes('data-product-review')) errors.push('Admin product review controls are missing');
   if (!runtime.includes('data-stock-save')) errors.push('Seller stock controls are missing');
