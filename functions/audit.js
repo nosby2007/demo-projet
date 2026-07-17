@@ -11,7 +11,7 @@ const DEFAULT_TENANT = 'lamylenoise';
 const AUDIT_REGION = 'us-central1';
 const MAX_AUDIT_ROWS = 200;
 const REDACTED = '[REDACTED]';
-const SENSITIVE_KEY = /(password|secret|token|authorization|cookie|deliverycode|otp|hash|idempotency|email|phone|address)/i;
+const SENSITIVE_KEY = /(password|secret|token|authorization|cookie|deliverycode|otp|hash|idempotency|email|phone|address|location|latitude|longitude|coordinate|geolocation)/i;
 
 function clean(value, max = 200) {
   return String(value || '').trim().slice(0, max);
@@ -66,6 +66,9 @@ function inferredActor(entityType, before, after) {
   if (before?.approvedBy !== after?.approvedBy && after?.approvedBy) return after.approvedBy;
   if (before?.reviewedBy !== after?.reviewedBy && after?.reviewedBy) return after.reviewedBy;
   if (before?.courierUid !== after?.courierUid && after?.courierUid) return after.courierUid;
+  if (before?.deliveryLocation?.setByUid !== after?.deliveryLocation?.setByUid && after?.deliveryLocation?.setByUid) {
+    return after.deliveryLocation.setByUid;
+  }
   if (before?.deliveryProof?.courierUid !== after?.deliveryProof?.courierUid && after?.deliveryProof?.courierUid) {
     return after.deliveryProof.courierUid;
   }
