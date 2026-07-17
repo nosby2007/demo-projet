@@ -60,7 +60,7 @@ for (const invariant of [
   "after.status !== 'in_transit'",
   'currentDistance > NEARBY_DISTANCE_KM',
   'previousDistance > NEARBY_DISTANCE_KM',
-  "profile?.status !== 'disabled'",
+  "profile.status !== 'disabled'",
   "uid !== 'catalog'",
   'db.ref(`userNotifications/${recipientUid}/${payload.id}`)',
   'db.ref(`userNotifications/${uid}/${id}`).transaction'
