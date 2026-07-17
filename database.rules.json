@@ -19,6 +19,7 @@
     },
     "profiles": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
+      ".indexOn": ["role", "tenantId", "status"],
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
         ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer' && (!newData.child('tenantId').exists() || newData.child('tenantId').val() == 'lamylenoise')) || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val()))))"
@@ -75,6 +76,13 @@
         ".read": "auth != null && (root.child('orders').child($orderId).child('customerUid').val() == auth.uid || (root.child('orders').child($orderId).child('courierUid').val() == auth.uid && root.child('orders').child($orderId).child('status').val() == 'in_transit') || (root.child('profiles').child(auth.uid).child('role').val() == 'admin' && root.child('profiles').child(auth.uid).child('status').val() != 'disabled' && root.child('profiles').child(auth.uid).child('tenantId').val() == root.child('orders').child($orderId).child('tenantId').val()))",
         ".write": false,
         ".indexOn": ["updatedAt", "status"]
+      }
+    },
+    "userNotifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": false,
+        ".indexOn": ["createdAt", "readAt"]
       }
     },
     "auditLogs": {
