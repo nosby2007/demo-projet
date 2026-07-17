@@ -2,7 +2,8 @@
 'use strict';
 
 (function idempotentCheckoutRuntime() {
-  if (!window.MarketplaceData || !window.AfroMarketFirebase?.functions) {
+  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
+  if (!window.MarketplaceData || !backend?.functions) {
     console.warn('Trusted marketplace runtime must load before checkout-runtime-v5.js');
     return;
   }
@@ -12,7 +13,12 @@
     return /^\d+$/.test(raw) ? `catalog-${raw}` : raw;
   }
 
+  function deliveryLocation() {
+    return window.SokivaDeliveryLocation?.get?.() || null;
+  }
+
   function fingerprint(order) {
+    const location = deliveryLocation();
     const normalized = {
       items: (order.items || []).map(item => ({
         productId: productId(item),
@@ -22,7 +28,8 @@
       address: order.address || '',
       deliveryDate: order.deliveryDate || '',
       deliverySlot: order.deliverySlot || '',
-      paymentMethod: order.paymentMethod || 'cod'
+      paymentMethod: order.paymentMethod || 'cod',
+      destination: location ? [location.latitude, location.longitude] : null
     };
     const source = JSON.stringify(normalized);
     let hash = 2166136261;
@@ -34,7 +41,7 @@
   }
 
   function checkoutKey(order) {
-    const storageKey = `lamylenoise-checkout:${fingerprint(order)}`;
+    const storageKey = `sokiva-checkout:${fingerprint(order)}`;
     let key = sessionStorage.getItem(storageKey);
     if (!key) {
       key = typeof crypto.randomUUID === 'function'
@@ -50,6 +57,23 @@
     return String(raw).replace(/^FirebaseError:\s*/i, '');
   }
 
+  async function attachDestination(orderId, location) {
+    if (!location) return;
+    try {
+      await backend.functions.httpsCallable('setDeliveryDestination')({
+        tenantId: 'lamylenoise',
+        orderId,
+        source: location.source || 'customer_map',
+        capturedAt: location.capturedAt || Date.now(),
+        location
+      });
+      sessionStorage.removeItem(`delivery-location-pending:${orderId}`);
+    } catch (error) {
+      sessionStorage.setItem(`delivery-location-pending:${orderId}`, JSON.stringify(location));
+      console.warn('Order created but delivery location must be confirmed from the customer dashboard.', error);
+    }
+  }
+
   MarketplaceData.createOrder = async function createIdempotentOrder(order) {
     const button = document.querySelector('#checkout-form button[type="submit"]');
     const previousHtml = button?.innerHTML;
@@ -60,8 +84,9 @@
     }
 
     const attempt = checkoutKey(order);
+    const location = deliveryLocation();
     try {
-      const callable = window.AfroMarketFirebase.functions.httpsCallable('createOrderDraft');
+      const callable = backend.functions.httpsCallable('createOrderDraft');
       const response = await callable({
         tenantId: order.tenantId || 'lamylenoise',
         idempotencyKey: attempt.key,
@@ -82,6 +107,7 @@
       if (result.deliveryCode) {
         sessionStorage.setItem(`delivery-code:${result.orderId}`, result.deliveryCode);
       }
+      await attachDestination(result.orderId, location);
       sessionStorage.removeItem(attempt.storageKey);
       return result.orderId;
     } catch (error) {
