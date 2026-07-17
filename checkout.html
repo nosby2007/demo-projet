@@ -3,26 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Finaliser ma commande — LAMYLENOISE." />
+  <meta name="description" content="Finaliser ma commande SOKIVA avec point de livraison pour le suivi en temps réel." />
   <meta name="theme-color" content="#FF6B2B" />
-  <meta name="application-name" content="LAMYLENOISE" />
+  <meta name="application-name" content="SOKIVA" />
   <link rel="manifest" href="app.webmanifest" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E" />
-  <title>Commande — LAMYLENOISE</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E" />
+  <title>Commande - SOKIVA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="tracking.css" />
 </head>
 <body data-shell="full" data-page="checkout.html">
-
   <main class="page">
     <section class="page-hero">
       <div class="container">
         <nav class="breadcrumb"><a href="index.html">Accueil</a> › <a href="shop.html">Boutique</a> › <span>Commande</span></nav>
         <h1 class="page-title">Finaliser ma commande</h1>
-        <p class="page-subtitle">Commande recalculée et enregistrée côté serveur. Paiement à la livraison disponible pour le lancement pilote.</p>
+        <p class="page-subtitle">Commande recalculée côté serveur, paiement COD et suivi du livreur en temps réel.</p>
       </div>
     </section>
 
@@ -43,7 +44,7 @@
             </div>
 
             <div class="co-card">
-              <h3 class="co-step"><span class="co-step-num">2</span> Adresse de livraison</h3>
+              <h3 class="co-step"><span class="co-step-num">2</span> Adresse et point de livraison</h3>
               <div class="form-row">
                 <label class="form-field">
                   <span>Émirat</span>
@@ -63,12 +64,18 @@
                   <span>Créneau</span>
                   <select required>
                     <option value="">Sélectionner…</option>
-                    <option>09:00 – 12:00</option>
-                    <option>12:00 – 15:00</option>
-                    <option>15:00 – 18:00</option>
-                    <option>18:00 – 21:00</option>
+                    <option>09:00 – 12:00</option><option>12:00 – 15:00</option>
+                    <option>15:00 – 18:00</option><option>18:00 – 21:00</option>
                   </select>
                 </label>
+              </div>
+              <div class="tracking-panel">
+                <div class="tracking-head">
+                  <div><strong>Point exact pour la carte</strong><p class="tracking-muted">Optionnel, mais nécessaire pour calculer la distance et l’arrivée estimée.</p></div>
+                  <button type="button" class="btn-link" id="checkout-use-location">Utiliser ma position</button>
+                </div>
+                <div id="checkout-location-map" class="checkout-location-map" aria-label="Carte du point de livraison"></div>
+                <p id="checkout-location-status" class="tracking-muted">Touchez la carte ou utilisez votre position. La localisation n’est partagée qu’avec le livreur assigné pendant la course.</p>
               </div>
             </div>
 
@@ -78,14 +85,10 @@
                 <label class="pay-option"><input type="radio" name="pay" value="cod" checked /> <i data-lucide="banknote"></i> Cash à la livraison (pilote actif)</label>
                 <label class="pay-option"><input type="radio" name="pay" value="card" disabled /> <i data-lucide="credit-card"></i> Carte — activation prochaine</label>
                 <label class="pay-option"><input type="radio" name="pay" value="apple" disabled /> <i data-lucide="apple"></i> Apple Pay — activation prochaine</label>
-                <label class="pay-option"><input type="radio" name="pay" value="tabby" disabled /> <i data-lucide="layers"></i> Tabby — activation prochaine</label>
-                <label class="pay-option"><input type="radio" name="pay" value="tamara" disabled /> <i data-lucide="calendar"></i> Tamara — activation prochaine</label>
               </div>
             </div>
 
-            <button type="submit" class="btn-primary co-submit">
-              <i data-lucide="shield-check"></i> Confirmer la commande sécurisée
-            </button>
+            <button type="submit" class="btn-primary co-submit"><i data-lucide="shield-check"></i> Confirmer la commande sécurisée</button>
           </form>
 
           <aside class="co-summary">
@@ -107,10 +110,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-functions-config.js"></script>
   <script src="marketplace.js"></script>
   <script src="saas-runtime.js"></script>
+  <script src="checkout-location-runtime.js"></script>
   <script src="checkout-runtime-v5.js"></script>
   <script src="app.js"></script>
 </body>
