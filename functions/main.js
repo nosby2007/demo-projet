@@ -1,6 +1,3 @@
 'use strict';
 
-module.exports = {
-  ...require('./index'),
-  ...require('./safe-claims')
-};
+module.exports = require('./marketplace-v2');
