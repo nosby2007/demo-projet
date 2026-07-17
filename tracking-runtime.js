@@ -91,6 +91,9 @@
           bounds.push(point);
           if (destinationMarker) destinationMarker.setLatLng(point);
           else destinationMarker = window.L.marker(point).addTo(map).bindPopup('Point de livraison');
+        } else if (destinationMarker) {
+          destinationMarker.remove();
+          destinationMarker = null;
         }
         if (courier) {
           const point = [courier.latitude, courier.longitude];
@@ -99,6 +102,9 @@
           else courierMarker = window.L.circleMarker(point, {
             radius: 10, weight: 4, color: '#ffffff', fillColor: '#ff6b2b', fillOpacity: 1
           }).addTo(map).bindPopup('Livreur SOKIVA');
+        } else if (courierMarker) {
+          courierMarker.remove();
+          courierMarker = null;
         }
         if (line) { line.remove(); line = null; }
         if (courier && destination) {
@@ -160,10 +166,12 @@
     function watch(order) {
       stopSubscriptions();
       currentOrder = order;
+      controller?.update(null);
       subscribe(order.id, tracking => {
         if (tracking?.error) {
           liveChip.textContent = 'Suivi indisponible';
           liveChip.className = 'tracking-live-chip offline';
+          controller?.update(null);
           return;
         }
         renderSteps(stepsList, tracking, order);
