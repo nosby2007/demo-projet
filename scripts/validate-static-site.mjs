@@ -109,7 +109,7 @@ async function validateEsModule(file) {
     const source = await readFile(file, 'utf8');
     if (!source.includes("from 'node:child_process'")) errors.push(`${file} must use the Node child_process module`);
     if (!source.includes('nursehome-7dc3f')) errors.push(`${file} must explicitly block the shared legacy project`);
-    if (!source.includes('lamylenoise-(dev|staging|prod)')) errors.push(`${file} must allow only approved LAMYLENOISE environments`);
+    if (!source.includes('sokiva-(dev|staging|prod)')) errors.push(`${file} must allow only approved SOKIVA environments`);
   } catch (error) {
     errors.push(`Invalid ES module in ${file}: ${error.message}`);
   }
