@@ -7,11 +7,19 @@ const requiredFiles = [
   'index.html',
   'shop.html',
   'checkout.html',
+  'customer.html',
+  'seller.html',
+  'courier.html',
+  'admin.html',
   'app.js',
   'marketplace.js',
+  'saas-runtime.js',
+  'firebase-functions-config.js',
   'style.css',
   'firebase.json',
   'database.rules.json',
+  'functions/package.json',
+  'functions/index.js',
   'app.webmanifest',
   'service-worker.js',
   'health.json',
@@ -19,8 +27,23 @@ const requiredFiles = [
   'sitemap.xml'
 ];
 
-const jsonFiles = ['firebase.json', 'app.webmanifest', 'health.json'];
-const jsFiles = ['app.js', 'marketplace.js', 'firebase-config.js', 'service-worker.js'];
+const jsonFiles = [
+  'firebase.json',
+  'database.rules.json',
+  'functions/package.json',
+  'app.webmanifest',
+  'health.json'
+];
+const jsFiles = [
+  'app.js',
+  'marketplace.js',
+  'saas-runtime.js',
+  'firebase-config.js',
+  'firebase-functions-config.js',
+  'service-worker.js',
+  'functions/index.js'
+];
+const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
 const errors = [];
 
 async function assertReadable(file) {
@@ -56,22 +79,38 @@ async function validateHtmlPages() {
     if (!html.includes('rel="stylesheet" href="style.css"')) errors.push(`${file} is missing style.css`);
     if (!html.includes('rel="manifest" href="app.webmanifest"')) errors.push(`${file} is missing app.webmanifest`);
     if (!html.includes('<script src="app.js"')) errors.push(`${file} is missing app.js`);
+
+    if (securePages.includes(file)) {
+      if (!html.includes('firebase-functions-compat.js')) errors.push(`${file} is missing Firebase Functions SDK`);
+      if (!html.includes('<script src="firebase-functions-config.js"')) errors.push(`${file} is missing functions config`);
+      if (!html.includes('<script src="saas-runtime.js"')) errors.push(`${file} is missing trusted SaaS runtime`);
+    }
   }
 }
 
-async function validateFirebaseHosting() {
+async function validateFirebaseConfig() {
   const firebaseConfig = JSON.parse(await readFile('firebase.json', 'utf8'));
   const hosting = firebaseConfig.hosting;
+  if (!firebaseConfig.functions?.source) errors.push('firebase.json is missing functions.source');
   if (!hosting?.public) errors.push('firebase.json is missing hosting.public');
   if (!hosting?.headers?.length) errors.push('firebase.json is missing hosting headers');
   if (!hosting?.rewrites?.some(rule => rule.source === '/health')) errors.push('firebase.json is missing /health rewrite');
+  if (!hosting?.ignore?.includes('functions/**')) errors.push('Firebase Hosting must exclude functions/**');
+}
+
+async function validateDatabaseRules() {
+  const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
+  for (const path of ['orders', 'customerOrders', 'sellerOrders', 'deliveryJobs']) {
+    if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
+  }
 }
 
 await Promise.all(requiredFiles.map(assertReadable));
 await Promise.all(jsonFiles.map(validateJson));
 await Promise.all(jsFiles.map(validateJavaScript));
 await validateHtmlPages();
-await validateFirebaseHosting();
+await validateFirebaseConfig();
+await validateDatabaseRules();
 
 if (errors.length) {
   console.error('Static build validation failed:');
@@ -79,4 +118,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Firebase Hosting bundle is ready to deploy.');
+console.log('Static build validation passed. Trusted marketplace bundle is ready for emulator testing.');
