@@ -27,6 +27,18 @@
     activeSubscriptions.clear();
   }
 
+  function stopCourierWatch(orderId) {
+    const watchId = courierWatches.get(orderId);
+    if (watchId !== undefined && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+    courierWatches.delete(orderId);
+  }
+
+  function reconcileCourierWatches(activeOrderIds) {
+    courierWatches.forEach((watchId, orderId) => {
+      if (!activeOrderIds.has(orderId)) stopCourierWatch(orderId);
+    });
+  }
+
   function formatTime(value) {
     if (!value) return '—';
     return new Intl.DateTimeFormat('fr-FR', {
@@ -97,8 +109,7 @@
         }
         if (bounds.length === 2) map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
         else if (bounds.length === 1) map.setView(bounds[0], 15);
-      },
-      destroy() { map.remove(); }
+      }
     };
   }
 
@@ -144,7 +155,7 @@
     root.append(panel);
 
     let currentOrder = selected;
-    let controller = mapController(mapElement);
+    const controller = mapController(mapElement);
 
     function watch(order) {
       stopSubscriptions();
@@ -232,20 +243,26 @@
 
   function appendCourierSharing(root, jobs, uid) {
     const active = jobs.filter(job => job.courierUid === uid && job.status === 'in_transit');
+    const activeOrderIds = new Set(active.map(job => job.orderId || job.id));
+    reconcileCourierWatches(activeOrderIds);
     if (!active.length) return;
+
     const section = create('section', 'ops-panel tracking-panel');
+    section.dataset.courierTracking = 'true';
     section.append(create('h2', '', 'Partage GPS pendant la livraison'));
-    section.append(create('p', 'tracking-muted', 'Le client voit uniquement votre position pendant la course. Le partage s’arrête à la livraison.'));
+    section.append(create('p', 'tracking-muted', 'Le client voit uniquement votre position pendant la course. Le GPS est arrêté dès que la course quitte le statut En route.'));
 
     active.forEach(job => {
       const orderId = job.orderId || job.id;
+      const sharing = courierWatches.has(orderId);
       const card = create('article', 'courier-share-card');
       const info = create('div');
-      info.append(create('strong', '', orderId), create('p', 'tracking-muted', 'Partage désactivé'));
+      info.append(create('strong', '', orderId), create('p', 'tracking-muted', sharing ? 'Partage GPS actif' : 'Partage désactivé'));
       const actions = create('div', 'record-actions');
       const start = create('button', 'btn-primary', 'Démarrer le suivi');
       const stop = create('button', 'btn-link danger', 'Arrêter');
-      stop.disabled = true;
+      start.disabled = sharing;
+      stop.disabled = !sharing;
       actions.append(start, stop);
       card.append(info, actions);
       section.append(card);
@@ -256,21 +273,27 @@
           status.textContent = 'GPS indisponible sur cet appareil.';
           return;
         }
+        if (courierWatches.has(orderId)) return;
         start.disabled = true;
         stop.disabled = false;
         status.textContent = 'Connexion au GPS…';
         const watchId = navigator.geolocation.watchPosition(
           position => publishLocation(orderId, position, status),
-          error => { status.textContent = error.code === 1 ? 'Autorisation GPS refusée.' : 'Signal GPS indisponible.'; },
+          error => {
+            status.textContent = error.code === 1 ? 'Autorisation GPS refusée.' : 'Signal GPS indisponible.';
+            if (error.code === 1) {
+              stopCourierWatch(orderId);
+              start.disabled = false;
+              stop.disabled = true;
+            }
+          },
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
         );
         courierWatches.set(orderId, watchId);
       });
 
       stop.addEventListener('click', () => {
-        const watchId = courierWatches.get(orderId);
-        if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
-        courierWatches.delete(orderId);
+        stopCourierWatch(orderId);
         start.disabled = false;
         stop.disabled = true;
         status.textContent = 'Partage suspendu.';
@@ -301,7 +324,6 @@
 
   window.addEventListener('pagehide', () => {
     stopSubscriptions();
-    courierWatches.forEach(watchId => navigator.geolocation.clearWatch(watchId));
-    courierWatches.clear();
+    [...courierWatches.keys()].forEach(stopCourierWatch);
   });
 })();
