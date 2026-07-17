@@ -124,8 +124,13 @@ async function validateFirebaseConfig() {
 
 async function validateDatabaseRules() {
   const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
-  for (const path of ['orders', 'customerOrders', 'sellerOrders', 'deliveryJobs']) {
+  for (const path of ['orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
     if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
+  }
+  if (rules.products?.['.write'] !== false) errors.push('products must reject all direct client writes');
+  const productReadRule = String(rules.products?.['.read'] || '');
+  if (!productReadRule.includes("query.orderByChild == 'status'") || !productReadRule.includes("query.equalTo == 'active'")) {
+    errors.push('products must expose only active-query catalogue reads');
   }
 }
 
@@ -166,4 +171,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Inventory, review, atomic courier assignment and OTP proof are present.');
+console.log('Static build validation passed. Inventory, moderation, atomic courier assignment, protected earnings and OTP proof are present.');
