@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
 
 const errors = [];
 const read = path => readFile(path, 'utf8');
@@ -8,6 +9,7 @@ const [
   main,
   rulesSource,
   runtime,
+  auditStyles,
   admin,
   serviceWorker,
   functionsPackage
@@ -16,12 +18,19 @@ const [
   read('functions/main.js'),
   read('database.rules.json'),
   read('audit-runtime.js'),
+  read('audit.css'),
   read('admin.html'),
   read('service-worker.js'),
   read('functions/package.json')
 ]);
 
 const rules = JSON.parse(rulesSource).rules || {};
+
+try {
+  new vm.Script(runtime, { filename: 'audit-runtime.js' });
+} catch (error) {
+  errors.push(`Invalid JavaScript in audit-runtime.js: ${error.message}`);
+}
 
 for (const path of [
   '/orders/{orderId}',
@@ -48,6 +57,12 @@ if (!audit.includes("source: 'rtdb_trigger'")) {
 }
 if (!audit.includes("region: AUDIT_REGION")) {
   errors.push('Realtime Database audit triggers must use the database-compatible region.');
+}
+if (!audit.includes("event.authType === 'app_user'")) {
+  errors.push('Audit actor attribution must distinguish end-user writes from backend service writes.');
+}
+if (!audit.includes('Number.isInteger(requestedLimit)')) {
+  errors.push('Audit list limits must reject malformed numeric input safely.');
 }
 
 for (const exportName of [
@@ -77,10 +92,16 @@ if (!runtime.includes("callable('listAuditEvents')")) {
 if (!runtime.includes('document.createElement')) {
   errors.push('Admin audit console must render records through DOM APIs.');
 }
+if (!runtime.includes('textContent = JSON.stringify')) {
+  errors.push('Audit details must be inserted as text rather than executable HTML.');
+}
+if (!auditStyles.includes('.audit-json')) {
+  errors.push('Dedicated audit detail styles are missing.');
+}
 if (!admin.includes('<script src="audit-runtime.js"')) {
   errors.push('admin.html must load audit-runtime.js.');
 }
-if (!admin.includes('audit.css')) {
+if (!admin.includes('<link rel="stylesheet" href="audit.css"')) {
   errors.push('admin.html must load the dedicated audit styles.');
 }
 if (!serviceWorker.includes("'/audit-runtime.js'")) {
