@@ -33,3 +33,12 @@ test('checkout reservation recovery records are server-only', async () => {
     expiresAt: Date.now() + 60000
   }));
 });
+
+test('checkout idempotency locks and committed results are server-only', async () => {
+  const db = testEnv.authenticatedContext('customer-1').database();
+  await assertFails(get(ref(db, 'checkoutIdempotency/customer-1/key-hash')));
+  await assertFails(set(ref(db, 'checkoutIdempotency/customer-1/key-hash'), {
+    status: 'committed',
+    orderId: 'fake-order'
+  }));
+});
