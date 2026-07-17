@@ -1,6 +1,6 @@
 {
   "name": "lamylenoise-functions",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Trusted backend for LAMYLENOISE marketplace and employment workflows.",
   "main": "main.js",
@@ -8,10 +8,17 @@
     "node": "20"
   },
   "scripts": {
-    "test": "node --check index.js && node --check safe-claims.js && node --check main.js"
+    "test:syntax": "node --check commerce.js && node --check marketplace-v2.js && node --check index.js && node --check safe-claims.js && node --check main.js",
+    "test:unit": "node --test test/commerce.test.js",
+    "test:rules": "node --test test/database.rules.test.js",
+    "test": "npm run test:syntax && npm run test:unit"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
     "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "latest",
+    "firebase": "latest"
   }
 }
