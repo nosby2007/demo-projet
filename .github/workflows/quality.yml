@@ -1,4 +1,4 @@
-name: Marketplace quality gate
+name: Sokiva marketplace quality gate
 
 on:
   pull_request:
@@ -43,4 +43,4 @@ jobs:
         run: npm install --ignore-scripts
 
       - name: Test Realtime Database rules in emulator
-        run: npx firebase emulators:exec --project lamylenoise-rules-test --only database "npm --prefix functions run test:rules"
+        run: npx firebase emulators:exec --project sokiva-rules-test --only database "npm --prefix functions run test:rules"
