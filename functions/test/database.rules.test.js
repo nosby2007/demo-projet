@@ -8,7 +8,15 @@ const {
   assertFails,
   assertSucceeds
 } = require('@firebase/rules-unit-testing');
-const { ref, set, update } = require('firebase/database');
+const {
+  ref,
+  set,
+  update,
+  get,
+  query,
+  orderByChild,
+  equalTo
+} = require('firebase/database');
 
 let testEnv;
 
@@ -44,6 +52,22 @@ beforeEach(async () => {
       status: 'active',
       tenantId: 'lamylenoise'
     });
+    await set(ref(db, 'products/product-active'), {
+      name: 'Bissap actif',
+      price: 20,
+      category: 'boissons',
+      status: 'active',
+      sellerUid: 'seller-1',
+      tenantId: 'lamylenoise'
+    });
+    await set(ref(db, 'products/product-pending'), {
+      name: 'Produit en attente',
+      price: 30,
+      category: 'epicerie',
+      status: 'pending_review',
+      sellerUid: 'seller-1',
+      tenantId: 'lamylenoise'
+    });
   });
 });
 
@@ -68,6 +92,35 @@ test('seller cannot publish or modify products directly', async () => {
   }));
 });
 
+test('admin also uses the trusted backend for product publication', async () => {
+  const db = testEnv.authenticatedContext('admin-1').database();
+  await assertFails(set(ref(db, 'products/admin-direct-product'), {
+    name: 'Publication directe',
+    price: 20,
+    category: 'boissons',
+    status: 'active',
+    sellerUid: 'catalog',
+    tenantId: 'lamylenoise'
+  }));
+});
+
+test('public catalogue query can read only active products', async () => {
+  const db = testEnv.unauthenticatedContext().database();
+  const activeQuery = query(ref(db, 'products'), orderByChild('status'), equalTo('active'));
+  const snapshot = await assertSucceeds(get(activeQuery));
+  const values = snapshot.val();
+  if (!values?.['product-active'] || values?.['product-pending']) {
+    throw new Error('Active product query returned an unexpected catalogue result.');
+  }
+});
+
+test('public cannot read the unfiltered product collection or pending submissions', async () => {
+  const db = testEnv.unauthenticatedContext().database();
+  await assertFails(get(ref(db, 'products')));
+  const pendingQuery = query(ref(db, 'products'), orderByChild('status'), equalTo('pending_review'));
+  await assertFails(get(pendingQuery));
+});
+
 test('authenticated user can submit an employment application linked to their account', async () => {
   const db = testEnv.authenticatedContext('customer-1').database();
   await assertSucceeds(set(ref(db, 'roleRequests/request-1'), {
@@ -89,14 +142,11 @@ test('customer cannot promote their own profile to seller', async () => {
   }));
 });
 
-test('admin can activate a reviewed product record', async () => {
-  const db = testEnv.authenticatedContext('admin-1').database();
-  await assertSucceeds(set(ref(db, 'products/product-1'), {
-    name: 'Bissap',
-    price: 20,
-    category: 'boissons',
-    status: 'active',
-    sellerUid: 'seller-1',
-    tenantId: 'lamylenoise'
+test('earnings records are inaccessible to browser clients', async () => {
+  const db = testEnv.authenticatedContext('seller-1').database();
+  await assertFails(get(ref(db, 'earnings/lamylenoise/sellers/seller-1')));
+  await assertFails(set(ref(db, 'earnings/lamylenoise/sellers/seller-1/fake'), {
+    amount: 999999,
+    status: 'eligible'
   }));
 });
