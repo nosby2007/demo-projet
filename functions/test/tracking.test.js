@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const {
   haversineMeters,
   validateUaePoint,
-  routeEstimate
+  routeEstimate,
+  courierSafeJob
 } = require('../tracking');
 
 test('haversine distance is zero for the same point', () => {
@@ -38,4 +39,19 @@ test('UAE point validation rounds accepted coordinates', () => {
     longitude: 54.37731,
     accuracyMeters: 12
   });
+});
+
+test('courier sees customer contact only during their active transit', () => {
+  const active = {
+    orderId: 'order-1', courierUid: 'courier-1', status: 'in_transit',
+    customerName: 'Client', address: 'Private address', phone: '+971500000000', courierPayout: 10
+  };
+  assert.equal(courierSafeJob(active, 'courier-1').address, 'Private address');
+
+  const delivered = courierSafeJob({ ...active, status: 'delivered' }, 'courier-1');
+  assert.equal(delivered.address, undefined);
+  assert.equal(delivered.phone, undefined);
+  assert.equal(delivered.customerName, undefined);
+  assert.equal(delivered.courierPayout, 10);
+  assert.equal(delivered.status, 'delivered');
 });
