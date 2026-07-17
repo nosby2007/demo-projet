@@ -35,6 +35,21 @@ function allocateSellerPayout(groups, sellerPoolCents) {
   });
 }
 
+function aggregateRequestedItems(items) {
+  const totals = new Map();
+  for (const item of items || []) {
+    const productId = String(item?.productId || '').trim();
+    const quantity = Number.parseInt(item?.quantity, 10);
+    if (!productId || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+      throw new TypeError('Invalid product request');
+    }
+    const aggregated = Number(totals.get(productId) || 0) + quantity;
+    if (aggregated > 99) throw new TypeError('Aggregated quantity exceeds limit');
+    totals.set(productId, aggregated);
+  }
+  return [...totals.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+}
+
 function allSellerLegsReady(order) {
   const statuses = Object.values(order?.sellerStatuses || {});
   return statuses.length > 0 && statuses.every(status => status === 'ready_for_pickup');
@@ -52,6 +67,29 @@ function isClaimableDelivery(order, job, tenantId) {
   );
 }
 
+function isAdminTransitionAllowed(currentStatus, nextStatus, sellerLegsReady) {
+  if (['delivered', 'cancelled', 'refunded'].includes(currentStatus)) return false;
+  if (nextStatus === 'cancelled') {
+    return ['confirmed', 'preparing', 'ready_for_pickup'].includes(currentStatus);
+  }
+  if (nextStatus === 'ready_for_pickup') {
+    return ['confirmed', 'preparing'].includes(currentStatus) && sellerLegsReady === true;
+  }
+  return false;
+}
+
+function deliveryOtpState(order, now, maxAttempts = 5) {
+  const attempts = Number(order?.deliveryOtpAttempts || 0);
+  const expiresAt = Number(order?.deliveryCodeExpiresAt || 0);
+  if (order?.deliveryOtpLockedAt || attempts >= maxAttempts) {
+    return { allowed: false, reason: 'locked', attempts };
+  }
+  if (!expiresAt || Number(now) > expiresAt) {
+    return { allowed: false, reason: 'expired', attempts };
+  }
+  return { allowed: true, reason: null, attempts, remaining: maxAttempts - attempts };
+}
+
 function hashDeliveryCode(code) {
   return createHash('sha256').update(String(code || '')).digest('hex');
 }
@@ -61,7 +99,10 @@ module.exports = {
   fromCents,
   calculatePayout,
   allocateSellerPayout,
+  aggregateRequestedItems,
   allSellerLegsReady,
   isClaimableDelivery,
+  isAdminTransitionAllowed,
+  deliveryOtpState,
   hashDeliveryCode
 };
