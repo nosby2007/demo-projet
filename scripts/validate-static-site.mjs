@@ -21,7 +21,7 @@ const requiredFiles = [
   'functions/package.json',
   'functions/main.js',
   'functions/index.js',
-  'functions/marketplace-v2.js',
+  'functions/marketplace-v3.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js',
@@ -51,6 +51,7 @@ const jsFiles = [
   'functions/index.js',
   'functions/safe-claims.js',
   'functions/marketplace-v2.js',
+  'functions/marketplace-v3.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js'
@@ -132,10 +133,14 @@ async function validateDatabaseRules() {
   if (!productReadRule.includes("query.orderByChild == 'status'") || !productReadRule.includes("query.equalTo == 'active'")) {
     errors.push('products must expose only active-query catalogue reads');
   }
+  const profileWriteRule = String(rules.profiles?.['$uid']?.['.write'] || '');
+  if (!profileWriteRule.includes("newData.child('tenantId').val() == 'lamylenoise'")) {
+    errors.push('new customer profiles must be bound to the pilot tenant');
+  }
 }
 
 async function validateEmploymentBackend() {
-  const backend = await readFile('functions/marketplace-v2.js', 'utf8');
+  const backend = await readFile('functions/marketplace-v3.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const runtime = await readFile('saas-runtime.js', 'utf8');
   for (const functionName of [
@@ -147,7 +152,11 @@ async function validateEmploymentBackend() {
   ]) {
     if (!backend.includes(`exports.${functionName}`)) errors.push(`Backend is missing ${functionName}`);
   }
+  if (!backend.includes('aggregateRequestedItems')) errors.push('Checkout must aggregate duplicate product lines');
   if (!backend.includes('isClaimableDelivery(order, job, tenantId)')) errors.push('Courier claim must use the shared atomic claim invariant');
+  if (!backend.includes('deliveryOtpState(order, now, MAX_OTP_ATTEMPTS)')) errors.push('Delivery OTP must enforce expiry and attempt limits');
+  if (!backend.includes('isAdminTransitionAllowed')) errors.push('Admin order changes must use the terminal transition graph');
+  if (!backend.includes("sellerUid: catalogProduct ? 'catalog' : uid")) errors.push('Admin-created catalogue products must use the catalog seller identity');
   if (!commerce.includes("order.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready order');
   if (!commerce.includes("job.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready delivery job');
   if (!backend.includes('deliveryCodeHash')) errors.push('Backend is missing OTP delivery proof');
@@ -171,4 +180,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Inventory, moderation, atomic courier assignment, protected earnings and OTP proof are present.');
+console.log('Static build validation passed. Duplicate stock, tenant binding, moderated products, atomic delivery, bounded OTP and terminal transitions are protected.');
