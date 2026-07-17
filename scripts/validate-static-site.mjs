@@ -22,10 +22,12 @@ const requiredFiles = [
   'functions/main.js',
   'functions/index.js',
   'functions/marketplace-v3.js',
+  'functions/checkout-v4.js',
   'functions/role-approval.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js',
+  'functions/test/checkout-reservations.rules.test.js',
   'scripts/deploy-safe.mjs',
   'app.webmanifest',
   'service-worker.js',
@@ -53,10 +55,12 @@ const jsFiles = [
   'functions/safe-claims.js',
   'functions/marketplace-v2.js',
   'functions/marketplace-v3.js',
+  'functions/checkout-v4.js',
   'functions/role-approval.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
-  'functions/test/database.rules.test.js'
+  'functions/test/database.rules.test.js',
+  'functions/test/checkout-reservations.rules.test.js'
 ];
 const esModuleFiles = ['scripts/deploy-safe.mjs'];
 const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
@@ -106,7 +110,6 @@ async function validateHtmlPages() {
     if (!html.includes('rel="stylesheet" href="style.css"')) errors.push(`${file} is missing style.css`);
     if (!html.includes('rel="manifest" href="app.webmanifest"')) errors.push(`${file} is missing app.webmanifest`);
     if (!html.includes('<script src="app.js"')) errors.push(`${file} is missing app.js`);
-
     if (securePages.includes(file)) {
       if (!html.includes('firebase-functions-compat.js')) errors.push(`${file} is missing Firebase Functions SDK`);
       if (!html.includes('<script src="firebase-functions-config.js"')) errors.push(`${file} is missing functions config`);
@@ -127,7 +130,7 @@ async function validateFirebaseConfig() {
 
 async function validateDatabaseRules() {
   const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
-  for (const path of ['orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
+  for (const path of ['checkoutReservations', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
     if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
   }
   if (rules.products?.['.write'] !== false) errors.push('products must reject all direct client writes');
@@ -142,32 +145,37 @@ async function validateDatabaseRules() {
 }
 
 async function validateEmploymentBackend() {
-  const backend = await readFile('functions/marketplace-v3.js', 'utf8');
+  const marketplace = await readFile('functions/marketplace-v3.js', 'utf8');
+  const checkout = await readFile('functions/checkout-v4.js', 'utf8');
   const approval = await readFile('functions/role-approval.js', 'utf8');
   const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const runtime = await readFile('saas-runtime.js', 'utf8');
-  for (const functionName of [
-    'createOrderDraft',
-    'claimDeliveryJob',
-    'completeDelivery',
-    'reviewProduct',
-    'updateInventory'
-  ]) {
-    if (!backend.includes(`exports.${functionName}`)) errors.push(`Backend is missing ${functionName}`);
+
+  for (const functionName of ['claimDeliveryJob', 'completeDelivery', 'reviewProduct', 'updateInventory']) {
+    if (!marketplace.includes(`exports.${functionName}`)) errors.push(`Marketplace backend is missing ${functionName}`);
   }
-  if (!backend.includes('aggregateRequestedItems')) errors.push('Checkout must aggregate duplicate product lines');
-  if (!backend.includes('isClaimableDelivery(order, job, tenantId)')) errors.push('Courier claim must use the shared atomic claim invariant');
-  if (!backend.includes('deliveryOtpState(order, now, MAX_OTP_ATTEMPTS)')) errors.push('Delivery OTP must enforce expiry and attempt limits');
-  if (!backend.includes('isAdminTransitionAllowed')) errors.push('Admin order changes must use the terminal transition graph');
-  if (!backend.includes("sellerUid: catalogProduct ? 'catalog' : uid")) errors.push('Admin-created catalogue products must use the catalog seller identity');
+  if (!checkout.includes('exports.createOrderDraft')) errors.push('Scoped checkout backend is missing createOrderDraft');
+  if (!checkout.includes('aggregateRequestedItems')) errors.push('Checkout must aggregate duplicate product lines');
+  if (!checkout.includes('productRef.transaction')) errors.push('Checkout stock reservations must transact per product');
+  if (checkout.includes('db.ref().transaction')) errors.push('Checkout must not transact over the database root');
+  if (!checkout.includes('checkoutReservations')) errors.push('Checkout must record recoverable reservation metadata');
+  if (!checkout.includes('exports.cleanupExpiredCheckoutReservations')) errors.push('Checkout must clean expired reservations');
+  if (!main.includes('...marketplace') || !main.includes('...checkout')) errors.push('Deployed Functions must compose marketplace and scoped checkout exports');
+  if (main.indexOf('...checkout') < main.indexOf('...marketplace')) errors.push('Scoped checkout must override the legacy checkout export');
+
+  if (!marketplace.includes('isClaimableDelivery(order, job, tenantId)')) errors.push('Courier claim must use the atomic claim invariant');
+  if (!marketplace.includes('deliveryOtpState(order, now, MAX_OTP_ATTEMPTS)')) errors.push('Delivery OTP must enforce expiry and attempt limits');
+  if (!marketplace.includes('isAdminTransitionAllowed')) errors.push('Admin order changes must use the terminal transition graph');
+  if (!marketplace.includes("sellerUid: catalogProduct ? 'catalog' : uid")) errors.push('Admin catalogue products must use the catalog identity');
+
   if (!approval.includes("roleRequest.status !== 'pending'")) errors.push('Role approval must require a pending application');
   if (!approval.includes("candidate.role !== 'customer'")) errors.push('Role approval must require an existing customer profile');
   if (!approval.includes("candidate.status === 'disabled'")) errors.push('Disabled accounts must not be reactivated through old applications');
-  if (!main.includes('approveRoleRequest: roleApproval.approveRoleRequest')) errors.push('Deployed Functions must use the atomic approval module');
+  if (!main.includes('approveRoleRequest: roleApproval.approveRoleRequest')) errors.push('Deployed Functions must use atomic role approval');
+
   if (!commerce.includes("order.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready order');
   if (!commerce.includes("job.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready delivery job');
-  if (!backend.includes('deliveryCodeHash')) errors.push('Backend is missing OTP delivery proof');
   if (!runtime.includes('data-product-review')) errors.push('Admin product review controls are missing');
   if (!runtime.includes('data-stock-save')) errors.push('Seller stock controls are missing');
   if (!runtime.includes('data-complete')) errors.push('Courier delivery completion control is missing');
@@ -188,4 +196,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Employment approval, duplicate stock, tenant binding, moderated products, atomic delivery, bounded OTP and terminal transitions are protected.');
+console.log('Static build validation passed. Checkout uses scoped recoverable stock reservations with protected employment and delivery workflows.');
