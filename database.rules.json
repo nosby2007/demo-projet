@@ -25,10 +25,11 @@
       }
     },
     "products": {
-      ".read": true,
+      ".read": "query.orderByChild == 'status' && query.equalTo == 'active'",
+      ".write": false,
       ".indexOn": ["status", "sellerUid", "tenantId"],
       "$productId": {
-        ".write": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
+        ".write": false,
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
       }
     },
@@ -49,6 +50,10 @@
       ".read": false,
       ".write": false,
       ".indexOn": ["tenantId", "courierUid", "status"]
+    },
+    "earnings": {
+      ".read": false,
+      ".write": false
     }
   }
 }
