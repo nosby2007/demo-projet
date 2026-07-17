@@ -62,6 +62,8 @@ for (const invariant of [
   'previousDistance > NEARBY_DISTANCE_KM',
   "profile.status !== 'disabled'",
   "uid !== 'catalog'",
+  'db.ref(`profiles/${recipientUid}`).get()',
+  'isActiveRoleProfile(recipientProfile, tenantId, role)',
   'db.ref(`userNotifications/${recipientUid}/${payload.id}`)',
   'db.ref(`userNotifications/${uid}/${id}`).transaction'
 ]) {
@@ -128,4 +130,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Notification validation passed. Inboxes are private, disabled accounts are blocked, browser writes are denied, alerts require explicit consent and deep links stay same-origin.');
+console.log('Notification validation passed. Recipients are revalidated, inboxes are private, disabled accounts are blocked, browser writes are denied and alerts require explicit consent.');
