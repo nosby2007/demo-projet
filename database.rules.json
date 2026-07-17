@@ -80,7 +80,7 @@
     },
     "userNotifications": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
+        ".read": "auth != null && auth.uid == $uid && root.child('profiles').child(auth.uid).child('status').val() != 'disabled'",
         ".write": false,
         ".indexOn": ["createdAt", "readAt"]
       }
