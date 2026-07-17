@@ -54,6 +54,8 @@ for (const exportName of ['syncOrderTracking', 'setDeliveryDestination', 'update
   if (!tracking.includes(`exports.${exportName}`)) errors.push(`Tracking backend is missing ${exportName}.`);
   if (!main.includes(`${exportName}: tracking.${exportName}`)) errors.push(`Functions composition is missing ${exportName}.`);
 }
+if (!tracking.includes('exports.listOrdersForRole')) errors.push('Tracking backend must wrap role order listing for courier privacy.');
+if (!main.includes('listOrdersForRole: tracking.listOrdersForRole')) errors.push('Deployed order listing must use the courier-safe wrapper.');
 
 for (const invariant of [
   "order.status === 'in_transit'",
@@ -67,7 +69,9 @@ for (const invariant of [
   "order.status === 'in_transit' || TERMINAL_STATUSES.has(order.status)",
   'TERMINAL_STATUSES.has(status)',
   'delete tracking.courierLocation',
-  'clearLiveCourierLocation(trackingRef)'
+  'clearLiveCourierLocation(trackingRef)',
+  'courierSafeJob(job, uid)',
+  'const { address, phone, customerName, deliveryLocation, ...safe }'
 ]) {
   if (!tracking.includes(invariant)) errors.push(`Tracking security invariant missing: ${invariant}`);
 }
@@ -121,4 +125,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Live tracking validation passed. GPS publishing is atomic, assigned-courier access expires after transit, terminal locations are cleared and map assets are pinned.');
+console.log('Live tracking validation passed. GPS publishing is atomic, courier access and PII expire after transit, terminal locations are cleared and map assets are pinned.');
