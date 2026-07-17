@@ -47,7 +47,6 @@ const jsFiles = [
   'firebase-config.js',
   'firebase-functions-config.js',
   'service-worker.js',
-  'scripts/deploy-safe.mjs',
   'functions/main.js',
   'functions/index.js',
   'functions/safe-claims.js',
@@ -56,6 +55,7 @@ const jsFiles = [
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js'
 ];
+const esModuleFiles = ['scripts/deploy-safe.mjs'];
 const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
 const errors = [];
 
@@ -81,6 +81,17 @@ async function validateJavaScript(file) {
     new vm.Script(source, { filename: file });
   } catch (error) {
     errors.push(`Invalid JavaScript in ${file}: ${error.message}`);
+  }
+}
+
+async function validateEsModule(file) {
+  try {
+    const source = await readFile(file, 'utf8');
+    if (!source.includes("from 'node:child_process'")) errors.push(`${file} must use the Node child_process module`);
+    if (!source.includes('nursehome-7dc3f')) errors.push(`${file} must explicitly block the shared legacy project`);
+    if (!source.includes('lamylenoise-(dev|staging|prod)')) errors.push(`${file} must allow only approved LAMYLENOISE environments`);
+  } catch (error) {
+    errors.push(`Invalid ES module in ${file}: ${error.message}`);
   }
 }
 
@@ -143,6 +154,7 @@ async function validateEmploymentBackend() {
 await Promise.all(requiredFiles.map(assertReadable));
 await Promise.all(jsonFiles.map(validateJson));
 await Promise.all(jsFiles.map(validateJavaScript));
+await Promise.all(esModuleFiles.map(validateEsModule));
 await validateHtmlPages();
 await validateFirebaseConfig();
 await validateDatabaseRules();
