@@ -44,9 +44,13 @@ jobs:
         working-directory: functions
         run: npm install --ignore-scripts
 
-      - name: Validate functions and commerce invariants
+      - name: Validate Cloud Functions syntax
         working-directory: functions
-        run: npm test
+        run: npm run test:syntax
+
+      - name: Test commerce, audit and tracking units
+        working-directory: functions
+        run: npm run test:unit
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
