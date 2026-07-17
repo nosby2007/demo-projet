@@ -13,7 +13,8 @@ const {
   buildNotification,
   customerStatusSpec,
   shouldNotifyNearby,
-  sellerUids
+  sellerUids,
+  isActiveRoleProfile
 } = require('../notifications');
 
 test('notification IDs are deterministic and safe for Realtime Database keys', () => {
@@ -71,6 +72,13 @@ test('nearby alert fires only when a live transit crosses within one kilometre',
     { status: 'delivered', live: false, distanceRemainingKm: 0.5 }
   ), false);
   assert.equal(shouldNotifyNearby(null, { status: 'in_transit', live: true, distanceRemainingKm: null }), false);
+});
+
+test('role recipients must match tenant, role and active status', () => {
+  assert.equal(isActiveRoleProfile({ tenantId: 'tenant-a', role: 'courier', status: 'active' }, 'tenant-a', 'courier'), true);
+  assert.equal(isActiveRoleProfile({ tenantId: 'tenant-b', role: 'courier', status: 'active' }, 'tenant-a', 'courier'), false);
+  assert.equal(isActiveRoleProfile({ tenantId: 'tenant-a', role: 'seller', status: 'active' }, 'tenant-a', 'courier'), false);
+  assert.equal(isActiveRoleProfile({ tenantId: 'tenant-a', role: 'courier', status: 'disabled' }, 'tenant-a', 'courier'), false);
 });
 
 test('seller recipients exclude the internal catalogue account', () => {
