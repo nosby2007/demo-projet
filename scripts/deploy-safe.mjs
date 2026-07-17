@@ -1,20 +1,25 @@
 import { spawnSync } from 'node:child_process';
 
 const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
-const blockedProjects = new Set(['nursehome-7dc3f']);
+const blockedProjects = new Set([
+  'nursehome-7dc3f',
+  'lamylenoise-dev',
+  'lamylenoise-staging',
+  'lamylenoise-prod'
+]);
 
 if (!projectId) {
-  console.error('FIREBASE_PROJECT_ID is required. Use a dedicated lamylenoise-dev, lamylenoise-staging or lamylenoise-prod project.');
+  console.error('FIREBASE_PROJECT_ID is required. Use sokiva-dev, sokiva-staging or sokiva-prod.');
   process.exit(1);
 }
 
 if (blockedProjects.has(projectId)) {
-  console.error(`Deployment blocked: ${projectId} is a shared legacy project and must not host LAMYLENOISE production data.`);
+  console.error(`Deployment blocked: ${projectId} is a legacy or unrelated project and must not host SOKIVA data.`);
   process.exit(1);
 }
 
-if (!/^lamylenoise-(dev|staging|prod)$/.test(projectId)) {
-  console.error(`Deployment blocked: ${projectId} is not an approved LAMYLENOISE environment.`);
+if (!/^sokiva-(dev|staging|prod)$/.test(projectId)) {
+  console.error(`Deployment blocked: ${projectId} is not an approved SOKIVA environment.`);
   process.exit(1);
 }
 
@@ -28,4 +33,5 @@ if (result.error) {
   console.error(result.error.message);
   process.exit(1);
 }
+
 process.exit(result.status ?? 1);
