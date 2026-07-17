@@ -4,6 +4,7 @@ const { getApps, initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 const { onValueWritten } = require('firebase-functions/v2/database');
+const marketplace = require('./marketplace-v3');
 
 if (!getApps().length) initializeApp();
 const db = getDatabase();
@@ -126,6 +127,12 @@ function isActiveAssignment(order, job, uid, tenantId) {
   );
 }
 
+function courierSafeJob(job, uid) {
+  if (job?.courierUid === uid && job?.status === 'in_transit') return job;
+  const { address, phone, customerName, deliveryLocation, ...safe } = job || {};
+  return safe;
+}
+
 async function clearLiveCourierLocation(trackingRef, updatedAt = Date.now()) {
   await trackingRef.update({
     courierLocation: null,
@@ -135,6 +142,15 @@ async function clearLiveCourierLocation(trackingRef, updatedAt = Date.now()) {
     updatedAt
   });
 }
+
+exports.listOrdersForRole = onCall({ region: 'me-central1', maxInstances: 20 }, async request => {
+  const { uid, profile } = await requireProfile(request, ['admin', 'customer', 'seller', 'courier']);
+  const response = await marketplace.listOrdersForRole.run(request);
+  if (profile.role !== 'courier') return response;
+  return {
+    orders: (response?.orders || []).map(job => courierSafeJob(job, uid))
+  };
+});
 
 exports.syncOrderTracking = onValueWritten({
   ref: '/orders/{orderId}',
@@ -329,3 +345,4 @@ exports.updateCourierLocation = onCall({ region: 'me-central1', maxInstances: 50
 exports.haversineMeters = haversineMeters;
 exports.validateUaePoint = validateUaePoint;
 exports.routeEstimate = routeEstimate;
+exports.courierSafeJob = courierSafeJob;
