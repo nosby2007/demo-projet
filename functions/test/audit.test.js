@@ -1,5 +1,11 @@
 'use strict';
 
+process.env.GCLOUD_PROJECT = 'sokiva-unit-test';
+process.env.FIREBASE_CONFIG = JSON.stringify({
+  projectId: 'sokiva-unit-test',
+  databaseURL: 'https://sokiva-unit-test-default-rtdb.firebaseio.com'
+});
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { sanitizeAuditValue } = require('../audit');
