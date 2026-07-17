@@ -22,14 +22,13 @@
       <div class="container">
         <nav class="breadcrumb"><a href="index.html">Accueil</a> › <a href="shop.html">Boutique</a> › <span>Commande</span></nav>
         <h1 class="page-title">Finaliser ma commande</h1>
-        <p class="page-subtitle">Livraison sécurisée dans tout l'UAE — Cash, Tabby, Tamara, Apple Pay acceptés.</p>
+        <p class="page-subtitle">Commande recalculée et enregistrée côté serveur. Paiement à la livraison disponible pour le lancement pilote.</p>
       </div>
     </section>
 
     <section class="checkout-section">
       <div class="container" id="checkout-root">
         <div class="co-grid">
-
           <form class="checkout-form" id="checkout-form" novalidate>
             <div class="co-card">
               <h3 class="co-step"><span class="co-step-num">1</span> Informations de contact</h3>
@@ -76,16 +75,16 @@
             <div class="co-card">
               <h3 class="co-step"><span class="co-step-num">3</span> Mode de paiement</h3>
               <div class="pay-options">
-                <label class="pay-option"><input type="radio" name="pay" value="card" checked /> <i data-lucide="credit-card"></i> Carte (Visa / MasterCard)</label>
-                <label class="pay-option"><input type="radio" name="pay" value="apple" /> <i data-lucide="apple"></i> Apple Pay</label>
-                <label class="pay-option"><input type="radio" name="pay" value="tabby" /> <i data-lucide="layers"></i> Tabby — 4× sans frais</label>
-                <label class="pay-option"><input type="radio" name="pay" value="tamara" /> <i data-lucide="calendar"></i> Tamara</label>
-                <label class="pay-option"><input type="radio" name="pay" value="cod" /> <i data-lucide="banknote"></i> Cash à la livraison (COD)</label>
+                <label class="pay-option"><input type="radio" name="pay" value="cod" checked /> <i data-lucide="banknote"></i> Cash à la livraison (pilote actif)</label>
+                <label class="pay-option"><input type="radio" name="pay" value="card" disabled /> <i data-lucide="credit-card"></i> Carte — activation prochaine</label>
+                <label class="pay-option"><input type="radio" name="pay" value="apple" disabled /> <i data-lucide="apple"></i> Apple Pay — activation prochaine</label>
+                <label class="pay-option"><input type="radio" name="pay" value="tabby" disabled /> <i data-lucide="layers"></i> Tabby — activation prochaine</label>
+                <label class="pay-option"><input type="radio" name="pay" value="tamara" disabled /> <i data-lucide="calendar"></i> Tamara — activation prochaine</label>
               </div>
             </div>
 
             <button type="submit" class="btn-primary co-submit">
-              <i data-lucide="check-circle"></i> Confirmer & Payer
+              <i data-lucide="shield-check"></i> Confirmer la commande sécurisée
             </button>
           </form>
 
@@ -93,13 +92,12 @@
             <h3 class="co-summary-title">Récapitulatif</h3>
             <div class="co-items" id="co-items"></div>
             <div class="co-totals">
-              <div class="co-line"><span>Sous-total</span><strong id="co-subtotal">0 AED</strong></div>
-              <div class="co-line"><span>Livraison</span><strong id="co-shipping">—</strong></div>
-              <div class="co-line co-total-line"><span>Total</span><strong id="co-total">0 AED</strong></div>
+              <div class="co-line"><span>Sous-total estimé</span><strong id="co-subtotal">0 AED</strong></div>
+              <div class="co-line"><span>Livraison estimée</span><strong id="co-shipping">—</strong></div>
+              <div class="co-line co-total-line"><span>Total vérifié par le serveur</span><strong id="co-total">0 AED</strong></div>
             </div>
-            <p class="co-note"><i data-lucide="shield-check"></i> Paiement 100% sécurisé. Vos données sont protégées.</p>
+            <p class="co-note"><i data-lucide="shield-check"></i> Les prix et commissions sont recalculés par le serveur avant création de la commande.</p>
           </aside>
-
         </div>
       </div>
     </section>
@@ -108,8 +106,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="firebase-functions-config.js"></script>
   <script src="marketplace.js"></script>
+  <script src="saas-runtime.js"></script>
+  <script src="checkout-runtime-v5.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

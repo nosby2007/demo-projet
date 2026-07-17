@@ -2,35 +2,73 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "tenants": {
+      "$tenantId": {
+        "public": {
+          ".read": true,
+          ".write": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'"
+        }
+      }
+    },
     "roleRequests": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
       "$requestId": {
-        ".write": "(!data.exists() && newData.child('status').val() == 'pending') || (auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
-        ".validate": "newData.hasChildren(['type', 'name', 'email', 'phone', 'status'])"
+        ".write": "auth != null && ((!data.exists() && newData.child('requesterUid').val() == auth.uid && newData.child('status').val() == 'pending') || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
+        ".validate": "newData.hasChildren(['type', 'name', 'email', 'phone', 'requesterUid', 'status']) && (newData.child('type').val() == 'seller' || newData.child('type').val() == 'courier')"
       }
     },
     "profiles": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
-        ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer') || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val()))))"
+        ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer' && (!newData.child('tenantId').exists() || newData.child('tenantId').val() == 'lamylenoise')) || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val()))))"
       }
     },
     "products": {
-      ".read": true,
-      ".indexOn": ["status", "sellerUid"],
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["status", "sellerUid", "tenantId"],
       "$productId": {
-        ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (root.child('profiles').child(auth.uid).child('role').val() == 'seller' && newData.child('sellerUid').val() == auth.uid && (!data.exists() || data.child('sellerUid').val() == auth.uid)))",
+        ".write": false,
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
       }
     },
-    "orders": {
-      ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
-      "$orderId": {
-        ".read": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || data.child('customerUid').val() == auth.uid || data.child('sellerUid').val() == auth.uid || data.child('courierUid').val() == auth.uid)",
-        ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || !data.exists() || data.child('customerUid').val() == auth.uid || data.child('sellerUid').val() == auth.uid || data.child('courierUid').val() == auth.uid)",
-        ".validate": "newData.hasChildren(['status', 'paymentStatus', 'total', 'payout'])"
+    "publicCatalog": {
+      "$tenantId": {
+        ".read": true,
+        ".write": false
       }
+    },
+    "checkoutReservations": {
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["expiresAt", "tenantId", "customerUid"]
+    },
+    "checkoutIdempotency": {
+      ".read": false,
+      ".write": false
+    },
+    "orders": {
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["tenantId", "customerUid", "status", "paymentStatus"]
+    },
+    "customerOrders": {
+      ".read": false,
+      ".write": false
+    },
+    "sellerOrders": {
+      ".read": false,
+      ".write": false
+    },
+    "deliveryJobs": {
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["tenantId", "courierUid", "status"]
+    },
+    "earnings": {
+      ".read": false,
+      ".write": false
     }
   }
 }

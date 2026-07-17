@@ -1,7 +1,7 @@
 {
-  "name": "LAMYLENOISE — Épicerie africaine UAE",
-  "short_name": "LAMYLENOISE",
-  "description": "Catalogue africain premium, livraison express UAE et marketplace vendeurs/livreurs.",
+  "name": "SOKIVA — Marché africain et opportunités UAE",
+  "short_name": "SOKIVA",
+  "description": "Marketplace africaine pour acheter, vendre, livrer et développer son activité aux Émirats Arabes Unis.",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
@@ -13,7 +13,7 @@
   "categories": ["shopping", "food", "business"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23ff6b2b'/%3E%3Ctext x='96' y='118' text-anchor='middle' font-family='Arial,sans-serif' font-size='72' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%23ff6b2b'/%3E%3Ctext x='96' y='118' text-anchor='middle' font-family='Arial,sans-serif' font-size='72' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"

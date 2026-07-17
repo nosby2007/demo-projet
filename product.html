@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Détail produit — LAMYLENOISE Abu Dhabi." />
+  <meta name="description" content="Détail produit vérifié — LAMYLENOISE UAE." />
   <meta name="theme-color" content="#FF6B2B" />
   <meta name="application-name" content="LAMYLENOISE" />
   <link rel="manifest" href="app.webmanifest" />
@@ -16,15 +16,19 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body data-shell="full" data-page="product.html">
-
   <main class="page">
     <section class="pd-section">
-      <div class="container" id="product-detail">
-        <!-- Injected by ProductDetailModule -->
-      </div>
+      <div class="container" id="product-detail"></div>
     </section>
   </main>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="marketplace.js"></script>
+  <script src="catalog-runtime.js"></script>
   <script src="app.js"></script>
+  <script src="product-public-runtime.js"></script>
 </body>
 </html>

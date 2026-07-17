@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Demander un compte vendeur ou livreur AFROMARKET." />
+  <meta name="description" content="Candidature vendeur ou livreur LAMYLENOISE." />
   <meta name="theme-color" content="#FF6B2B" />
   <meta name="application-name" content="LAMYLENOISE" />
   <link rel="manifest" href="app.webmanifest" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E" />
-  <title>Demande vendeur / livreur - LAMYLENOISE</title>
+  <title>Candidature vendeur / livreur - LAMYLENOISE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -19,48 +19,50 @@
   <main class="page">
     <section class="page-hero">
       <div class="container">
-        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Demande d'acces</span></nav>
-        <h1 class="page-title">Devenir vendeur ou livreur</h1>
-        <p class="page-subtitle">Remplissez le formulaire. L'admin valide le statut, puis envoie les coordonnees et identifiants.</p>
+        <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Candidature</span></nav>
+        <h1 class="page-title">Développer son activité ou devenir livreur</h1>
+        <p class="page-subtitle">Créez d’abord un compte client ou connectez-vous. Votre compte existant sera activé comme vendeur ou livreur après vérification.</p>
       </div>
     </section>
 
     <section class="role-section">
       <div class="container role-form-layout">
         <form class="ops-panel form-block" id="role-request-form" novalidate>
-          <h2>Formulaire de demande</h2>
+          <h2>Formulaire de candidature</h2>
+          <p class="muted">Votre candidature est rattachée à votre compte connecté. Aucun mot de passe ne sera créé ou envoyé par un administrateur.</p>
           <div class="form-row">
             <label class="form-field">
-              <span>Type de compte</span>
+              <span>Type d’activité</span>
               <select name="type" required>
                 <option value="seller">Vendeur</option>
                 <option value="courier">Livreur</option>
               </select>
             </label>
-            <label class="form-field"><span>Ville / Emirat</span><input name="city" required placeholder="Abu Dhabi, Dubai..." /></label>
+            <label class="form-field"><span>Ville / Émirat</span><input name="city" required placeholder="Abu Dhabi, Dubai..." /></label>
           </div>
           <div class="form-row">
             <label class="form-field"><span>Nom complet</span><input name="name" required placeholder="Aminata Diop" /></label>
-            <label class="form-field"><span>Telephone</span><input name="phone" required placeholder="+971 50 123 4567" /></label>
+            <label class="form-field"><span>Téléphone</span><input name="phone" required placeholder="+971 50 123 4567" /></label>
           </div>
-          <label class="form-field full"><span>Email de connexion souhaite</span><input name="email" type="email" required placeholder="vous@exemple.com" /></label>
+          <label class="form-field full"><span>Email du compte</span><input name="email" type="email" required placeholder="vous@exemple.com" /></label>
           <label class="form-field full"><span>Nom boutique / zone livreur</span><input name="businessName" required placeholder="Afro Saveurs / Zone Mussafah" /></label>
-          <label class="form-field full"><span>Vehicule ou categorie de produits</span><input name="vehicle" placeholder="Moto, voiture, epicerie, beaute, mode..." /></label>
-          <label class="form-field full"><span>Message pour l'admin</span><textarea name="message" rows="4" placeholder="Experience, disponibilites, documents disponibles..."></textarea></label>
-          <button type="submit" class="btn-primary"><i data-lucide="send"></i> Envoyer la demande</button>
+          <label class="form-field full"><span>Véhicule ou catégorie de produits</span><input name="vehicle" placeholder="Moto, voiture, épicerie, beauté, mode..." /></label>
+          <label class="form-field full"><span>Message pour l’équipe</span><textarea name="message" rows="4" placeholder="Expérience, disponibilités, documents disponibles..."></textarea></label>
+          <button type="submit" class="btn-primary"><i data-lucide="send"></i> Envoyer ma candidature</button>
+          <p class="muted">Pas encore de compte ? <a href="register.html">Créer un compte</a> · Déjà inscrit ? <a href="login.html?next=request.html">Se connecter</a></p>
         </form>
 
         <aside class="ops-panel role-info-panel">
-          <h2>Processus d'approbation</h2>
+          <h2>Processus d’approbation</h2>
           <ol class="role-steps">
-            <li><strong>1. Demande recue</strong><span>Votre profil entre dans la file admin.</span></li>
-            <li><strong>2. Verification</strong><span>L'admin controle les infos, documents et zones.</span></li>
-            <li><strong>3. Statut cree</strong><span>Role vendeur ou livreur assigne dans Firebase.</span></li>
-            <li><strong>4. Identifiants envoyes</strong><span>Coordonnees et instructions de connexion transmises.</span></li>
+            <li><strong>1. Compte créé</strong><span>Votre identité de connexion reste sous votre contrôle.</span></li>
+            <li><strong>2. Candidature reçue</strong><span>Votre profil entre dans la file de vérification.</span></li>
+            <li><strong>3. Vérification</strong><span>L’équipe contrôle les informations, documents et zones.</span></li>
+            <li><strong>4. Compte activé</strong><span>Le rôle vendeur ou livreur est ajouté à votre compte existant.</span></li>
           </ol>
           <div class="commission-box">
-            <strong>Repartition automatique</strong>
-            <span>Plateforme 15% • Livreur 10% • Vendeur 75%</span>
+            <strong>Répartition pilote transparente</strong>
+            <span>Plateforme 15% • Livreur 10% + frais de livraison • Vendeur 75%</span>
           </div>
         </aside>
       </div>
@@ -72,6 +74,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="marketplace.js"></script>
+  <script src="saas-runtime.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

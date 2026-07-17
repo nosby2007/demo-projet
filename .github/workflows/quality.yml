@@ -1,0 +1,46 @@
+name: Sokiva marketplace quality gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Use Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Validate static application and security configuration
+        run: npm run build
+
+      - name: Install backend test dependencies
+        working-directory: functions
+        run: npm install --ignore-scripts
+
+      - name: Validate functions and commerce invariants
+        working-directory: functions
+        run: npm test
+
+      - name: Install Firebase CLI
+        run: npm install --ignore-scripts
+
+      - name: Test Realtime Database rules in emulator
+        run: npx firebase emulators:exec --project sokiva-rules-test --only database "npm --prefix functions run test:rules"
