@@ -1,5 +1,5 @@
 /* SOKIVA resilient offline shell */
-const CACHE_VERSION = 'sokiva-v1.5.0';
+const CACHE_VERSION = 'sokiva-v1.6.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -22,6 +22,7 @@ const APP_SHELL = [
   '/product-public-runtime.js',
   '/checkout-runtime-v5.js',
   '/role-sync-runtime.js',
+  '/audit-runtime.js',
   '/firebase-config.js',
   '/firebase-functions-config.js',
   '/app.webmanifest',
