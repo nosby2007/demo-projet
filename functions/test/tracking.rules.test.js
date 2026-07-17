@@ -38,12 +38,13 @@ beforeEach(async () => {
     });
     await set(ref(db, 'orderTracking/order-1'), {
       orderId: 'order-1', tenantId: 'lamylenoise', status: 'in_transit', live: true,
+      destination: { latitude: 24.46, longitude: 54.38 },
       courierLocation: { latitude: 24.45, longitude: 54.37, publishedAt: 1000 }
     });
   });
 });
 
-test('order owner, assigned courier and same-tenant admin can read tracking', async () => {
+test('order owner, assigned in-transit courier and same-tenant admin can read tracking', async () => {
   for (const uid of ['customer-owner', 'courier-assigned', 'admin-same']) {
     const db = testEnv.authenticatedContext(uid).database();
     await assertSucceeds(get(ref(db, 'orderTracking/order-1')));
@@ -56,6 +57,15 @@ test('unrelated users and other-tenant admins cannot read tracking', async () =>
     await assertFails(get(ref(db, 'orderTracking/order-1')));
   }
   await assertFails(get(ref(testEnv.unauthenticatedContext().database(), 'orderTracking/order-1')));
+});
+
+test('courier tracking access ends when the order leaves in-transit status', async () => {
+  await testEnv.withSecurityRulesDisabled(async context => {
+    await update(ref(context.database(), 'orders/order-1'), { status: 'delivered' });
+  });
+  await assertFails(get(ref(testEnv.authenticatedContext('courier-assigned').database(), 'orderTracking/order-1')));
+  await assertSucceeds(get(ref(testEnv.authenticatedContext('customer-owner').database(), 'orderTracking/order-1')));
+  await assertSucceeds(get(ref(testEnv.authenticatedContext('admin-same').database(), 'orderTracking/order-1')));
 });
 
 test('no browser role can forge or modify courier tracking', async () => {
