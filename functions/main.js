@@ -19,6 +19,7 @@ module.exports = {
   auditDeliveryJobWrites: audit.auditDeliveryJobWrites,
   auditEarningWrites: audit.auditEarningWrites,
   listAuditEvents: audit.listAuditEvents,
+  listOrdersForRole: tracking.listOrdersForRole,
   syncOrderTracking: tracking.syncOrderTracking,
   setDeliveryDestination: tracking.setDeliveryDestination,
   updateCourierLocation: tracking.updateCourierLocation
