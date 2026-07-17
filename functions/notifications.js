@@ -120,9 +120,23 @@ function buildNotification(order, eventKey, role, spec, createdAt = Date.now()) 
   };
 }
 
+function isActiveRoleProfile(profile, tenantId, role) {
+  return Boolean(
+    profile &&
+    clean(profile.tenantId || DEFAULT_TENANT, 80) === clean(tenantId || DEFAULT_TENANT, 80) &&
+    profile.role === role &&
+    profile.status !== 'disabled'
+  );
+}
+
 async function writeNotification(uid, order, eventKey, role, spec, createdAt) {
   const recipientUid = clean(uid, 160);
   if (!recipientUid || recipientUid === 'catalog' || !order?.id || !spec) return null;
+
+  const tenantId = clean(order.tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
+  const recipientProfile = (await db.ref(`profiles/${recipientUid}`).get()).val();
+  if (!isActiveRoleProfile(recipientProfile, tenantId, role)) return null;
+
   const payload = buildNotification(order, eventKey, role, spec, createdAt);
   const ref = db.ref(`userNotifications/${recipientUid}/${payload.id}`);
   const result = await ref.transaction(current => current || payload, undefined, false);
@@ -139,15 +153,6 @@ async function notifyMany(uids, order, eventKey, role, spec, createdAt) {
 
 function sellerUids(order) {
   return Object.keys(order?.sellerUids || {}).filter(uid => uid && uid !== 'catalog');
-}
-
-function isActiveRoleProfile(profile, tenantId, role) {
-  return Boolean(
-    profile &&
-    clean(profile.tenantId || DEFAULT_TENANT, 80) === clean(tenantId || DEFAULT_TENANT, 80) &&
-    profile.role === role &&
-    profile.status !== 'disabled'
-  );
 }
 
 async function activeRoleUids(tenantId, role) {
