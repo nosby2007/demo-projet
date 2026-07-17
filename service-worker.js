@@ -1,5 +1,5 @@
 /* LAMYLENOISE resilient offline shell */
-const CACHE_VERSION = 'lamylenoise-v1.2.0';
+const CACHE_VERSION = 'lamylenoise-v1.3.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,7 @@ const APP_SHELL = [
   '/seller.html',
   '/courier.html',
   '/admin.html',
+  '/request.html',
   '/delivery.html',
   '/contact.html',
   '/faq.html',
