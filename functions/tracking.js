@@ -114,6 +114,28 @@ function publicDestination(order) {
   }
 }
 
+function isActiveAssignment(order, job, uid, tenantId) {
+  return Boolean(
+    order && job &&
+    order.tenantId === tenantId &&
+    job.tenantId === tenantId &&
+    order.courierUid === uid &&
+    job.courierUid === uid &&
+    order.status === 'in_transit' &&
+    job.status === 'in_transit'
+  );
+}
+
+async function clearLiveCourierLocation(trackingRef, updatedAt = Date.now()) {
+  await trackingRef.update({
+    courierLocation: null,
+    distanceRemainingKm: null,
+    etaMinutes: null,
+    live: false,
+    updatedAt
+  });
+}
+
 exports.syncOrderTracking = onValueWritten({
   ref: '/orders/{orderId}',
   region: DATABASE_REGION
@@ -178,8 +200,8 @@ exports.setDeliveryDestination = onCall({ region: 'me-central1', maxInstances: 2
   if (profile.role !== 'admin' && order.customerUid !== uid) {
     throw new HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
   }
-  if (TERMINAL_STATUSES.has(order.status)) {
-    throw new HttpsError('failed-precondition', 'Le point de livraison ne peut plus être modifié.');
+  if (order.status === 'in_transit' || TERMINAL_STATUSES.has(order.status)) {
+    throw new HttpsError('failed-precondition', 'Le point de livraison est verrouillé dès le départ du livreur.');
   }
 
   const now = Date.now();
@@ -213,37 +235,20 @@ exports.updateCourierLocation = onCall({ region: 'me-central1', maxInstances: 50
     throw new HttpsError('failed-precondition', 'Position GPS trop ancienne ou horodatage invalide.');
   }
   const point = validateUaePoint(request.data?.location, 'Position du livreur');
-  const [orderSnapshot, jobSnapshot, trackingSnapshot] = await Promise.all([
+  const [orderSnapshot, jobSnapshot] = await Promise.all([
     db.ref(`orders/${orderId}`).get(),
-    db.ref(`deliveryJobs/${orderId}`).get(),
-    db.ref(`orderTracking/${orderId}`).get()
+    db.ref(`deliveryJobs/${orderId}`).get()
   ]);
   const order = orderSnapshot.val();
   const job = jobSnapshot.val();
-  const tracking = trackingSnapshot.val() || {};
   if (!order || !job) throw new HttpsError('not-found', 'Course introuvable.');
   if (order.tenantId !== tenantId || job.tenantId !== tenantId || order.courierUid !== uid || job.courierUid !== uid) {
     throw new HttpsError('permission-denied', 'Cette course ne vous est pas attribuée.');
   }
-  if (order.status !== 'in_transit' || job.status !== 'in_transit') {
+  if (!isActiveAssignment(order, job, uid, tenantId)) {
     throw new HttpsError('failed-precondition', 'Le partage GPS est autorisé uniquement pendant la livraison.');
   }
 
-  const previous = tracking.courierLocation;
-  if (previous && now - Number(previous.publishedAt || 0) < LOCATION_MIN_INTERVAL_MS) {
-    return { orderId, accepted: false, reason: 'throttled' };
-  }
-  if (previous?.capturedAt) {
-    const elapsedSeconds = Math.max(1, (capturedAt - Number(previous.capturedAt)) / 1000);
-    const movedMeters = haversineMeters(previous, point);
-    const allowedMeters = 500 + elapsedSeconds * 60;
-    if (movedMeters !== null && movedMeters > allowedMeters) {
-      throw new HttpsError('out-of-range', 'Déplacement GPS impossible détecté. Attendez une nouvelle position précise.');
-    }
-  }
-
-  const destination = publicDestination(order) || tracking.destination || null;
-  const estimate = routeEstimate(point, destination);
   const heading = finite(request.data?.heading);
   const speedMetersPerSecond = finite(request.data?.speedMetersPerSecond);
   const courierLocation = {
@@ -255,27 +260,70 @@ exports.updateCourierLocation = onCall({ region: 'me-central1', maxInstances: 50
     capturedAt,
     publishedAt: now
   };
+  const trackingRef = db.ref(`orderTracking/${orderId}`);
+  let problem = null;
+  let throttled = false;
+  let response = null;
 
-  await db.ref(`orderTracking/${orderId}`).update({
-    orderId,
-    tenantId,
-    status: 'in_transit',
-    progress: 80,
-    live: true,
-    destination,
-    courierLocation,
-    distanceRemainingKm: estimate.distanceRemainingKm,
-    etaMinutes: estimate.etaMinutes,
-    updatedAt: now
-  });
+  const transaction = await trackingRef.transaction(current => {
+    problem = null;
+    throttled = false;
+    response = null;
+    const tracking = current || {};
+    const previous = tracking.courierLocation;
+    if (previous && now - Number(previous.publishedAt || 0) < LOCATION_MIN_INTERVAL_MS) {
+      throttled = true;
+      return;
+    }
+    if (previous?.capturedAt) {
+      const elapsedSeconds = Math.max(1, (capturedAt - Number(previous.capturedAt)) / 1000);
+      const movedMeters = haversineMeters(previous, point);
+      const allowedMeters = 500 + elapsedSeconds * 60;
+      if (movedMeters !== null && movedMeters > allowedMeters) {
+        problem = new HttpsError('out-of-range', 'Déplacement GPS impossible détecté. Attendez une nouvelle position précise.');
+        return;
+      }
+    }
 
-  return {
-    orderId,
-    accepted: true,
-    distanceRemainingKm: estimate.distanceRemainingKm,
-    etaMinutes: estimate.etaMinutes,
-    publishedAt: now
-  };
+    const destination = publicDestination(order) || tracking.destination || null;
+    const estimate = routeEstimate(point, destination);
+    response = {
+      orderId,
+      accepted: true,
+      distanceRemainingKm: estimate.distanceRemainingKm,
+      etaMinutes: estimate.etaMinutes,
+      publishedAt: now
+    };
+    return {
+      ...tracking,
+      orderId,
+      tenantId,
+      status: 'in_transit',
+      progress: 80,
+      live: true,
+      destination,
+      courierLocation,
+      distanceRemainingKm: estimate.distanceRemainingKm,
+      etaMinutes: estimate.etaMinutes,
+      updatedAt: now
+    };
+  }, undefined, false);
+
+  if (throttled) return { orderId, accepted: false, reason: 'throttled' };
+  if (!transaction.committed || !response) {
+    throw problem || new HttpsError('aborted', 'La position n’a pas pu être publiée.');
+  }
+
+  const [latestOrderSnapshot, latestJobSnapshot] = await Promise.all([
+    db.ref(`orders/${orderId}`).get(),
+    db.ref(`deliveryJobs/${orderId}`).get()
+  ]);
+  if (!isActiveAssignment(latestOrderSnapshot.val(), latestJobSnapshot.val(), uid, tenantId)) {
+    await clearLiveCourierLocation(trackingRef);
+    throw new HttpsError('failed-precondition', 'La course est terminée; le partage GPS a été arrêté.');
+  }
+
+  return response;
 });
 
 exports.haversineMeters = haversineMeters;
