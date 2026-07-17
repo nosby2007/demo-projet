@@ -66,7 +66,9 @@ for (const invariant of [
   'MAX_ACCURACY_METERS',
   'allowedMeters = 500 + elapsedSeconds * 60',
   'trackingRef.transaction',
-  "order.status === 'in_transit' || TERMINAL_STATUSES.has(order.status)",
+  'orderRef.transaction',
+  "current.status === 'in_transit' || TERMINAL_STATUSES.has(current.status)",
+  'isStrictlyNewerSample(previous, capturedAt)',
   'TERMINAL_STATUSES.has(status)',
   'delete tracking.courierLocation',
   'clearLiveCourierLocation(trackingRef)',
@@ -74,6 +76,12 @@ for (const invariant of [
   'const { address, phone, customerName, deliveryLocation, ...safe }'
 ]) {
   if (!tracking.includes(invariant)) errors.push(`Tracking security invariant missing: ${invariant}`);
+}
+if (tracking.includes('await orderRef.update({ deliveryLocation: location')) {
+  errors.push('Delivery destination must not use a read-then-update race; use an order transaction.');
+}
+if (!tracking.includes("Position GPS plus ancienne que la dernière position enregistrée")) {
+  errors.push('Out-of-order courier GPS samples must be rejected explicitly.');
 }
 
 if (trackingRule['.write'] !== false) errors.push('orderTracking must reject direct browser writes.');
@@ -125,4 +133,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Live tracking validation passed. GPS publishing is atomic, courier access and PII expire after transit, terminal locations are cleared and map assets are pinned.');
+console.log('Live tracking validation passed. Destination locking and GPS ordering are atomic, courier access and PII expire after transit, terminal locations are cleared and map assets are pinned.');
