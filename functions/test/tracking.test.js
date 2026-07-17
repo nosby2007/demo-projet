@@ -12,7 +12,8 @@ const {
   haversineMeters,
   validateUaePoint,
   routeEstimate,
-  courierSafeJob
+  courierSafeJob,
+  isStrictlyNewerSample
 } = require('../tracking');
 
 test('haversine distance is zero for the same point', () => {
@@ -45,6 +46,14 @@ test('UAE point validation rounds accepted coordinates', () => {
     longitude: 54.37731,
     accuracyMeters: 12
   });
+});
+
+test('GPS samples must be strictly newer than the stored sample', () => {
+  const previous = { capturedAt: 1000 };
+  assert.equal(isStrictlyNewerSample(previous, 1001), true);
+  assert.equal(isStrictlyNewerSample(previous, 1000), false);
+  assert.equal(isStrictlyNewerSample(previous, 999), false);
+  assert.equal(isStrictlyNewerSample(null, 1000), true);
 });
 
 test('courier sees customer contact only during their active transit', () => {
