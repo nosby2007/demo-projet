@@ -25,7 +25,7 @@
       }
     },
     "products": {
-      ".read": "query.orderByChild == 'status' && query.equalTo == 'active'",
+      ".read": false,
       ".write": false,
       ".indexOn": ["status", "sellerUid", "tenantId"],
       "$productId": {
@@ -33,10 +33,20 @@
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
       }
     },
+    "publicCatalog": {
+      "$tenantId": {
+        ".read": true,
+        ".write": false
+      }
+    },
     "checkoutReservations": {
       ".read": false,
       ".write": false,
       ".indexOn": ["expiresAt", "tenantId", "customerUid"]
+    },
+    "checkoutIdempotency": {
+      ".read": false,
+      ".write": false
     },
     "orders": {
       ".read": false,
