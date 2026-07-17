@@ -1,0 +1,26 @@
+.audit-json {
+  max-height: 28rem;
+  overflow: auto;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+[data-audit-panel] details {
+  margin-top: 0.75rem;
+}
+
+[data-audit-panel] summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+[data-audit-panel] [data-audit-refresh] {
+  margin: 0.75rem 0;
+}
