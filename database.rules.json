@@ -69,6 +69,13 @@
     "earnings": {
       ".read": false,
       ".write": false
+    },
+    "auditLogs": {
+      ".read": false,
+      ".write": false,
+      "$tenantId": {
+        ".indexOn": ["createdAt", "action", "entityType", "entityId", "actorUid"]
+      }
     }
   }
 }
