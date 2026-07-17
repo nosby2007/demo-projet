@@ -40,6 +40,9 @@ jobs:
       - name: Validate live order tracking stack
         run: node scripts/validate-tracking-stack.mjs
 
+      - name: Validate private notification stack
+        run: node scripts/validate-notification-stack.mjs
+
       - name: Install backend test dependencies
         working-directory: functions
         run: npm install --ignore-scripts
@@ -59,6 +62,10 @@ jobs:
       - name: Test live tracking units
         working-directory: functions
         run: node --test test/tracking.test.js
+
+      - name: Test notification units
+        working-directory: functions
+        run: node --test test/notifications.test.js
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
