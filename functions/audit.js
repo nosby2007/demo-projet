@@ -56,17 +56,40 @@ function actionFor(entityType, before, after) {
   return `${entityType}.updated`;
 }
 
-function actorFor(event, before, after, fallbackUid = '') {
-  const inferredUid = clean(
-    event.authId ||
-    after?.approvedBy || after?.reviewedBy || after?.courierUid || after?.customerUid || after?.sellerUid ||
-    before?.approvedBy || before?.reviewedBy || before?.courierUid || before?.customerUid || before?.sellerUid ||
-    fallbackUid || 'system',
-    200
-  );
+function changedSellerActor(before, after) {
+  const beforeStatuses = before?.sellerStatuses || {};
+  const afterStatuses = after?.sellerStatuses || {};
+  return Object.keys(afterStatuses).find(uid => beforeStatuses[uid] !== afterStatuses[uid]) || '';
+}
+
+function inferredActor(entityType, before, after) {
+  if (before?.approvedBy !== after?.approvedBy && after?.approvedBy) return after.approvedBy;
+  if (before?.reviewedBy !== after?.reviewedBy && after?.reviewedBy) return after.reviewedBy;
+  if (before?.courierUid !== after?.courierUid && after?.courierUid) return after.courierUid;
+  if (before?.deliveryProof?.courierUid !== after?.deliveryProof?.courierUid && after?.deliveryProof?.courierUid) {
+    return after.deliveryProof.courierUid;
+  }
+  if (entityType === 'order') {
+    const sellerUid = changedSellerActor(before, after);
+    if (sellerUid) return sellerUid;
+  }
+  if (!before && after) {
+    if (entityType === 'order') return after.customerUid || '';
+    if (entityType === 'product') return after.sellerUid || '';
+    if (entityType === 'role_request') return after.requesterUid || '';
+  }
+  return '';
+}
+
+function actorFor(event, entityType, before, after) {
+  if (event.authType === 'app_user' && event.authId) {
+    return { uid: clean(event.authId, 200), type: 'app_user' };
+  }
+  const inferredUid = clean(inferredActor(entityType, before, after), 200);
+  if (inferredUid) return { uid: inferredUid, type: 'inferred' };
   return {
-    uid: inferredUid,
-    type: clean(event.authType || (inferredUid === 'system' ? 'system' : 'inferred'), 40)
+    uid: 'system',
+    type: event.authType === 'admin' ? 'admin_service' : 'system'
   };
 }
 
@@ -102,7 +125,7 @@ async function recordWrite(event, entityType, entityId, options = {}) {
     options.tenantId || after?.tenantId || before?.tenantId || DEFAULT_TENANT,
     80
   ) || DEFAULT_TENANT;
-  const actor = actorFor(event, before, after, options.fallbackUid);
+  const actor = actorFor(event, entityType, before, after);
   return appendAuditEvent({
     tenantId,
     action: actionFor(entityType, before, after),
@@ -116,7 +139,9 @@ async function recordWrite(event, entityType, entityId, options = {}) {
     after,
     metadata: {
       eventId: clean(event.id, 200),
-      databaseInstance: clean(event.instance || '', 160)
+      authType: clean(event.authType || 'unknown', 40),
+      databaseInstance: clean(event.instance || '', 160),
+      subjectUid: clean(options.subjectUid || '', 200)
     }
   });
 }
@@ -139,7 +164,7 @@ exports.auditRoleRequestWrites = onValueWritten({
 exports.auditProfileWrites = onValueWritten({
   ref: '/profiles/{uid}',
   region: AUDIT_REGION
-}, event => recordWrite(event, 'profile', event.params.uid, { fallbackUid: event.params.uid }));
+}, event => recordWrite(event, 'profile', event.params.uid, { subjectUid: event.params.uid }));
 
 exports.auditDeliveryJobWrites = onValueWritten({
   ref: '/deliveryJobs/{orderId}',
@@ -151,7 +176,7 @@ exports.auditEarningWrites = onValueWritten({
   region: AUDIT_REGION
 }, event => recordWrite(event, 'earning', `${event.params.group}:${event.params.uid}:${event.params.orderId}`, {
   tenantId: event.params.tenantId,
-  fallbackUid: event.params.uid
+  subjectUid: event.params.uid
 }));
 
 exports.listAuditEvents = onCall({ region: 'me-central1', maxInstances: 10 }, async request => {
@@ -170,7 +195,10 @@ exports.listAuditEvents = onCall({ region: 'me-central1', maxInstances: 10 }, as
     throw new HttpsError('permission-denied', 'Organisation non autorisée.');
   }
 
-  const limit = Math.min(MAX_AUDIT_ROWS, Math.max(1, Number.parseInt(request.data?.limit || 100, 10)));
+  const requestedLimit = Number.parseInt(request.data?.limit || 100, 10);
+  const limit = Number.isInteger(requestedLimit)
+    ? Math.min(MAX_AUDIT_ROWS, Math.max(1, requestedLimit))
+    : 100;
   const action = clean(request.data?.action, 120);
   const entityType = clean(request.data?.entityType, 80);
   const entityId = clean(request.data?.entityId, 200);
