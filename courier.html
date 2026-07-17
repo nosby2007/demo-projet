@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Espace livreur LAMYLENOISE pour trouver des courses et développer ses revenus." />
+  <meta name="description" content="Espace livreur SOKIVA pour accepter les courses et partager la position pendant la livraison." />
   <meta name="theme-color" content="#FF6B2B" />
-  <meta name="application-name" content="LAMYLENOISE" />
+  <meta name="application-name" content="SOKIVA" />
   <link rel="manifest" href="app.webmanifest" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E" />
-  <title>Espace livreur - LAMYLENOISE</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E" />
+  <title>Espace livreur - SOKIVA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="tracking.css" />
 </head>
 <body data-shell="full" data-page="courier.html">
   <main class="page">
@@ -21,7 +22,7 @@
       <div class="container">
         <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Livreur</span></nav>
         <h1 class="page-title">Mes courses et revenus</h1>
-        <p class="page-subtitle">Voir les courses disponibles, accepter une livraison et sécuriser la progression jusqu’à la remise au client.</p>
+        <p class="page-subtitle">Accepter une course, partager le GPS uniquement pendant la livraison et confirmer la remise par OTP.</p>
       </div>
     </section>
     <section class="role-section">
@@ -37,6 +38,7 @@
   <script src="firebase-functions-config.js"></script>
   <script src="marketplace.js"></script>
   <script src="saas-runtime.js"></script>
+  <script src="tracking-runtime.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
