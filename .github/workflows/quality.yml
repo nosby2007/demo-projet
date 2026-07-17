@@ -37,13 +37,28 @@ jobs:
       - name: Validate audit and traceability stack
         run: node scripts/validate-audit-stack.mjs
 
+      - name: Validate live order tracking stack
+        run: node scripts/validate-tracking-stack.mjs
+
       - name: Install backend test dependencies
         working-directory: functions
         run: npm install --ignore-scripts
 
-      - name: Validate functions and commerce invariants
+      - name: Validate Cloud Functions syntax
         working-directory: functions
-        run: npm test
+        run: npm run test:syntax
+
+      - name: Test commerce units
+        working-directory: functions
+        run: node --test test/commerce.test.js
+
+      - name: Test audit privacy units
+        working-directory: functions
+        run: node --test test/audit.test.js
+
+      - name: Test live tracking units
+        working-directory: functions
+        run: node --test test/tracking.test.js
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts

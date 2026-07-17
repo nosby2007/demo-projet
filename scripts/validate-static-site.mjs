@@ -18,6 +18,9 @@ const requiredFiles = [
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
+  'checkout-location-runtime.js',
+  'tracking-runtime.js',
+  'tracking.css',
   'role-sync-runtime.js',
   'firebase-functions-config.js',
   'style.css',
@@ -32,10 +35,14 @@ const requiredFiles = [
   'functions/catalog-v4.js',
   'functions/role-approval.js',
   'functions/commerce.js',
+  'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
+  'functions/test/tracking.rules.test.js',
   'scripts/deploy-safe.mjs',
+  'scripts/validate-tracking-stack.mjs',
   'app.webmanifest',
   'service-worker.js',
   'health.json',
@@ -57,6 +64,8 @@ const jsFiles = [
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
+  'checkout-location-runtime.js',
+  'tracking-runtime.js',
   'role-sync-runtime.js',
   'firebase-config.js',
   'firebase-functions-config.js',
@@ -71,9 +80,12 @@ const jsFiles = [
   'functions/catalog-v4.js',
   'functions/role-approval.js',
   'functions/commerce.js',
+  'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
-  'functions/test/checkout-reservations.rules.test.js'
+  'functions/test/checkout-reservations.rules.test.js',
+  'functions/test/tracking.rules.test.js'
 ];
 const esModuleFiles = ['scripts/deploy-safe.mjs'];
 const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
@@ -132,6 +144,13 @@ async function validateHtmlPages() {
 
   const checkout = await readFile('checkout.html', 'utf8');
   if (!checkout.includes('<script src="checkout-runtime-v5.js"')) errors.push('checkout.html is missing idempotent checkout runtime');
+  if (!checkout.includes('<script src="checkout-location-runtime.js"')) errors.push('checkout.html is missing delivery location runtime');
+  if (!checkout.includes('leaflet@1.9.4')) errors.push('checkout.html must pin the approved map library version');
+  const customer = await readFile('customer.html', 'utf8');
+  if (!customer.includes('<script src="tracking-runtime.js"')) errors.push('customer.html is missing live tracking runtime');
+  if (!customer.includes('leaflet@1.9.4')) errors.push('customer.html must pin the approved map library version');
+  const courier = await readFile('courier.html', 'utf8');
+  if (!courier.includes('<script src="tracking-runtime.js"')) errors.push('courier.html is missing GPS sharing runtime');
   const shop = await readFile('shop.html', 'utf8');
   if (!shop.includes('<script src="catalog-runtime.js"')) errors.push('shop.html is missing tenant catalogue runtime');
   const product = await readFile('product.html', 'utf8');
@@ -160,6 +179,11 @@ async function validateDatabaseRules() {
   if (rules.products?.['.read'] !== false) errors.push('internal products must reject browser reads');
   if (rules.publicCatalog?.['$tenantId']?.['.read'] !== true) errors.push('tenant public catalogue path must be browser-readable');
   if (rules.publicCatalog?.['$tenantId']?.['.write'] !== false) errors.push('tenant public catalogue path must reject browser writes');
+  if (rules.orderTracking?.['$orderId']?.['.write'] !== false) errors.push('live tracking must reject direct browser writes');
+  const trackingReadRule = String(rules.orderTracking?.['$orderId']?.['.read'] || '');
+  for (const fragment of ['customerUid', 'courierUid', "role').val() == 'admin'", 'tenantId']) {
+    if (!trackingReadRule.includes(fragment)) errors.push(`live tracking read rule is missing ${fragment}`);
+  }
   const profileWriteRule = String(rules.profiles?.['$uid']?.['.write'] || '');
   if (!profileWriteRule.includes("newData.child('tenantId').val() == 'lamylenoise'")) {
     errors.push('new customer profiles must be bound to the pilot tenant');
@@ -172,11 +196,13 @@ async function validateEmploymentBackend() {
   const checkoutCompat = await readFile('functions/checkout-v4.js', 'utf8');
   const catalog = await readFile('functions/catalog-v4.js', 'utf8');
   const approval = await readFile('functions/role-approval.js', 'utf8');
+  const tracking = await readFile('functions/tracking.js', 'utf8');
   const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const checkoutRuntime = await readFile('checkout-runtime-v5.js', 'utf8');
   const catalogRuntime = await readFile('catalog-runtime.js', 'utf8');
   const roleRuntime = await readFile('role-sync-runtime.js', 'utf8');
+  const trackingRuntime = await readFile('tracking-runtime.js', 'utf8');
   const runtime = await readFile('saas-runtime.js', 'utf8');
 
   for (const functionName of ['claimDeliveryJob', 'completeDelivery']) {
@@ -207,6 +233,12 @@ async function validateEmploymentBackend() {
   if (!main.includes('...marketplace') || !main.includes('...checkout') || !main.includes('...catalog') || !main.includes('...roleApproval')) {
     errors.push('Deployed Functions must compose marketplace, checkout, catalogue and role approval modules');
   }
+  for (const functionName of ['syncOrderTracking', 'setDeliveryDestination', 'updateCourierLocation']) {
+    if (!tracking.includes(`exports.${functionName}`)) errors.push(`Tracking backend is missing ${functionName}`);
+    if (!main.includes(`${functionName}: tracking.${functionName}`)) errors.push(`Functions composition is missing ${functionName}`);
+  }
+  if (!trackingRuntime.includes("callable('updateCourierLocation')")) errors.push('Courier location must use the trusted callable');
+  if (!trackingRuntime.includes('orderTracking/${orderId}')) errors.push('Customer tracking must subscribe to the private realtime path');
   if (main.indexOf('...checkout') < main.indexOf('...marketplace')) errors.push('Idempotent checkout must override legacy checkout');
   if (main.indexOf('...catalog') < main.indexOf('...marketplace')) errors.push('Tenant catalogue must override legacy product operations');
 
@@ -235,4 +267,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Checkout is idempotent, catalogue is tenant-scoped, inventory mode is immutable and Auth claims are recoverable.');
+console.log('Static build validation passed. Checkout, catalogue, roles, audit and private live tracking are composed and protected.');
