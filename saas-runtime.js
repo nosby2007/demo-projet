@@ -10,7 +10,8 @@
   const original = {
     list: MarketplaceData.list.bind(MarketplaceData),
     update: MarketplaceData.update.bind(MarketplaceData),
-    saveProduct: MarketplaceData.saveProduct.bind(MarketplaceData)
+    saveProduct: MarketplaceData.saveProduct.bind(MarketplaceData),
+    submitRoleRequest: MarketplaceData.submitRoleRequest.bind(MarketplaceData)
   };
 
   function callable(name) {
@@ -40,6 +41,18 @@
     }
     return record;
   }
+
+  MarketplaceData.submitRoleRequest = async function submitEmploymentApplication(data) {
+    const user = await MarketplaceData.currentUser();
+    if (!user) {
+      throw new Error('Créez un compte client ou connectez-vous avant d’envoyer votre candidature.');
+    }
+    return original.submitRoleRequest({
+      ...data,
+      tenantId: 'lamylenoise',
+      requesterUid: user.uid
+    });
+  };
 
   MarketplaceData.createOrder = async function createSecureOrder(order) {
     try {
