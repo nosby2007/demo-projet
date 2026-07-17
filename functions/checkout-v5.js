@@ -114,8 +114,9 @@ async function acquireIdempotency(uid, keyHash, tenantId) {
   };
 
   const result = await lockRef.transaction(current => {
-    const expired = Number(current?.expiresAt || 0) <= Date.now();
-    if (!current || current.status === 'failed' || expired) return candidate;
+    const processingExpired = current?.status === 'processing'
+      && Number(current?.expiresAt || 0) <= Date.now();
+    if (!current || current.status === 'failed' || processingExpired) return candidate;
     return current;
   }, undefined, false);
   const state = result.snapshot.val();
@@ -137,7 +138,9 @@ async function acquireIdempotency(uid, keyHash, tenantId) {
     if (latest?.status === 'committed' && latest.result) {
       return { owner: false, lockRef, state: latest };
     }
-    if (!latest || latest.status === 'failed' || Number(latest.expiresAt || 0) <= Date.now()) break;
+    const processingExpired = latest?.status === 'processing'
+      && Number(latest?.expiresAt || 0) <= Date.now();
+    if (!latest || latest.status === 'failed' || processingExpired) break;
   }
 
   throw new HttpsError('aborted', 'Une commande identique est déjà en cours. Vérifiez votre historique puis réessayez.');
