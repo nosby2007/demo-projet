@@ -56,21 +56,31 @@ for (const exportName of ['syncOrderTracking', 'setDeliveryDestination', 'update
 }
 
 for (const invariant of [
-  "order.status !== 'in_transit'",
-  'order.courierUid !== uid',
+  "order.status === 'in_transit'",
+  "job.status === 'in_transit'",
+  'order.courierUid === uid',
   'LOCATION_MIN_INTERVAL_MS',
   'LOCATION_MAX_AGE_MS',
   'MAX_ACCURACY_METERS',
   'allowedMeters = 500 + elapsedSeconds * 60',
+  'trackingRef.transaction',
+  "order.status === 'in_transit' || TERMINAL_STATUSES.has(order.status)",
   'TERMINAL_STATUSES.has(status)',
-  'delete tracking.courierLocation'
+  'delete tracking.courierLocation',
+  'clearLiveCourierLocation(trackingRef)'
 ]) {
   if (!tracking.includes(invariant)) errors.push(`Tracking security invariant missing: ${invariant}`);
 }
 
 if (trackingRule['.write'] !== false) errors.push('orderTracking must reject direct browser writes.');
 const readRule = String(trackingRule['.read'] || '');
-for (const required of ['customerUid', 'courierUid', "role').val() == 'admin'", "tenantId').val() == root.child('orders'"]) {
+for (const required of [
+  'customerUid',
+  'courierUid',
+  "child('status').val() == 'in_transit'",
+  "role').val() == 'admin'",
+  "tenantId').val() == root.child('orders'"
+]) {
   if (!readRule.includes(required)) errors.push(`Tracking read rule is missing authorization check: ${required}`);
 }
 
@@ -78,6 +88,7 @@ if (!runtime.includes("backend.db.ref(`orderTracking/${orderId}`)")) errors.push
 if (!runtime.includes('navigator.geolocation.watchPosition')) errors.push('Courier tracking must use watchPosition after explicit activation.');
 if (!runtime.includes('navigator.geolocation.clearWatch')) errors.push('Courier tracking must stop GPS watches.');
 if (!runtime.includes('reconcileCourierWatches(activeOrderIds)')) errors.push('Courier GPS watches must stop when a delivery is no longer active.');
+if (!runtime.includes('courierMarker.remove()')) errors.push('Customer map must remove the precise courier marker when live tracking ends.');
 if (!runtime.includes("callable('updateCourierLocation')")) errors.push('Courier GPS updates must use the trusted callable.');
 if (!runtime.includes('document.createElement')) errors.push('Tracking UI must render dynamic data with DOM APIs.');
 if (!checkoutLocation.includes('navigator.geolocation.getCurrentPosition')) errors.push('Checkout location selection must require browser consent.');
@@ -110,4 +121,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Live tracking validation passed. GPS sharing is assigned-courier-only, reads are private, terminal orders clear location and map assets are pinned.');
+console.log('Live tracking validation passed. GPS publishing is atomic, assigned-courier access expires after transit, terminal locations are cleared and map assets are pinned.');
