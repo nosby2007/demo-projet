@@ -1,6 +1,6 @@
 {
   "name": "lamylenoise-functions",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Trusted backend for LAMYLENOISE marketplace and employment workflows.",
   "main": "main.js",
@@ -8,7 +8,7 @@
     "node": "20"
   },
   "scripts": {
-    "test:syntax": "node --check commerce.js && node --check marketplace-v3.js && node --check checkout-v4.js && node --check role-approval.js && node --check marketplace-v2.js && node --check index.js && node --check safe-claims.js && node --check main.js",
+    "test:syntax": "node --check commerce.js && node --check marketplace-v3.js && node --check checkout-v5.js && node --check checkout-v4.js && node --check catalog-v4.js && node --check role-approval.js && node --check marketplace-v2.js && node --check index.js && node --check safe-claims.js && node --check main.js",
     "test:unit": "node --test test/commerce.test.js",
     "test:rules": "node --test --test-concurrency=1 test/*.rules.test.js",
     "test": "npm run test:syntax && npm run test:unit"
