@@ -121,6 +121,33 @@ test('public cannot read the unfiltered product collection or pending submission
   await assertFails(get(pendingQuery));
 });
 
+test('new customer profile can use the pilot tenant or omit it', async () => {
+  const withoutTenant = testEnv.authenticatedContext('new-customer-1').database();
+  await assertSucceeds(set(ref(withoutTenant, 'profiles/new-customer-1'), {
+    role: 'customer',
+    status: 'active',
+    name: 'Client Pilot'
+  }));
+
+  const pilotTenant = testEnv.authenticatedContext('new-customer-2').database();
+  await assertSucceeds(set(ref(pilotTenant, 'profiles/new-customer-2'), {
+    role: 'customer',
+    status: 'active',
+    tenantId: 'lamylenoise',
+    name: 'Client Pilot Deux'
+  }));
+});
+
+test('new customer cannot self-enroll into another tenant', async () => {
+  const db = testEnv.authenticatedContext('new-customer-foreign').database();
+  await assertFails(set(ref(db, 'profiles/new-customer-foreign'), {
+    role: 'customer',
+    status: 'active',
+    tenantId: 'other-tenant',
+    name: 'Foreign Tenant Attempt'
+  }));
+});
+
 test('authenticated user can submit an employment application linked to their account', async () => {
   const db = testEnv.authenticatedContext('customer-1').database();
   await assertSucceeds(set(ref(db, 'roleRequests/request-1'), {
