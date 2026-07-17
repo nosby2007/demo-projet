@@ -22,6 +22,7 @@ const requiredFiles = [
   'functions/main.js',
   'functions/index.js',
   'functions/marketplace-v3.js',
+  'functions/role-approval.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js',
@@ -52,6 +53,7 @@ const jsFiles = [
   'functions/safe-claims.js',
   'functions/marketplace-v2.js',
   'functions/marketplace-v3.js',
+  'functions/role-approval.js',
   'functions/commerce.js',
   'functions/test/commerce.test.js',
   'functions/test/database.rules.test.js'
@@ -141,6 +143,8 @@ async function validateDatabaseRules() {
 
 async function validateEmploymentBackend() {
   const backend = await readFile('functions/marketplace-v3.js', 'utf8');
+  const approval = await readFile('functions/role-approval.js', 'utf8');
+  const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const runtime = await readFile('saas-runtime.js', 'utf8');
   for (const functionName of [
@@ -157,6 +161,10 @@ async function validateEmploymentBackend() {
   if (!backend.includes('deliveryOtpState(order, now, MAX_OTP_ATTEMPTS)')) errors.push('Delivery OTP must enforce expiry and attempt limits');
   if (!backend.includes('isAdminTransitionAllowed')) errors.push('Admin order changes must use the terminal transition graph');
   if (!backend.includes("sellerUid: catalogProduct ? 'catalog' : uid")) errors.push('Admin-created catalogue products must use the catalog seller identity');
+  if (!approval.includes("roleRequest.status !== 'pending'")) errors.push('Role approval must require a pending application');
+  if (!approval.includes("candidate.role !== 'customer'")) errors.push('Role approval must require an existing customer profile');
+  if (!approval.includes("candidate.status === 'disabled'")) errors.push('Disabled accounts must not be reactivated through old applications');
+  if (!main.includes('approveRoleRequest: roleApproval.approveRoleRequest')) errors.push('Deployed Functions must use the atomic approval module');
   if (!commerce.includes("order.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready order');
   if (!commerce.includes("job.status === 'ready_for_pickup'")) errors.push('Claim invariant must require a ready delivery job');
   if (!backend.includes('deliveryCodeHash')) errors.push('Backend is missing OTP delivery proof');
@@ -180,4 +188,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Duplicate stock, tenant binding, moderated products, atomic delivery, bounded OTP and terminal transitions are protected.');
+console.log('Static build validation passed. Employment approval, duplicate stock, tenant binding, moderated products, atomic delivery, bounded OTP and terminal transitions are protected.');
