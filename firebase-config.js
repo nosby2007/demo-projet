@@ -1,14 +1,15 @@
-/* Firebase backend for AFROMARKET / LAMYLENOISE */
+/* Firebase backend for SOKIVA development. */
 'use strict';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBByAA76jI7hHup-mFQWx1u9rHEkRtfEwE",
-  authDomain: "nursehome-7dc3f.firebaseapp.com",
-  databaseURL: "https://nursehome-7dc3f-default-rtdb.firebaseio.com",
-  projectId: "nursehome-7dc3f",
-  storageBucket: "nursehome-7dc3f.firebasestorage.app",
-  messagingSenderId: "1098942563500",
-  appId: "1:1098942563500:web:c04f64d60ccd50a9f04b09"
+  apiKey: "AIzaSyD3IwNnwKWbebGxjJTLVyknvyV267uR28w",
+  authDomain: "sokiva-dev.firebaseapp.com",
+  databaseURL: "https://sokiva-dev-default-rtdb.firebaseio.com",
+  projectId: "sokiva-dev",
+  storageBucket: "sokiva-dev.firebasestorage.app",
+  messagingSenderId: "669134589789",
+  appId: "1:669134589789:web:167daaa6a8979f416122b4",
+  measurementId: "G-TFECL1VPQQ"
 };
 
 (function initFirebase() {
@@ -18,13 +19,18 @@ const firebaseConfig = {
   }
 
   const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
-
-  window.AfroMarketFirebase = {
+  const backend = {
     app,
     auth: firebase.auth(),
     db: firebase.database(),
     timestamp: firebase.database.ServerValue.TIMESTAMP,
     config: firebaseConfig,
-    projectId: firebaseConfig.projectId
+    projectId: firebaseConfig.projectId,
+    environment: 'development',
+    brand: 'SOKIVA'
   };
+
+  window.SokivaFirebase = backend;
+  // Alias temporaire pour les runtimes existants pendant la migration de marque.
+  window.AfroMarketFirebase = backend;
 })();
