@@ -48,9 +48,17 @@ jobs:
         working-directory: functions
         run: npm run test:syntax
 
-      - name: Test commerce, audit and tracking units
+      - name: Test commerce units
         working-directory: functions
-        run: npm run test:unit
+        run: node --test test/commerce.test.js
+
+      - name: Test audit privacy units
+        working-directory: functions
+        run: node --test test/audit.test.js
+
+      - name: Test live tracking units
+        working-directory: functions
+        run: node --test test/tracking.test.js
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
