@@ -1,5 +1,5 @@
-/* LAMYLENOISE resilient offline shell */
-const CACHE_VERSION = 'lamylenoise-v1.4.0';
+/* SOKIVA resilient offline shell */
+const CACHE_VERSION = 'sokiva-v1.5.0';
 const APP_SHELL = [
   '/',
   '/index.html',
