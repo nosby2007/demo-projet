@@ -126,27 +126,39 @@ async function writeNotification(uid, order, eventKey, role, spec, createdAt) {
   const payload = buildNotification(order, eventKey, role, spec, createdAt);
   const ref = db.ref(`userNotifications/${recipientUid}/${payload.id}`);
   const result = await ref.transaction(current => current || payload, undefined, false);
+  if (!result.committed && !result.snapshot.exists()) {
+    throw new Error(`Notification ${payload.id} non enregistrée.`);
+  }
   return result.snapshot.val() || null;
 }
 
 async function notifyMany(uids, order, eventKey, role, spec, createdAt) {
   const unique = [...new Set((uids || []).map(uid => clean(uid, 160)).filter(Boolean))];
-  await Promise.allSettled(unique.map(uid => writeNotification(uid, order, eventKey, role, spec, createdAt)));
+  await Promise.all(unique.map(uid => writeNotification(uid, order, eventKey, role, spec, createdAt)));
 }
 
 function sellerUids(order) {
   return Object.keys(order?.sellerUids || {}).filter(uid => uid && uid !== 'catalog');
 }
 
+function isActiveRoleProfile(profile, tenantId, role) {
+  return Boolean(
+    profile &&
+    clean(profile.tenantId || DEFAULT_TENANT, 80) === clean(tenantId || DEFAULT_TENANT, 80) &&
+    profile.role === role &&
+    profile.status !== 'disabled'
+  );
+}
+
 async function activeRoleUids(tenantId, role) {
+  const normalizedTenant = clean(tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
   const snapshot = await db.ref('profiles')
-    .orderByChild('role')
-    .equalTo(role)
+    .orderByChild('tenantId')
+    .equalTo(normalizedTenant)
     .limitToFirst(MAX_ROLE_RECIPIENTS)
     .get();
   return Object.entries(snapshot.val() || {})
-    .filter(([, profile]) => clean(profile?.tenantId || DEFAULT_TENANT, 80) === tenantId)
-    .filter(([, profile]) => profile?.status !== 'disabled')
+    .filter(([, profile]) => isActiveRoleProfile(profile, normalizedTenant, role))
     .map(([uid]) => uid);
 }
 
@@ -158,7 +170,7 @@ async function notifyCustomerStatus(order, status, createdAt) {
 
 async function notifyOrderCreated(order, createdAt) {
   const reference = shortOrderId(order.id);
-  const tasks = [
+  await Promise.all([
     writeNotification(order.customerUid, order, 'order_received', 'customer', {
       type: 'order_received',
       title: 'Commande reçue',
@@ -171,8 +183,7 @@ async function notifyOrderCreated(order, createdAt) {
       body: `Une nouvelle commande ${reference} attend votre préparation.`,
       priority: 'high'
     }, createdAt)
-  ];
-  await Promise.allSettled(tasks);
+  ]);
 }
 
 async function notifyStatusActors(order, status, createdAt) {
@@ -239,7 +250,7 @@ async function notifyStatusActors(order, status, createdAt) {
     }, createdAt));
   }
 
-  await Promise.allSettled(tasks);
+  await Promise.all(tasks);
 }
 
 async function requireActiveUser(request) {
@@ -335,3 +346,4 @@ exports.buildNotification = buildNotification;
 exports.customerStatusSpec = customerStatusSpec;
 exports.shouldNotifyNearby = shouldNotifyNearby;
 exports.sellerUids = sellerUids;
+exports.isActiveRoleProfile = isActiveRoleProfile;
