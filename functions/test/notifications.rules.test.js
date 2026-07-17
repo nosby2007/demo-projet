@@ -29,6 +29,7 @@ beforeEach(async () => {
     const db = context.database();
     await set(ref(db, 'profiles/customer-a'), { role: 'customer', status: 'active', tenantId: 'lamylenoise' });
     await set(ref(db, 'profiles/customer-b'), { role: 'customer', status: 'active', tenantId: 'lamylenoise' });
+    await set(ref(db, 'profiles/customer-disabled'), { role: 'customer', status: 'disabled', tenantId: 'lamylenoise' });
     await set(ref(db, 'profiles/admin-a'), { role: 'admin', status: 'active', tenantId: 'lamylenoise' });
     await set(ref(db, 'userNotifications/customer-a/order-1_status_in_transit'), {
       id: 'order-1_status_in_transit',
@@ -41,13 +42,29 @@ beforeEach(async () => {
       createdAt: 1000,
       readAt: null
     });
+    await set(ref(db, 'userNotifications/customer-disabled/order-2_status_confirmed'), {
+      id: 'order-2_status_confirmed',
+      tenantId: 'lamylenoise',
+      orderId: 'order-2',
+      type: 'order_confirmed',
+      title: 'Commande confirmée',
+      body: 'Commande enregistrée.',
+      deepLink: 'customer.html?order=order-2',
+      createdAt: 1000,
+      readAt: null
+    });
   });
 });
 
-test('authenticated owner can read only their notification inbox', async () => {
+test('authenticated active owner can read only their notification inbox', async () => {
   const ownerDb = testEnv.authenticatedContext('customer-a').database();
   await assertSucceeds(get(ref(ownerDb, 'userNotifications/customer-a')));
   await assertFails(get(ref(ownerDb, 'userNotifications/customer-b')));
+});
+
+test('disabled account cannot read its former notification inbox', async () => {
+  const disabledDb = testEnv.authenticatedContext('customer-disabled').database();
+  await assertFails(get(ref(disabledDb, 'userNotifications/customer-disabled')));
 });
 
 test('other users, admins and unauthenticated clients cannot read an owner inbox', async () => {
@@ -59,7 +76,7 @@ test('other users, admins and unauthenticated clients cannot read an owner inbox
 });
 
 test('all browser roles are denied direct notification writes and read-state changes', async () => {
-  for (const uid of ['customer-a', 'customer-b', 'admin-a']) {
+  for (const uid of ['customer-a', 'customer-b', 'customer-disabled', 'admin-a']) {
     const db = testEnv.authenticatedContext(uid).database();
     await assertFails(update(ref(db, 'userNotifications/customer-a/order-1_status_in_transit'), {
       readAt: Date.now()
