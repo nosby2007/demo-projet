@@ -29,7 +29,13 @@ jobs:
           java-version: 21
 
       - name: Validate static application and security configuration
-        run: npm run build
+        run: node scripts/validate-static-site.mjs
+
+      - name: Validate marketplace hardening regressions
+        run: node scripts/validate-hardening-v2.mjs
+
+      - name: Validate audit and traceability stack
+        run: node scripts/validate-audit-stack.mjs
 
       - name: Install backend test dependencies
         working-directory: functions

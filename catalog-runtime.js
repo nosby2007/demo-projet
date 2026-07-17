@@ -2,12 +2,14 @@
 'use strict';
 
 (function tenantCatalogueRuntime() {
-  if (!window.MarketplaceData || !window.AfroMarketFirebase?.db) {
+  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
+  if (!window.MarketplaceData || !backend?.db) {
     console.warn('Marketplace and Firebase must load before catalog-runtime.js');
     return;
   }
 
   const TENANT_ID = 'lamylenoise';
+  const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i;
   const HTML_ENTITIES = Object.freeze({
     '&': '&amp;',
     '<': '&lt;',
@@ -30,9 +32,12 @@
   function safeImageUrl(value) {
     const url = String(value || '').trim();
     if (!url) return '';
+    if (/^data:/i.test(url)) {
+      return SAFE_DATA_IMAGE.test(url) ? escapeHtml(url, 1200) : '';
+    }
     try {
       const parsed = new URL(url, window.location.origin);
-      if (parsed.origin === window.location.origin || parsed.protocol === 'https:' || parsed.protocol === 'data:') {
+      if (parsed.origin === window.location.origin || parsed.protocol === 'https:') {
         return escapeHtml(parsed.href, 1200);
       }
     } catch {
@@ -65,7 +70,7 @@
 
   MarketplaceData.getProducts = async function getTenantPublicProducts(fallback = []) {
     try {
-      const snapshot = await window.AfroMarketFirebase.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
+      const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
       const products = Object.entries(values)
         .map(([id, product]) => sanitizePublicProduct(id, product))
@@ -78,5 +83,6 @@
     }
   };
 
-  window.LamylenoiseCatalogue = Object.freeze({ tenantId: TENANT_ID, source: 'publicCatalog' });
+  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, source: 'publicCatalog' });
+  window.LamylenoiseCatalogue = window.SokivaCatalogue;
 })();

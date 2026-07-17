@@ -1,12 +1,12 @@
 {
-  "name": "lamylenoise-web",
-  "version": "1.2.0",
+  "name": "sokiva-web",
+  "version": "1.7.0",
   "private": true,
-  "description": "LAMYLENOISE marketplace frontend and trusted Firebase backend.",
+  "description": "SOKIVA marketplace frontend and trusted Firebase backend.",
   "scripts": {
-    "build": "node scripts/validate-static-site.mjs",
+    "build": "node scripts/validate-static-site.mjs && node scripts/validate-hardening-v2.mjs && node scripts/validate-audit-stack.mjs",
     "test:functions": "npm --prefix functions install --ignore-scripts && npm --prefix functions test",
-    "test:rules": "firebase emulators:exec --project lamylenoise-rules-test --only database \"npm --prefix functions run test:rules\"",
+    "test:rules": "firebase emulators:exec --project sokiva-rules-test --only database \"npm --prefix functions run test:rules\"",
     "check": "npm run build && npm run test:functions",
     "emulators": "firebase emulators:start --only auth,database,functions,hosting",
     "deploy": "node scripts/deploy-safe.mjs"
