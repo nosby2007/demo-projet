@@ -31,6 +31,16 @@
     return /^\d+$/.test(raw) ? `catalog-${raw}` : raw;
   }
 
+  function normalizeRoleRecord(record) {
+    if (record?.sellerPayout != null && !record.payout) {
+      return { ...record, payout: { seller: Number(record.sellerPayout || 0) } };
+    }
+    if (record?.courierPayout != null && !record.payout) {
+      return { ...record, payout: { courier: Number(record.courierPayout || 0) } };
+    }
+    return record;
+  }
+
   MarketplaceData.createOrder = async function createSecureOrder(order) {
     try {
       const response = await callable('createOrderDraft')({
@@ -58,7 +68,8 @@
     if (path !== 'orders') return original.list(path, localKey);
     try {
       const response = await callable('listOrdersForRole')({ tenantId: 'lamylenoise' });
-      return Array.isArray(response.data?.orders) ? response.data.orders : [];
+      const orders = Array.isArray(response.data?.orders) ? response.data.orders : [];
+      return orders.map(normalizeRoleRecord);
     } catch (error) {
       throw new Error(messageFrom(error, 'Impossible de charger les commandes autorisées.'));
     }
@@ -108,6 +119,17 @@
       throw new Error(messageFrom(error, 'Le produit n’a pas pu être soumis.'));
     }
   };
+
+  if (typeof Toast !== 'undefined' && typeof Toast.show === 'function') {
+    const showToast = Toast.show.bind(Toast);
+    Toast.show = function secureMessage(message, ...args) {
+      const replacements = {
+        'Produit publie dans la boutique': 'Produit soumis pour validation par l’administrateur',
+        'Statut approuve et identifiants generes': 'Candidature approuvée et compte existant activé'
+      };
+      return showToast(replacements[message] || message, ...args);
+    };
+  }
 
   window.LamylenoiseSaaS = Object.freeze({
     mode: 'trusted-backend',
