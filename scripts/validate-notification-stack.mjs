@@ -71,6 +71,7 @@ for (const invariant of [
 if (inboxRule['.write'] !== false) errors.push('Notification inboxes must reject direct browser writes.');
 const readRule = String(inboxRule['.read'] || '');
 if (!readRule.includes('auth.uid == $uid')) errors.push('Users must be limited to their own notification inbox.');
+if (!readRule.includes("child('status').val() != 'disabled'")) errors.push('Disabled accounts must lose notification inbox access.');
 for (const index of ['createdAt', 'readAt']) {
   if (!inboxRule['.indexOn']?.includes(index)) errors.push(`Notification inbox must index ${index}.`);
 }
@@ -127,4 +128,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Notification validation passed. Inboxes are private, browser writes are denied, alerts require explicit consent and deep links stay same-origin.');
+console.log('Notification validation passed. Inboxes are private, disabled accounts are blocked, browser writes are denied, alerts require explicit consent and deep links stay same-origin.');
