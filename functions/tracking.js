@@ -83,6 +83,11 @@ function routeEstimate(location, destination) {
   };
 }
 
+function isStrictlyNewerSample(previous, capturedAt) {
+  const previousCapturedAt = finite(previous?.capturedAt);
+  return previousCapturedAt === null || capturedAt > previousCapturedAt;
+}
+
 async function requireProfile(request, roles) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
@@ -206,20 +211,6 @@ exports.setDeliveryDestination = onCall({ region: 'me-central1', maxInstances: 2
   if (!orderId) throw new HttpsError('invalid-argument', 'Commande manquante.');
 
   const point = validateUaePoint(request.data?.location, 'Point de livraison');
-  const orderRef = db.ref(`orders/${orderId}`);
-  const orderSnapshot = await orderRef.get();
-  const order = orderSnapshot.val();
-  if (!order) throw new HttpsError('not-found', 'Commande introuvable.');
-  if (clean(order.tenantId || DEFAULT_TENANT, 80) !== tenantId) {
-    throw new HttpsError('permission-denied', 'Commande rattachée à une autre organisation.');
-  }
-  if (profile.role !== 'admin' && order.customerUid !== uid) {
-    throw new HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
-  }
-  if (order.status === 'in_transit' || TERMINAL_STATUSES.has(order.status)) {
-    throw new HttpsError('failed-precondition', 'Le point de livraison est verrouillé dès le départ du livreur.');
-  }
-
   const now = Date.now();
   const location = {
     latitude: point.latitude,
@@ -230,7 +221,37 @@ exports.setDeliveryDestination = onCall({ region: 'me-central1', maxInstances: 2
     capturedAt: Number(request.data?.capturedAt || now),
     updatedAt: now
   };
-  await orderRef.update({ deliveryLocation: location, updatedAt: now });
+  const orderRef = db.ref(`orders/${orderId}`);
+  let destinationProblem = null;
+  const transaction = await orderRef.transaction(current => {
+    destinationProblem = null;
+    if (!current) {
+      destinationProblem = new HttpsError('not-found', 'Commande introuvable.');
+      return;
+    }
+    if (clean(current.tenantId || DEFAULT_TENANT, 80) !== tenantId) {
+      destinationProblem = new HttpsError('permission-denied', 'Commande rattachée à une autre organisation.');
+      return;
+    }
+    if (profile.role !== 'admin' && current.customerUid !== uid) {
+      destinationProblem = new HttpsError('permission-denied', 'Cette commande ne vous appartient pas.');
+      return;
+    }
+    if (current.status === 'in_transit' || TERMINAL_STATUSES.has(current.status)) {
+      destinationProblem = new HttpsError('failed-precondition', 'Le point de livraison est verrouillé dès le départ du livreur.');
+      return;
+    }
+    return {
+      ...current,
+      deliveryLocation: location,
+      updatedAt: now
+    };
+  }, undefined, false);
+
+  if (!transaction.committed) {
+    throw destinationProblem || new HttpsError('aborted', 'Le point de livraison n’a pas pu être enregistré.');
+  }
+
   await db.ref(`orderTracking/${orderId}/destination`).set({
     latitude: location.latitude,
     longitude: location.longitude,
@@ -287,12 +308,16 @@ exports.updateCourierLocation = onCall({ region: 'me-central1', maxInstances: 50
     response = null;
     const tracking = current || {};
     const previous = tracking.courierLocation;
+    if (previous?.capturedAt && !isStrictlyNewerSample(previous, capturedAt)) {
+      problem = new HttpsError('failed-precondition', 'Position GPS plus ancienne que la dernière position enregistrée.');
+      return;
+    }
     if (previous && now - Number(previous.publishedAt || 0) < LOCATION_MIN_INTERVAL_MS) {
       throttled = true;
       return;
     }
     if (previous?.capturedAt) {
-      const elapsedSeconds = Math.max(1, (capturedAt - Number(previous.capturedAt)) / 1000);
+      const elapsedSeconds = (capturedAt - Number(previous.capturedAt)) / 1000;
       const movedMeters = haversineMeters(previous, point);
       const allowedMeters = 500 + elapsedSeconds * 60;
       if (movedMeters !== null && movedMeters > allowedMeters) {
@@ -346,3 +371,4 @@ exports.haversineMeters = haversineMeters;
 exports.validateUaePoint = validateUaePoint;
 exports.routeEstimate = routeEstimate;
 exports.courierSafeJob = courierSafeJob;
+exports.isStrictlyNewerSample = isStrictlyNewerSample;
