@@ -1,9 +1,10 @@
 /* LAMYLENOISE resilient offline shell */
-const CACHE_VERSION = 'lamylenoise-v1.3.0';
+const CACHE_VERSION = 'lamylenoise-v1.4.0';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/shop.html',
+  '/product.html',
   '/checkout.html',
   '/customer.html',
   '/seller.html',
@@ -17,6 +18,10 @@ const APP_SHELL = [
   '/app.js',
   '/marketplace.js',
   '/saas-runtime.js',
+  '/catalog-runtime.js',
+  '/product-public-runtime.js',
+  '/checkout-runtime-v5.js',
+  '/role-sync-runtime.js',
   '/firebase-config.js',
   '/firebase-functions-config.js',
   '/app.webmanifest',
