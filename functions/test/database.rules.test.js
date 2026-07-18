@@ -133,10 +133,18 @@ test('browser clients cannot create or change the superadmin flag', async () => 
   await assertFails(update(ref(adminDb, 'profiles/owner-1'), { isSuperAdmin: false }));
 });
 
-test('authenticated user can submit an employment application linked to their account', async () => {
-  const db = testEnv.authenticatedContext('customer-1').database();
+test('verified user can submit a professional application linked to their account', async () => {
+  const db = testEnv.authenticatedContext('customer-1', { email_verified: true }).database();
   await assertSucceeds(set(ref(db, 'roleRequests/request-1'), {
     type: 'seller', name: 'Client Test', email: 'client@example.com',
+    phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
+  }));
+});
+
+test('unverified user cannot submit a professional application', async () => {
+  const db = testEnv.authenticatedContext('customer-1', { email_verified: false }).database();
+  await assertFails(set(ref(db, 'roleRequests/request-unverified'), {
+    type: 'courier', name: 'Client Test', email: 'client@example.com',
     phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
   }));
 });
