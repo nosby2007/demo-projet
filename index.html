@@ -3,103 +3,722 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="SOKIVA — marketplace africaine, opportunités vendeurs et livraison suivie aux Émirats Arabes Unis." />
+  <meta name="description" content="LAMYLENOISE – L'épicerie africaine d'Abu Dhabi. Livraison express dans tous les Émirats Arabes Unis." />
   <meta name="theme-color" content="#FF6B2B" />
-  <meta name="application-name" content="SOKIVA" />
+  <meta name="application-name" content="LAMYLENOISE" />
   <link rel="manifest" href="app.webmanifest" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E" />
-  <title>SOKIVA — Marketplace africaine et livraison suivie aux UAE</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E" />
+  <title>LAMYLENOISE — L'Afrique livrée à votre porte • Abu Dhabi & UAE</title>
+
+  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons via CDN -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+
+  <!-- Stylesheet -->
   <link rel="stylesheet" href="style.css" />
 </head>
-<body data-shell="full" data-page="index.html">
-  <main>
-    <section class="hero" aria-label="Présentation SOKIVA">
-      <article class="hero-slide active">
-        <div class="container hero-inner">
-          <div class="hero-content">
-            <span class="hero-eyebrow">Marketplace africaine aux UAE</span>
-            <h1>Vendre, acheter et livrer avec <span>SOKIVA</span></h1>
-            <p>Une plateforme sécurisée reliant clients, vendeurs africains et livreurs, avec commandes contrôlées, suivi en temps réel et notifications privées.</p>
-            <div class="hero-actions">
-              <a href="shop.html" class="btn-primary"><i data-lucide="shopping-bag"></i> Ouvrir la boutique</a>
-              <a href="register.html" class="btn-ghost-dark" data-auth-create-account><i data-lucide="user-plus"></i> Créer un compte</a>
-              <a href="request.html" class="btn-ghost-dark"><i data-lucide="store"></i> Vendre ou livrer</a>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       TOAST CONTAINER
+  ═══════════════════════════════════════════ -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ═══════════════════════════════════════════
+       CART DRAWER
+  ═══════════════════════════════════════════ -->
+  <div id="cart-overlay" class="cart-overlay" role="dialog" aria-modal="true" aria-label="Panier d'achat">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <h2>Mon Panier <span id="cart-count-badge" class="cart-badge">0</span></h2>
+        <button id="cart-close" class="icon-btn" aria-label="Fermer le panier">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div id="cart-items" class="cart-items">
+        <div class="cart-empty">
+          <i data-lucide="shopping-bag"></i>
+          <p>Votre panier est vide</p>
+          <span>Découvrez nos saveurs d'Afrique</span>
+        </div>
+      </div>
+      <div class="cart-footer" id="cart-footer" style="display:none;">
+        <div class="cart-subtotal">
+          <span>Sous-total</span>
+          <strong id="cart-total">0 AED</strong>
+        </div>
+        <button class="btn-checkout">
+          <i data-lucide="credit-card"></i>
+          Commander • Livraison UAE
+        </button>
+        <p class="cart-disclaimer">Livraison gratuite à partir de 150 AED dans tout l'UAE</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOP BAR
+  ═══════════════════════════════════════════ -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <span>🚚 Livraison express dans tout l'UAE — <strong>Abu Dhabi • Dubai • Sharjah • Ajman</strong></span>
+      <div class="topbar-links">
+        <a href="delivery.html">Suivre ma livraison</a>
+        <a href="contact.html">WhatsApp +971 50 000 0000</a>
+        <a href="request.html">Vendre / Livrer</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       HEADER / NAV
+  ═══════════════════════════════════════════ -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+
+      <!-- Logo -->
+      <a href="#" class="logo" aria-label="LAMYLENOISE — Accueil">
+        <span class="logo-nova">LAMYLENOISE</span>
+        <span class="logo-dot">●</span>
+      </a>
+
+      <!-- Search Bar -->
+      <div class="search-wrapper" role="search">
+        <div class="search-category">
+          <select id="search-category" aria-label="Catégorie de recherche">
+            <option>Tout</option>
+            <option>Épicerie</option>
+            <option>Boissons</option>
+            <option>Épices</option>
+            <option>Mode Wax</option>
+            <option>Beauté Karité</option>
+            <option>Cuisine</option>
+          </select>
+          <i data-lucide="chevron-down"></i>
+        </div>
+        <input
+          type="search"
+          id="search-input"
+          placeholder="Rechercher attiéké, karité, wax, bissap, jollof…"
+          autocomplete="off"
+          aria-label="Rechercher"
+        />
+        <button class="search-btn" aria-label="Lancer la recherche">
+          <i data-lucide="search"></i>
+        </button>
+        <!-- Suggestions Dropdown -->
+        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Suggestions de recherche"></div>
+      </div>
+
+      <!-- Header Actions -->
+      <nav class="header-actions" aria-label="Actions principales">
+        <button class="icon-btn header-action" id="wishlist-btn" aria-label="Liste de souhaits">
+          <i data-lucide="heart"></i>
+          <span class="action-label">Favoris</span>
+        </button>
+        <button class="icon-btn header-action" id="account-btn" aria-label="Mon compte">
+          <i data-lucide="user"></i>
+          <span class="action-label">Compte</span>
+        </button>
+        <button class="icon-btn header-action cart-toggle" id="cart-toggle" aria-label="Panier d'achat">
+          <i data-lucide="shopping-cart"></i>
+          <span id="cart-count" class="cart-count">0</span>
+          <span class="action-label">Panier</span>
+        </button>
+      </nav>
+
+      <!-- Hamburger (mobile) -->
+      <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- ── Category Nav ── -->
+    <nav class="cat-nav" id="cat-nav" aria-label="Catégories">
+      <div class="container cat-nav-inner">
+        <button class="cat-item active" data-cat="tous">
+          <i data-lucide="layout-grid"></i> Tout
+        </button>
+        <button class="cat-item" data-cat="epicerie">
+          <i data-lucide="shopping-basket"></i> Épicerie
+        </button>
+        <button class="cat-item" data-cat="boissons">
+          <i data-lucide="coffee"></i> Boissons
+        </button>
+        <button class="cat-item" data-cat="epices">
+          <i data-lucide="flame"></i> Épices
+        </button>
+        <button class="cat-item" data-cat="mode">
+          <i data-lucide="shirt"></i> Mode Wax
+        </button>
+        <button class="cat-item" data-cat="beaute">
+          <i data-lucide="sparkles"></i> Beauté Karité
+        </button>
+        <button class="cat-item" data-cat="cuisine">
+          <i data-lucide="utensils"></i> Cuisine
+        </button>
+        <button class="cat-item" data-cat="snacks">
+          <i data-lucide="cookie"></i> Snacks
+        </button>
+      </div>
+      <span class="cat-indicator" id="cat-indicator"></span>
+    </nav>
+
+    <!-- Mobile Nav Menu -->
+    <div class="mobile-nav" id="mobile-nav" aria-hidden="true">
+      <div class="mobile-nav-inner">
+        <a href="account.html" class="mobile-link"><i data-lucide="user"></i> Mon Compte</a>
+        <a href="account.html#wishlist" class="mobile-link"><i data-lucide="heart"></i> Mes Favoris</a>
+        <a href="account.html#orders" class="mobile-link"><i data-lucide="package"></i> Mes Commandes</a>
+        <a href="customer.html" class="mobile-link"><i data-lucide="user-round"></i> Espace client</a>
+        <a href="seller.html" class="mobile-link"><i data-lucide="store"></i> Espace vendeur</a>
+        <a href="courier.html" class="mobile-link"><i data-lucide="truck"></i> Espace livreur</a>
+        <a href="admin.html" class="mobile-link"><i data-lucide="shield"></i> Admin</a>
+        <a href="request.html" class="mobile-link"><i data-lucide="badge-check"></i> Demande d'acces</a>
+        <a href="#delivery" class="mobile-link"><i data-lucide="truck"></i> Réserver une livraison</a>
+        <hr class="mobile-divider"/>
+        <a href="shop.html?cat=epicerie" class="mobile-link"><i data-lucide="shopping-basket"></i> Épicerie</a>
+        <a href="shop.html?cat=boissons" class="mobile-link"><i data-lucide="coffee"></i> Boissons</a>
+        <a href="shop.html?cat=epices" class="mobile-link"><i data-lucide="flame"></i> Épices</a>
+        <a href="shop.html?cat=mode" class="mobile-link"><i data-lucide="shirt"></i> Mode Wax</a>
+        <a href="shop.html?cat=beaute" class="mobile-link"><i data-lucide="sparkles"></i> Beauté Karité</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       HERO BANNER
+  ═══════════════════════════════════════════ -->
+  <section class="hero" aria-label="Promotion principale">
+    <div class="hero-slides" id="hero-slides">
+
+      <div class="hero-slide active" style="--slide-bg: linear-gradient(135deg, #2A1503 0%, #6B3410 55%, #2A1503 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">🌿 Saveurs authentiques d'Afrique</span>
+            <h1 class="hero-title">L'Afrique<br /><em>livrée à votre porte</em></h1>
+            <p class="hero-sub">Attiéké, fonio, karité, bissap, wax… Plus de <strong>800 produits</strong> importés directement du continent, livrés dans tout l'UAE en <strong>24h</strong>.</p>
+            <div class="hero-ctas">
+              <a href="#products" class="btn-primary">Découvrir la boutique <i data-lucide="arrow-right"></i></a>
+              <a href="#delivery" class="btn-ghost">Réserver livraison</a>
             </div>
           </div>
-          <div class="hero-image-wrap">
-            <div class="empty-state" style="background:rgba(255,255,255,.94);border-radius:1.5rem;padding:2rem;">
-              <i data-lucide="shield-check"></i>
-              <h3>Infrastructure SOKIVA</h3>
-              <p>Firebase Auth, rôles sécurisés, audit, commandes idempotentes, tracking GPS et pipeline CI/CD.</p>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&q=80" alt="Épices et produits africains colorés" loading="eager" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Express</span>
+                <span class="badge-value">24h</span>
+              </div>
             </div>
           </div>
         </div>
-      </article>
-    </section>
-
-    <section class="benefits-bar" aria-label="Garanties SOKIVA">
-      <div class="container benefits-grid">
-        <div class="benefit"><i data-lucide="badge-check"></i><div><strong>Comptes vérifiés</strong><span>Email et rôles Firebase</span></div></div>
-        <div class="benefit"><i data-lucide="package-check"></i><div><strong>Commandes sécurisées</strong><span>Prix et stock contrôlés côté serveur</span></div></div>
-        <div class="benefit"><i data-lucide="map-pin"></i><div><strong>Suivi en direct</strong><span>Carte privée pendant la livraison</span></div></div>
-        <div class="benefit"><i data-lucide="bell"></i><div><strong>Notifications privées</strong><span>Client, vendeur et livreur</span></div></div>
       </div>
-    </section>
 
-    <section class="section" aria-labelledby="catalogue-title">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <span class="section-kicker">Catalogue réel</span>
-            <h2 class="section-title" id="catalogue-title">Produits validés par SOKIVA</h2>
-            <p>Cette zone lit directement le catalogue public Firebase. Les anciennes fiches de démonstration ne sont plus utilisées.</p>
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #1F0A28 0%, #6B1D6A 55%, #1F0A28 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">👗 Collection Wax 2026</span>
+            <h1 class="hero-title">Mode Africaine<br /><em>made for UAE</em></h1>
+            <p class="hero-sub">Tissus wax authentiques du Ghana et de Côte d'Ivoire, boubous brodés, accessoires faits main. Style intemporel, livraison express.</p>
+            <div class="hero-ctas">
+              <a href="#products" class="btn-primary">Explorer le Wax <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Lookbook 2026</a>
+            </div>
           </div>
-          <a href="shop.html" class="btn-link">Voir toute la boutique <i data-lucide="arrow-right"></i></a>
-        </div>
-        <div id="home-catalogue-preview" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <section class="how-section" aria-labelledby="how-title">
-      <div class="container">
-        <div class="section-head centered">
-          <div>
-            <span class="section-kicker">Écosystème</span>
-            <h2 class="section-title" id="how-title">Un espace adapté à chaque rôle</h2>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&q=80" alt="Tissu wax africain coloré" loading="lazy" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Nouveau</span>
+                <span class="badge-value">2026</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="steps-grid">
-          <article class="step-card"><span class="step-num">1</span><i data-lucide="user-round"></i><h3>Client</h3><p>Compte vérifié, commandes réelles, adresses UAE et suivi du livreur.</p><a href="register.html" class="btn-link" data-auth-create-account>Créer un compte</a></article>
-          <article class="step-card"><span class="step-num">2</span><i data-lucide="store"></i><h3>Vendeur</h3><p>Produits soumis à validation, gestion du stock, commandes et revenus.</p><a href="request.html" class="btn-link">Demander l’accès vendeur</a></article>
-          <article class="step-card"><span class="step-num">3</span><i data-lucide="truck"></i><h3>Livreur</h3><p>Courses attribuées, GPS volontaire, remise OTP et revenus de livraison.</p><a href="request.html" class="btn-link">Demander l’accès livreur</a></article>
-          <article class="step-card"><span class="step-num">4</span><i data-lucide="shield-check"></i><h3>Administration</h3><p>Contrôle des rôles, catalogue, audit et opérations sensibles.</p><a href="login.html" class="btn-link">Connexion sécurisée</a></article>
-        </div>
       </div>
-    </section>
 
-    <section class="newsletter" aria-label="Informations SOKIVA">
-      <div class="container newsletter-inner">
-        <div class="newsletter-text">
-          <i data-lucide="rocket"></i>
-          <div>
-            <h2>Le pilote SOKIVA se construit avec des données réelles</h2>
-            <p>Les profils, commandes et produits apparaissent uniquement après création ou validation dans Firebase.</p>
+      <div class="hero-slide" style="--slide-bg: linear-gradient(135deg, #0B2A1A 0%, #1A5C35 55%, #0B2A1A 100%);">
+        <div class="container hero-content">
+          <div class="hero-text">
+            <span class="hero-eyebrow">🚚 Livraison dans tout l'UAE</span>
+            <h1 class="hero-title">Abu Dhabi, Dubai,<br /><em>Sharjah & au-delà</em></h1>
+            <p class="hero-sub">Chaîne du froid garantie pour les produits frais. Créneaux de livraison au choix, paiement à la livraison disponible.</p>
+            <div class="hero-ctas">
+              <a href="#delivery" class="btn-primary">Réserver un créneau <i data-lucide="arrow-right"></i></a>
+              <a href="#" class="btn-ghost">Zones de livraison</a>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-image-wrap">
+              <img src="https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&q=80" alt="Livraison express UAE" loading="lazy" />
+              <div class="hero-badge-float">
+                <span class="badge-label">Dès</span>
+                <span class="badge-value">150 AED</span>
+              </div>
+            </div>
           </div>
         </div>
-        <a href="login.html" class="btn-primary"><i data-lucide="log-in"></i> Se connecter</a>
       </div>
-    </section>
-  </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
+    </div>
+
+    <!-- Hero Controls -->
+    <div class="hero-controls">
+      <button class="hero-prev" id="hero-prev" aria-label="Slide précédente"><i data-lucide="chevron-left"></i></button>
+      <div class="hero-dots" id="hero-dots" role="tablist" aria-label="Slides du hero">
+        <button class="hero-dot active" role="tab" aria-selected="true" data-slide="0"></button>
+        <button class="hero-dot" role="tab" aria-selected="false" data-slide="1"></button>
+        <button class="hero-dot" role="tab" aria-selected="false" data-slide="2"></button>
+      </div>
+      <button class="hero-next" id="hero-next" aria-label="Slide suivante"><i data-lucide="chevron-right"></i></button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TRUST STRIP
+  ═══════════════════════════════════════════ -->
+  <div class="trust-strip">
+    <div class="container trust-inner">
+      <div class="trust-item">
+        <i data-lucide="shield-check"></i>
+        <div>
+          <strong>Produits authentiques</strong>
+          <span>Importés d'Afrique</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="truck"></i>
+        <div>
+          <strong>Livraison 24h</strong>
+          <span>Tout l'UAE</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="snowflake"></i>
+        <div>
+          <strong>Chaîne du froid</strong>
+          <span>Frais garantis</span>
+        </div>
+      </div>
+      <div class="trust-item">
+        <i data-lucide="headphones"></i>
+        <div>
+          <strong>Support 7j/7</strong>
+          <span>WhatsApp en FR/EN/AR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FLASH DEALS TIMER
+  ═══════════════════════════════════════════ -->
+  <section class="flash-section" aria-label="Ventes flash">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">⚡ Limité dans le temps</span>
+          <h2 class="section-title">Ventes Flash</h2>
+        </div>
+        <div class="flash-timer" id="flash-timer" aria-live="polite" aria-label="Compte à rebours des ventes flash">
+          <div class="timer-unit">
+            <span id="timer-h">04</span>
+            <label>H</label>
+          </div>
+          <span class="timer-sep">:</span>
+          <div class="timer-unit">
+            <span id="timer-m">23</span>
+            <label>M</label>
+          </div>
+          <span class="timer-sep">:</span>
+          <div class="timer-unit">
+            <span id="timer-s">47</span>
+            <label>S</label>
+          </div>
+        </div>
+        <a href="#" class="see-all-link">Tout voir <i data-lucide="arrow-right"></i></a>
+      </div>
+
+      <div class="products-scroll" id="flash-products" role="list">
+        <!-- Injected by JS -->
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+        <div class="skeleton-card" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CATEGORY QUICK ACCESS
+  ═══════════════════════════════════════════ -->
+  <section class="quick-cats" aria-label="Accès rapide aux catégories">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Explorer par catégorie</h2>
+      </div>
+      <div class="cat-grid">
+        <a href="#" class="cat-card" style="--cat-color:#D97706">
+          <div class="cat-icon-wrap"><i data-lucide="shopping-basket"></i></div>
+          <span>Épicerie</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#7C2D12">
+          <div class="cat-icon-wrap"><i data-lucide="coffee"></i></div>
+          <span>Boissons</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#DC2626">
+          <div class="cat-icon-wrap"><i data-lucide="flame"></i></div>
+          <span>Épices</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#E91E8C">
+          <div class="cat-icon-wrap"><i data-lucide="shirt"></i></div>
+          <span>Mode Wax</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#9C27B0">
+          <div class="cat-icon-wrap"><i data-lucide="sparkles"></i></div>
+          <span>Beauté Karité</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#0F766E">
+          <div class="cat-icon-wrap"><i data-lucide="utensils"></i></div>
+          <span>Cuisine</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#F59E0B">
+          <div class="cat-icon-wrap"><i data-lucide="cookie"></i></div>
+          <span>Snacks</span>
+        </a>
+        <a href="#" class="cat-card" style="--cat-color:#16A34A">
+          <div class="cat-icon-wrap"><i data-lucide="gift"></i></div>
+          <span>Cadeaux</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN PRODUCTS GRID
+  ═══════════════════════════════════════════ -->
+  <section class="products-section" id="products" aria-label="Catalogue produits">
+    <div class="container">
+      <div class="section-header products-section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">Catalogue</span>
+          <h2 class="section-title">Nos Produits</h2>
+        </div>
+        <div class="products-toolbar">
+          <!-- Filters -->
+          <div class="filter-chips" id="filter-chips" role="group" aria-label="Filtres actifs"></div>
+          <!-- Sort -->
+          <div class="sort-wrap">
+            <label for="sort-select" class="sr-only">Trier par</label>
+            <select id="sort-select" class="sort-select" aria-label="Trier les produits">
+              <option value="default">Pertinence</option>
+              <option value="price-asc">Prix : croissant</option>
+              <option value="price-desc">Prix : décroissant</option>
+              <option value="rating">Meilleures notes</option>
+              <option value="new">Nouveautés</option>
+            </select>
+            <i data-lucide="chevrons-up-down"></i>
+          </div>
+          <!-- View Toggle -->
+          <div class="view-toggle" role="group" aria-label="Mode d'affichage">
+            <button class="view-btn active" id="view-grid" aria-label="Vue grille" aria-pressed="true">
+              <i data-lucide="layout-grid"></i>
+            </button>
+            <button class="view-btn" id="view-list" aria-label="Vue liste" aria-pressed="false">
+              <i data-lucide="layout-list"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="products-layout">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar" id="sidebar" aria-label="Filtres produits">
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Catégories</h3>
+            <ul class="sidebar-list" id="sidebar-cats">
+              <li><label class="checkbox-label"><input type="checkbox" checked value="tous"> Tous les produits <span class="count">124</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="epicerie"> Épicerie <span class="count">48</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="boissons"> Boissons <span class="count">22</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="epices"> Épices & Condiments <span class="count">18</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="mode"> Mode Wax <span class="count">16</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="beaute"> Beauté Karité <span class="count">12</span></label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="cuisine"> Cuisine <span class="count">8</span></label></li>
+            </ul>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Prix (AED)</h3>
+            <div class="price-range-wrap">
+              <div class="price-inputs">
+                <input type="number" id="price-min" placeholder="Min" min="0" max="1500" aria-label="Prix minimum" />
+                <span>—</span>
+                <input type="number" id="price-max" placeholder="Max" min="0" max="1500" aria-label="Prix maximum" />
+              </div>
+              <input type="range" id="price-range" min="0" max="1500" value="1500" step="10" aria-label="Plage de prix" />
+              <div class="price-labels">
+                <span>0</span>
+                <span>1 500 AED</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Évaluation</h3>
+            <ul class="sidebar-list">
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="5"> ★★★★★ <span class="count">18</span></label></li>
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="4"> ★★★★☆ <span class="count">45</span></label></li>
+              <li><label class="checkbox-label rating-filter"><input type="checkbox" value="3"> ★★★☆☆ <span class="count">30</span></label></li>
+            </ul>
+          </div>
+
+          <div class="sidebar-section">
+            <h3 class="sidebar-title">Livraison UAE</h3>
+            <ul class="sidebar-list">
+              <li><label class="checkbox-label"><input type="checkbox" value="express"> Livraison 24h Abu Dhabi/Dubai</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="free"> Livraison gratuite (dès 150 AED)</label></li>
+              <li><label class="checkbox-label"><input type="checkbox" value="cold"> Chaîne du froid</label></li>
+            </ul>
+          </div>
+
+          <button class="btn-reset-filters" id="reset-filters">Réinitialiser les filtres</button>
+        </aside>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="products-grid" role="list" aria-label="Liste des produits">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <nav class="pagination" aria-label="Pagination des produits">
+        <button class="page-btn prev" id="page-prev" disabled aria-label="Page précédente"><i data-lucide="chevron-left"></i></button>
+        <div class="page-numbers" id="page-numbers" role="list"></div>
+        <button class="page-btn next" id="page-next" aria-label="Page suivante"><i data-lucide="chevron-right"></i></button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       DELIVERY RESERVATION (UAE)
+  ═══════════════════════════════════════════ -->
+  <section class="delivery-section" id="delivery" aria-label="Réservation de livraison UAE">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-title-group">
+          <span class="section-eyebrow">🚚 Livraison UAE</span>
+          <h2 class="section-title">Réserver un créneau de livraison</h2>
+          <p class="section-desc">Choisissez votre émirat, votre jour et votre créneau horaire. Chaîne du froid garantie pour les produits frais.</p>
+        </div>
+      </div>
+
+      <div class="delivery-grid">
+        <!-- Zones UAE -->
+        <div class="delivery-zones">
+          <h3 class="delivery-subtitle"><i data-lucide="map-pin"></i> Nos zones couvertes</h3>
+          <ul class="zones-list">
+            <li class="zone-item"><span class="zone-name">Abu Dhabi</span><span class="zone-info"><strong>24h</strong> • dès 0 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Dubai</span><span class="zone-info"><strong>24h</strong> • dès 15 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Sharjah</span><span class="zone-info"><strong>24-48h</strong> • dès 20 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Ajman</span><span class="zone-info"><strong>24-48h</strong> • dès 25 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Al Ain</span><span class="zone-info"><strong>48h</strong> • dès 30 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Ras Al Khaimah</span><span class="zone-info"><strong>48-72h</strong> • dès 35 AED</span></li>
+            <li class="zone-item"><span class="zone-name">Fujairah / Umm Al Quwain</span><span class="zone-info"><strong>48-72h</strong> • dès 35 AED</span></li>
+          </ul>
+          <p class="delivery-note"><i data-lucide="gift"></i> Livraison <strong>OFFERTE</strong> partout dans l'UAE pour toute commande dès 150 AED.</p>
+        </div>
+
+        <!-- Reservation Form -->
+        <form class="delivery-form" id="delivery-form" novalidate>
+          <h3 class="delivery-subtitle"><i data-lucide="calendar-clock"></i> Réserver mon créneau</h3>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Nom complet</span>
+              <input type="text" id="deliv-name" required placeholder="Aminata Diop" />
+            </label>
+            <label class="form-field">
+              <span>Téléphone (UAE)</span>
+              <input type="tel" id="deliv-phone" required placeholder="+971 50 123 4567" />
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Émirat</span>
+              <select id="deliv-emirate" required>
+                <option value="">Choisir un émirat…</option>
+                <option>Abu Dhabi</option>
+                <option>Dubai</option>
+                <option>Sharjah</option>
+                <option>Ajman</option>
+                <option>Al Ain</option>
+                <option>Ras Al Khaimah</option>
+                <option>Fujairah</option>
+                <option>Umm Al Quwain</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Quartier / Zone</span>
+              <input type="text" id="deliv-area" required placeholder="Khalifa City, Marina…" />
+            </label>
+          </div>
+
+          <label class="form-field full">
+            <span>Adresse complète (bâtiment, villa, n°)</span>
+            <input type="text" id="deliv-address" required placeholder="Villa 12, Street 5, Building 88…" />
+          </label>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Date souhaitée</span>
+              <input type="date" id="deliv-date" required />
+            </label>
+            <label class="form-field">
+              <span>Créneau horaire</span>
+              <select id="deliv-slot" required>
+                <option value="">Sélectionner…</option>
+                <option>09:00 – 12:00</option>
+                <option>12:00 – 15:00</option>
+                <option>15:00 – 18:00</option>
+                <option>18:00 – 21:00</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <label class="form-field">
+              <span>Mode de paiement</span>
+              <select id="deliv-pay" required>
+                <option>Carte bancaire (Visa / MasterCard)</option>
+                <option>Apple Pay</option>
+                <option>Tabby — 4x sans frais</option>
+                <option>Tamara</option>
+                <option>Cash à la livraison (COD)</option>
+              </select>
+            </label>
+            <label class="form-field checkbox-line">
+              <input type="checkbox" id="deliv-cold" />
+              <span>Commande contient des produits frais (chaîne du froid)</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary delivery-submit">
+            <i data-lucide="check-circle"></i> Confirmer la réservation
+          </button>
+          <p class="delivery-disclaimer">Vous recevrez un SMS et un email de confirmation avec le suivi de votre livreur.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       NEWSLETTER
+  ═══════════════════════════════════════════ -->
+  <section class="newsletter" aria-label="Inscription newsletter">
+    <div class="container newsletter-inner">
+      <div class="newsletter-text">
+        <i data-lucide="mail"></i>
+        <div>
+          <h2>Restez branché sur les nouveautés africaines</h2>
+          <p>Nouveaux arrivages, recettes, codes promo exclusifs UAE — directement dans votre boîte mail.</p>
+        </div>
+      </div>
+      <form class="newsletter-form" id="newsletter-form" novalidate>
+        <div class="input-group">
+          <input type="email" id="newsletter-email" placeholder="votre@email.com" aria-label="Votre adresse email" required />
+          <button type="submit" class="btn-primary">S'abonner</button>
+        </div>
+        <p class="newsletter-disclaimer">Pas de spam. Désabonnement en un clic.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo footer-logo">
+            <span class="logo-nova">LAMYLENOISE</span><span class="logo-dot">●</span>
+          </a>
+          <p>L'épicerie africaine de référence à Abu Dhabi. Plus de 800 produits authentiques importés du continent, livrés dans tous les Émirats.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+            <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            <a href="#" aria-label="TikTok"><i data-lucide="music-2"></i></a>
+            <a href="#" aria-label="WhatsApp"><i data-lucide="message-circle"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h3>Acheter</h3>
+          <ul>
+            <li><a href="account.html">Mon compte</a></li>
+            <li><a href="account.html#orders">Mes commandes</a></li>
+            <li><a href="shop.html">Catalogue complet</a></li>
+            <li><a href="delivery.html">Réserver livraison</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Aide & Support</h3>
+          <ul>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contactez-nous</a></li>
+            <li><a href="delivery.html">Zones de livraison UAE</a></li>
+            <li><a href="contact.html">WhatsApp +971 50 000 0000</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>À propos</h3>
+          <ul>
+            <li><a href="about.html">Qui sommes-nous</a></li>
+            <li><a href="request.html">Vendre sur LAMYLENOISE</a></li>
+            <li><a href="request.html">Devenir livreur UAE</a></li>
+            <li><a href="admin.html">Command center admin</a></li>
+            <li><a href="blog.html">Blog & Recettes</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h3>Paiements acceptés</h3>
+          <div class="payment-icons">
+            <span class="payment-badge">Visa</span>
+            <span class="payment-badge">MasterCard</span>
+            <span class="payment-badge">Apple Pay</span>
+            <span class="payment-badge">Tabby</span>
+            <span class="payment-badge">Tamara</span>
+            <span class="payment-badge">COD</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 LAMYLENOISE LLC — Abu Dhabi, UAE. Tous droits réservés.</p>
+        <div class="footer-legal">
+          <a href="legal.html#privacy">Confidentialité</a>
+          <a href="legal.html#terms">CGV</a>
+          <a href="legal.html#cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Back to top -->
+  <button class="back-to-top" id="back-to-top" aria-label="Retour en haut de page">
+    <i data-lucide="arrow-up"></i>
+  </button>
+
+  <!-- JS -->
   <script src="app.js"></script>
-  <script src="home-runtime.js"></script>
 </body>
 </html>
