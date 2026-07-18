@@ -2,14 +2,14 @@
 'use strict';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD3IwNnwKWbebGxjJTLVyknvyV267uR28w",
+  apiKey: "AIzaSyD3TwNnuwKbebGxjJTlVyknvyV267uR28w",
   authDomain: "sokiva-dev.firebaseapp.com",
   databaseURL: "https://sokiva-dev-default-rtdb.firebaseio.com",
   projectId: "sokiva-dev",
   storageBucket: "sokiva-dev.firebasestorage.app",
   messagingSenderId: "669134589789",
   appId: "1:669134589789:web:167daaa6a8979f416122b4",
-  measurementId: "G-TFECL1VPQQ"
+  measurementId: "G-TFECL1Y0QQ"
 };
 
 (function initFirebase() {
