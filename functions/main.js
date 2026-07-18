@@ -7,6 +7,7 @@ const roleApproval = require('./role-approval');
 const audit = require('./audit');
 const tracking = require('./tracking');
 const notifications = require('./notifications');
+const identity = require('./identity');
 
 module.exports = {
   ...marketplace,
@@ -27,5 +28,8 @@ module.exports = {
   notifyOrderChanges: notifications.notifyOrderChanges,
   notifyCourierNearby: notifications.notifyCourierNearby,
   markNotificationRead: notifications.markNotificationRead,
-  markAllNotificationsRead: notifications.markAllNotificationsRead
+  markAllNotificationsRead: notifications.markAllNotificationsRead,
+  registerCustomerProfile: identity.registerCustomerProfile,
+  getMyIdentity: identity.getMyIdentity,
+  updateMyProfile: identity.updateMyProfile
 };
