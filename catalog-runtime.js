@@ -47,7 +47,7 @@
   function sanitizePublicProduct(id, product) {
     const safeProductId = safeId(id || product?.id);
     if (!safeProductId) return null;
-    const normalized = MarketplaceData.normalizeProduct({
+    const normalized = window.MarketplaceData.normalizeProduct({
       ...product,
       id: safeProductId,
       name: escapeHtml(product?.name, 240),
@@ -68,7 +68,7 @@
     return normalized;
   }
 
-  MarketplaceData.getProducts = async function getTenantPublicProducts() {
+  window.MarketplaceData.getProducts = async function getTenantPublicProducts() {
     if (!backend?.db) {
       console.warn('SOKIVA Firebase catalogue unavailable; demo products are disabled.');
       window.MarketplaceCatalog = [];
