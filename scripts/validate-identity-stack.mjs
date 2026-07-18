@@ -15,9 +15,10 @@ const [
   identityRuntime,
   accountRuntime,
   brandRuntime,
-  homeRuntime,
   catalogRuntime,
   productRuntime,
+  appBootstrap,
+  appCore,
   accountHtml,
   loginHtml,
   registerHtml,
@@ -41,9 +42,10 @@ const [
   read('identity-runtime.js'),
   read('account-runtime.js'),
   read('brand-runtime.js'),
-  read('home-runtime.js'),
   read('catalog-runtime.js'),
   read('product-public-runtime.js'),
+  read('app.js'),
+  read('app-core.js'),
   read('account.html'),
   read('login.html'),
   read('register.html'),
@@ -67,9 +69,10 @@ for (const [name, source] of [
   ['identity-runtime.js', identityRuntime],
   ['account-runtime.js', accountRuntime],
   ['brand-runtime.js', brandRuntime],
-  ['home-runtime.js', homeRuntime],
   ['catalog-runtime.js', catalogRuntime],
   ['product-public-runtime.js', productRuntime],
+  ['app.js', appBootstrap],
+  ['app-core.js', appCore],
   ['functions/scripts/bootstrap-superadmin.js', bootstrap]
 ]) {
   try { new vm.Script(source, { filename: name }); }
@@ -171,11 +174,10 @@ for (const invariant of [
 }
 if (accountRuntime.includes('.innerHTML')) errors.push('Authenticated account data must not render with innerHTML.');
 
-const publicPages = {
+const strictlyBrandedPages = {
   'account.html': accountHtml,
   'login.html': loginHtml,
   'register.html': registerHtml,
-  'index.html': indexHtml,
   'about.html': aboutHtml,
   'shop.html': shopHtml,
   'product.html': productHtml,
@@ -184,25 +186,30 @@ const publicPages = {
   'faq.html': faqHtml,
   'legal.html': legalHtml
 };
-const forbiddenDemoValues = [
+for (const [name, html] of Object.entries(strictlyBrandedPages)) {
+  if (!html.includes('SOKIVA')) errors.push(`${name} must visibly identify SOKIVA.`);
+  if (html.includes('LAMYLENOISE')) errors.push(`${name} must not contain the legacy visible brand.`);
+}
+
+for (const value of [
   'Bonjour Aminata',
   'Aminata Diop',
   'aminata.d@exemple.ae',
   '#LYN-A7K3M9',
   'Villa 12, Street 5',
-  '5 000+',
-  '800+ produits',
-  '+971 50 000 0000',
-  'contact@lamylenoise.ae',
   'Trade License : 12345678',
   'TRN (TVA UAE) : 100000000000003'
-];
-for (const [name, html] of Object.entries(publicPages)) {
-  if (!html.includes('SOKIVA')) errors.push(`${name} must visibly identify SOKIVA.`);
-  if (html.includes('LAMYLENOISE')) errors.push(`${name} must not contain the legacy visible brand.`);
-  for (const value of forbiddenDemoValues) {
-    if (html.includes(value)) errors.push(`${name} contains legacy demonstration value: ${value}`);
+]) {
+  for (const [name, html] of Object.entries({ accountHtml, loginHtml, registerHtml, aboutHtml, contactHtml, legalHtml })) {
+    if (html.includes(value)) errors.push(`${name} contains obsolete personal demonstration data: ${value}`);
   }
+}
+
+for (const marker of ['hero-slides', 'flash-products', 'quick-cats', 'products-grid', 'delivery-section']) {
+  requireText(indexHtml, marker, `Homepage must preserve the original ecommerce section: ${marker}.`);
+}
+for (const unwanted of ['Infrastructure SOKIVA', 'Produits validés par SOKIVA', 'Un espace adapté à chaque rôle']) {
+  if (indexHtml.includes(unwanted)) errors.push(`Homepage must not contain replacement presentation copy: ${unwanted}`);
 }
 
 for (const [name, html] of [['account.html', accountHtml], ['login.html', loginHtml], ['register.html', registerHtml]]) {
@@ -212,8 +219,8 @@ for (const [name, html] of [['account.html', accountHtml], ['login.html', loginH
 }
 requireText(accountHtml, 'account-runtime.js', 'account.html must load the authenticated account runtime.');
 requireText(accountHtml, 'identity.css', 'account.html must load identity.css.');
-requireText(loginHtml, 'sokiva-login-form', 'Login must use the new SOKIVA authentication form.');
-requireText(registerHtml, 'sokiva-register-form', 'Registration must use the new SOKIVA authentication form.');
+requireText(loginHtml, 'sokiva-login-form', 'Login must use the SOKIVA authentication form.');
+requireText(registerHtml, 'sokiva-register-form', 'Registration must use the SOKIVA authentication form.');
 requireText(registerHtml, 'confirmPassword', 'Registration must confirm the password.');
 
 for (const invariant of [
@@ -222,27 +229,38 @@ for (const invariant of [
   'MutationObserver',
   'onAuthStateChanged(updateSessionChrome)',
   'user.getIdTokenResult()',
-  "token.claims?.role === 'admin'",
-  'sanitizeSharedChrome',
-  'COD pilote',
-  'Aucun profil, commande ou contact fictif'
+  "token.claims?.role === 'admin'"
 ]) {
   requireText(brandRuntime, invariant, `Brand migration invariant missing: ${invariant}`);
 }
-
-requireText(homeRuntime, 'publicCatalog/${tenantId}', 'Home catalogue must read the Firebase public catalogue.');
-requireText(indexHtml, 'home-catalogue-preview', 'Homepage must expose the live catalogue preview root.');
-requireText(indexHtml, 'home-runtime.js', 'Homepage must load home-runtime.js.');
-requireText(catalogRuntime, 'MarketplaceData.getProducts = async function getTenantPublicProducts()', 'Catalogue runtime must override the legacy product source before checking Firebase availability.');
-requireText(catalogRuntime, 'if (!backend?.db)', 'Catalogue runtime must handle missing Firebase explicitly.');
-requireText(catalogRuntime, 'demo products are disabled', 'Missing Firebase must disable demonstration products.');
-requireText(catalogRuntime, 'window.MarketplaceCatalog = []', 'Unavailable catalogue must render as empty rather than demo data.');
-requireText(catalogRuntime, 'normalized.status =', 'Catalogue sanitization must preserve the backend publication status.');
-requireText(catalogRuntime, 'normalized.tenantId =', 'Catalogue sanitization must preserve tenant identity.');
-if (catalogRuntime.includes('return fallback') || catalogRuntime.includes('products.length ? products : fallback')) {
-  errors.push('Public catalogue must not fall back to hardcoded demonstration products.');
+if (brandRuntime.includes('sanitizeSharedChrome') || brandRuntime.includes('Infrastructure SOKIVA')) {
+  errors.push('Brand runtime must rename the site without rewriting storefront content.');
 }
-requireText(productRuntime, 'Produit indisponible', 'Unknown product pages must show an honest unavailable state.');
+
+requireText(appBootstrap, 'brand-runtime.js', 'Storefront bootstrap must load the SOKIVA brand runtime.');
+requireText(appBootstrap, 'app-core.js', 'Storefront bootstrap must load the preserved ecommerce application.');
+for (const invariant of [
+  'const PRODUCTS = [',
+  'Attiéké semoule de manioc',
+  'window.PRODUCTS = PRODUCTS',
+  'HeroModule.init()',
+  'ProductsModule.init()'
+]) {
+  requireText(appCore, invariant, `Original storefront invariant missing: ${invariant}`);
+}
+
+for (const invariant of [
+  'publicCatalog/${TENANT_ID}',
+  'starterCatalogue()',
+  'mergeUnique(published, starter)',
+  'window.MarketplaceCatalog = starter',
+  "source: 'publicCatalog+starter'",
+  'normalized.status = status',
+  'normalized.tenantId ='
+]) {
+  requireText(catalogRuntime, invariant, `Catalogue runtime invariant missing: ${invariant}`);
+}
+requireText(productRuntime, 'Produit indisponible', 'Unknown product pages must show an unavailable state.');
 
 for (const invariant of [
   'GOOGLE_APPLICATION_CREDENTIALS',
@@ -258,10 +276,10 @@ if (loginHtml.includes('isSuperAdmin') || registerHtml.includes('isSuperAdmin') 
   errors.push('Public authentication forms must not expose superadministrator creation fields.');
 }
 
-for (const asset of ['/identity.css', '/brand-runtime.js', '/identity-runtime.js', '/account-runtime.js', '/home-runtime.js']) {
+for (const asset of ['/app-core.js', '/brand-runtime.js', '/identity-runtime.js', '/account-runtime.js']) {
   requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }
-requireText(serviceWorker, "CACHE_VERSION = 'sokiva-v2.0.0'", 'Identity migration must invalidate the old PWA cache.');
+requireText(serviceWorker, "CACHE_VERSION = 'sokiva-v2.1.0'", 'Storefront restoration must invalidate the broken PWA cache.');
 
 requireText(functionsPackage, 'node --check identity.js', 'Function syntax validation must include identity.js.');
 requireText(functionsPackage, 'test/identity.test.js', 'Function unit tests must include identity.test.js.');
@@ -283,4 +301,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('SOKIVA identity validation passed. Email verification is atomically enforced, profiles are callable-created, owner identity is protected, account addresses persist and demo catalogue fallbacks are disabled.');
+console.log('SOKIVA identity validation passed. The original storefront and starter products are preserved while Firebase identity, roles, orders and owner protections remain enforced.');
