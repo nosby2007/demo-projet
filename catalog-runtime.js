@@ -9,6 +9,7 @@
 
   const backend = window.SokivaFirebase || window.AfroMarketFirebase;
   const TENANT_ID = backend?.tenantId || 'lamylenoise';
+  const LEGACY_VALIDATION_NOTE = 'demo products are disabled from untrusted storage; curated starter products remain';
   const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i;
   const HTML_ENTITIES = Object.freeze({
     '&': '&amp;',
@@ -103,7 +104,7 @@
       window.MarketplaceCatalog = products;
       return products;
     } catch (error) {
-      console.warn('SOKIVA public catalogue unavailable; starter catalogue retained.', error);
+      console.warn('SOKIVA public catalogue unavailable; starter catalogue retained.', error, LEGACY_VALIDATION_NOTE);
       window.MarketplaceCatalog = starter;
       return starter;
     }
