@@ -1,4 +1,4 @@
-/* SOKIVA public brand and session chrome migration. */
+/* SOKIVA public brand and authenticated account chrome. */
 'use strict';
 
 (function sokivaBrandRuntime() {
@@ -10,13 +10,10 @@
     [/AfroMarket/gi, 'SOKIVA']
   ];
   let scheduled = false;
+  let observerStarted = false;
 
   function replaceText(value) {
     return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), String(value || ''));
-  }
-
-  function setText(element, value) {
-    if (element && element.textContent !== value) element.textContent = value;
   }
 
   function migrateElement(element) {
@@ -66,57 +63,6 @@
     });
   }
 
-  function sanitizeSharedChrome() {
-    const topbarMessage = document.querySelector('.topbar-inner > span');
-    setText(topbarMessage, 'Pilote SOKIVA aux UAE — fonctionnalités activées progressivement après validation');
-
-    document.querySelectorAll('.topbar-links a').forEach(link => {
-      if (/WhatsApp|\+971/i.test(link.textContent || '')) {
-        link.href = 'contact.html';
-        setText(link, 'Support pilote');
-      }
-    });
-
-    setText(
-      document.querySelector('.footer-brand > p'),
-      'Marketplace SOKIVA en phase pilote : comptes Firebase, catalogue validé, commandes sécurisées et livraison suivie.'
-    );
-
-    document.querySelectorAll('.site-footer a').forEach(link => {
-      if (/WhatsApp|\+971/i.test(link.textContent || '')) {
-        link.href = 'contact.html';
-        setText(link, 'Canaux de support');
-      }
-    });
-
-    const paymentIcons = document.querySelector('.payment-icons');
-    if (paymentIcons && paymentIcons.dataset.sokivaPilot !== 'true') {
-      paymentIcons.replaceChildren();
-      paymentIcons.append(Object.assign(document.createElement('span'), {
-        className: 'payment-badge',
-        textContent: 'COD pilote'
-      }));
-      paymentIcons.dataset.sokivaPilot = 'true';
-    }
-
-    const copyright = document.querySelector('.footer-bottom > p');
-    setText(copyright, '© 2026 SOKIVA — environnement pilote. Informations commerciales définitives à venir.');
-
-    const trustCards = document.querySelectorAll('.enterprise-trust-grid > div');
-    const trustContent = [
-      ['Firebase Hosting', 'Environnement de développement avec cache PWA'],
-      ['RBAC contrôlé', 'Client, vendeur, livreur, admin et propriétaire'],
-      ['Données réelles', 'Aucun profil, commande ou contact fictif'],
-      ['Livraison pilote', 'Tracking privé et ETA approximative']
-    ];
-    trustCards.forEach((card, index) => {
-      const content = trustContent[index];
-      if (!content) return;
-      setText(card.querySelector('strong'), content[0]);
-      setText(card.querySelector('span'), content[1]);
-    });
-  }
-
   function safePageForRole(profile, isSuperAdmin) {
     if (isSuperAdmin) return 'admin.html';
     return {
@@ -161,17 +107,12 @@
         if (label) label.textContent = 'Connexion';
       }
     });
-
-    document.querySelectorAll('[data-auth-create-account]').forEach(link => {
-      link.hidden = Boolean(user);
-    });
   }
 
   function runMigration() {
     scheduled = false;
     migrateMetadata();
     migrateNode(document.body);
-    sanitizeSharedChrome();
   }
 
   function scheduleMigration() {
@@ -180,16 +121,21 @@
     queueMicrotask(runMigration);
   }
 
-  function boot() {
-    runMigration();
+  function startObserverAndSession() {
+    if (observerStarted) return;
+    observerStarted = true;
     const observer = new MutationObserver(scheduleMigration);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     const backend = window.SokivaFirebase;
     if (backend?.auth) backend.auth.onAuthStateChanged(updateSessionChrome);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
+  runMigration();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObserverAndSession, { once: true });
+  } else {
+    startObserverAndSession();
+  }
 
   window.SokivaBrandRuntime = Object.freeze({ migrate: runMigration, replaceText });
 })();
