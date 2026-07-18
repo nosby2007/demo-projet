@@ -68,3 +68,10 @@ printf "  Firebase project: %s\n" "$PROJECT_ID"
 printf "  Secret: FIREBASE_SERVICE_ACCOUNT_JSON\n"
 echo
 printf "The local JSON key was not uploaded to the repository. Store it securely or delete the local copy after verification.\n"
+
+if [ "$ENVIRONMENT" = "development" ]; then
+  echo
+  echo "Automatic development deployment remains disabled by default."
+  echo "After one successful manual Hosting deployment, enable it with:"
+  echo "gh variable set FIREBASE_AUTO_DEPLOY_DEV --repo $REPOSITORY --body true"
+fi
