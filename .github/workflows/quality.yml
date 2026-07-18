@@ -43,6 +43,9 @@ jobs:
       - name: Validate private notification stack
         run: node scripts/validate-notification-stack.mjs
 
+      - name: Validate Firebase deployment pipeline
+        run: node scripts/validate-deploy-pipeline.mjs
+
       - name: Install backend test dependencies
         working-directory: functions
         run: npm install --ignore-scripts
