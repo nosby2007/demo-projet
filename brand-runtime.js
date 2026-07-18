@@ -15,6 +15,10 @@
     return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), String(value || ''));
   }
 
+  function setText(element, value) {
+    if (element && element.textContent !== value) element.textContent = value;
+  }
+
   function migrateElement(element) {
     if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
     for (const attr of ['aria-label', 'title', 'placeholder', 'content']) {
@@ -59,6 +63,57 @@
     });
     document.querySelectorAll('link[rel="icon"]').forEach(link => {
       if (link.href.includes('%3EL%3C')) link.href = link.href.replace('%3EL%3C', '%3ES%3C');
+    });
+  }
+
+  function sanitizeSharedChrome() {
+    const topbarMessage = document.querySelector('.topbar-inner > span');
+    setText(topbarMessage, 'Pilote SOKIVA aux UAE — fonctionnalités activées progressivement après validation');
+
+    document.querySelectorAll('.topbar-links a').forEach(link => {
+      if (/WhatsApp|\+971/i.test(link.textContent || '')) {
+        link.href = 'contact.html';
+        setText(link, 'Support pilote');
+      }
+    });
+
+    setText(
+      document.querySelector('.footer-brand > p'),
+      'Marketplace SOKIVA en phase pilote : comptes Firebase, catalogue validé, commandes sécurisées et livraison suivie.'
+    );
+
+    document.querySelectorAll('.site-footer a').forEach(link => {
+      if (/WhatsApp|\+971/i.test(link.textContent || '')) {
+        link.href = 'contact.html';
+        setText(link, 'Canaux de support');
+      }
+    });
+
+    const paymentIcons = document.querySelector('.payment-icons');
+    if (paymentIcons && paymentIcons.dataset.sokivaPilot !== 'true') {
+      paymentIcons.replaceChildren();
+      paymentIcons.append(Object.assign(document.createElement('span'), {
+        className: 'payment-badge',
+        textContent: 'COD pilote'
+      }));
+      paymentIcons.dataset.sokivaPilot = 'true';
+    }
+
+    const copyright = document.querySelector('.footer-bottom > p');
+    setText(copyright, '© 2026 SOKIVA — environnement pilote. Informations commerciales définitives à venir.');
+
+    const trustCards = document.querySelectorAll('.enterprise-trust-grid > div');
+    const trustContent = [
+      ['Firebase Hosting', 'Environnement de développement avec cache PWA'],
+      ['RBAC contrôlé', 'Client, vendeur, livreur, admin et propriétaire'],
+      ['Données réelles', 'Aucun profil, commande ou contact fictif'],
+      ['Livraison pilote', 'Tracking privé et ETA approximative']
+    ];
+    trustCards.forEach((card, index) => {
+      const content = trustContent[index];
+      if (!content) return;
+      setText(card.querySelector('strong'), content[0]);
+      setText(card.querySelector('span'), content[1]);
     });
   }
 
@@ -108,6 +163,7 @@
     scheduled = false;
     migrateMetadata();
     migrateNode(document.body);
+    sanitizeSharedChrome();
   }
 
   function scheduleMigration() {
