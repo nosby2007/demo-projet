@@ -1,0 +1,152 @@
+name: Sokiva Firebase deployment
+
+on:
+  workflow_run:
+    workflows:
+      - Sokiva marketplace quality gate
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Firebase environment to deploy
+        required: true
+        type: choice
+        default: development
+        options:
+          - development
+          - staging
+          - production
+      scope:
+        description: Deployment scope
+        required: true
+        type: choice
+        default: hosting
+        options:
+          - hosting
+          - full
+      confirmation:
+        description: Type DEPLOY for Hosting or DEPLOY_FULL for Hosting + Rules + Functions
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-${{ github.event_name == 'workflow_run' && 'development' || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: ${{ github.event_name == 'workflow_run' && 'development' || inputs.environment }}
+    env:
+      DEPLOY_ENVIRONMENT: ${{ github.event_name == 'workflow_run' && 'development' || inputs.environment }}
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      FIREBASE_DEPLOY_ONLY: ${{ github.event_name == 'workflow_run' && 'hosting' || (inputs.scope == 'full' && 'hosting,database,functions' || 'hosting') }}
+
+    steps:
+      - name: Checkout validated revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Validate deployment request
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "$DEPLOY_ENVIRONMENT" in
+            development) expected_project="sokiva-dev" ;;
+            staging) expected_project="sokiva-staging" ;;
+            production) expected_project="sokiva-prod" ;;
+            *) echo "Unknown deployment environment: $DEPLOY_ENVIRONMENT" >&2; exit 1 ;;
+          esac
+
+          if [ -z "$FIREBASE_PROJECT_ID" ]; then
+            echo "GitHub Environment variable FIREBASE_PROJECT_ID is missing." >&2
+            exit 1
+          fi
+
+          if [ "$FIREBASE_PROJECT_ID" != "$expected_project" ]; then
+            echo "Deployment blocked: $DEPLOY_ENVIRONMENT must target $expected_project, not $FIREBASE_PROJECT_ID." >&2
+            exit 1
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "$FIREBASE_DEPLOY_ONLY" = "hosting" ] && [ "${{ inputs.confirmation }}" != "DEPLOY" ]; then
+              echo "Manual Hosting deployment blocked: confirmation must be exactly DEPLOY." >&2
+              exit 1
+            fi
+
+            if [ "$FIREBASE_DEPLOY_ONLY" = "hosting,database,functions" ]; then
+              if [ "${{ inputs.confirmation }}" != "DEPLOY_FULL" ]; then
+                echo "Full deployment blocked: confirmation must be exactly DEPLOY_FULL." >&2
+                exit 1
+              fi
+              echo "FIREBASE_CONFIRM_FULL=DEPLOY_FULL" >> "$GITHUB_ENV"
+            fi
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "$DEPLOY_ENVIRONMENT" != "development" ]; then
+            echo "Automatic deployments are restricted to development." >&2
+            exit 1
+          fi
+
+          echo "Environment: $DEPLOY_ENVIRONMENT"
+          echo "Firebase project: $FIREBASE_PROJECT_ID"
+          echo "Scope: $FIREBASE_DEPLOY_ONLY"
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Firebase CLI
+        run: npm install --ignore-scripts
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: npm install --ignore-scripts
+
+      - name: Revalidate application
+        run: npm run build
+
+      - name: Revalidate Cloud Functions
+        run: npm run test:functions
+
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Deploy Firebase
+        run: npm run deploy
+
+      - name: Publish deployment summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Firebase deployment"
+            echo ""
+            echo "- Environment: \`$DEPLOY_ENVIRONMENT\`"
+            echo "- Project: \`$FIREBASE_PROJECT_ID\`"
+            echo "- Scope: \`$FIREBASE_DEPLOY_ONLY\`"
+            echo "- Revision: \`${GITHUB_SHA}\`"
+            if [ "$FIREBASE_DEPLOY_ONLY" = "hosting" ]; then
+              echo "- Hosting: https://${FIREBASE_PROJECT_ID}.web.app"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

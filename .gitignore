@@ -1,1 +1,4 @@
 .firebase/
+.gcloud/
+*service-account*.json
+firebase-adminsdk-*.json
