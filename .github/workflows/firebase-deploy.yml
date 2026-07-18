@@ -28,7 +28,7 @@ on:
           - hosting
           - full
       confirmation:
-        description: Type DEPLOY for a manual deployment
+        description: Type DEPLOY for Hosting or DEPLOY_FULL for Hosting + Rules + Functions
         required: true
         type: string
 
@@ -83,9 +83,19 @@ jobs:
             exit 1
           fi
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.confirmation }}" != "DEPLOY" ]; then
-            echo "Manual deployment blocked: confirmation must be exactly DEPLOY." >&2
-            exit 1
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "$FIREBASE_DEPLOY_ONLY" = "hosting" ] && [ "${{ inputs.confirmation }}" != "DEPLOY" ]; then
+              echo "Manual Hosting deployment blocked: confirmation must be exactly DEPLOY." >&2
+              exit 1
+            fi
+
+            if [ "$FIREBASE_DEPLOY_ONLY" = "hosting,database,functions" ]; then
+              if [ "${{ inputs.confirmation }}" != "DEPLOY_FULL" ]; then
+                echo "Full deployment blocked: confirmation must be exactly DEPLOY_FULL." >&2
+                exit 1
+              fi
+              echo "FIREBASE_CONFIRM_FULL=DEPLOY_FULL" >> "$GITHUB_ENV"
+            fi
           fi
 
           if [ "${{ github.event_name }}" = "workflow_run" ] && [ "$DEPLOY_ENVIRONMENT" != "development" ]; then
@@ -101,7 +111,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
