@@ -2,13 +2,13 @@
 'use strict';
 
 (function tenantCatalogueRuntime() {
-  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
-  if (!window.MarketplaceData || !backend?.db) {
-    console.warn('Marketplace and Firebase must load before catalog-runtime.js');
+  if (!window.MarketplaceData) {
+    console.warn('Marketplace runtime must load before catalog-runtime.js');
     return;
   }
 
-  const TENANT_ID = backend.tenantId || 'lamylenoise';
+  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
+  const TENANT_ID = backend?.tenantId || 'lamylenoise';
   const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i;
   const HTML_ENTITIES = Object.freeze({
     '&': '&amp;',
@@ -67,6 +67,11 @@
   }
 
   MarketplaceData.getProducts = async function getTenantPublicProducts() {
+    if (!backend?.db) {
+      console.warn('SOKIVA Firebase catalogue unavailable; demo products are disabled.');
+      window.MarketplaceCatalog = [];
+      return [];
+    }
     try {
       const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
