@@ -70,6 +70,12 @@ function normalizeAddresses(value) {
   });
 }
 
+function profileStatusForRegistration(currentStatus, emailVerified) {
+  if (currentStatus === 'disabled') return 'disabled';
+  if (currentStatus === 'active') return 'active';
+  return emailVerified ? 'active' : 'pending_verification';
+}
+
 async function requireUser(request) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
@@ -87,7 +93,7 @@ function publicIdentity(user, profile) {
     emailVerified: user.emailVerified === true,
     displayName: user.displayName || profile?.name || '',
     role: profile?.role || 'customer',
-    status: profile?.status || 'active',
+    status: profile?.status || 'pending_verification',
     tenantId: profile?.tenantId || COMPAT_TENANT_ID,
     brandId: profile?.brandId || BRAND_ID,
     isSuperAdmin: signedSuperAdmin,
@@ -110,6 +116,7 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
     throw new HttpsError('invalid-argument', 'Utilisez un numéro UAE au format +971XXXXXXXXX.');
   }
 
+  const emailVerified = user.emailVerified === true || request.auth?.token?.email_verified === true;
   const now = Date.now();
   const profileRef = db.ref(`profiles/${uid}`);
   let problem = null;
@@ -124,7 +131,7 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
       ...safeCurrent,
       uid,
       role: 'customer',
-      status: current?.status || 'active',
+      status: profileStatusForRegistration(current?.status, emailVerified),
       tenantId: current?.tenantId || COMPAT_TENANT_ID,
       brandId: BRAND_ID,
       name,
@@ -153,22 +160,29 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
 
 exports.getMyIdentity = onCall({ region: 'me-central1', maxInstances: 50 }, async request => {
   const { uid, user } = await requireUser(request);
-  const profile = (await db.ref(`profiles/${uid}`).get()).val();
-  if (!profile) {
-    return publicIdentity(user, null);
-  }
+  let profile = (await db.ref(`profiles/${uid}`).get()).val();
+  if (!profile) return publicIdentity(user, null);
   if (profile.status === 'disabled') {
     throw new HttpsError('permission-denied', 'Ce compte est désactivé.');
+  }
+
+  if (profile.status === 'pending_verification' && user.emailVerified === true) {
+    const activatedAt = Date.now();
+    await db.ref(`profiles/${uid}`).update({ status: 'active', emailVerifiedAt: activatedAt, updatedAt: activatedAt });
+    profile = { ...profile, status: 'active', emailVerifiedAt: activatedAt, updatedAt: activatedAt };
   }
   return publicIdentity(user, profile);
 });
 
 exports.updateMyProfile = onCall({ region: 'me-central1', maxInstances: 30 }, async request => {
   const { uid, user } = await requireUser(request);
+  if (user.emailVerified !== true || request.auth?.token?.email_verified !== true) {
+    throw new HttpsError('failed-precondition', 'Vérifiez votre adresse email avant de modifier le profil.');
+  }
   const profileRef = db.ref(`profiles/${uid}`);
   const current = (await profileRef.get()).val();
-  if (!current || current.status === 'disabled') {
-    throw new HttpsError('permission-denied', 'Profil indisponible ou désactivé.');
+  if (!current || current.status !== 'active') {
+    throw new HttpsError('permission-denied', 'Profil indisponible, non vérifié ou désactivé.');
   }
 
   const firstName = clean(request.data?.firstName ?? current.firstName, 80);
@@ -199,3 +213,4 @@ exports.updateMyProfile = onCall({ region: 'me-central1', maxInstances: 30 }, as
 
 exports.identityConstants = Object.freeze({ COMPAT_TENANT_ID, BRAND_ID });
 exports.normalizeAddresses = normalizeAddresses;
+exports.profileStatusForRegistration = profileStatusForRegistration;
