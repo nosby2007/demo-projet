@@ -1,4 +1,4 @@
-/* Dynamic product detail for tenant public catalogue items. */
+/* Dynamic product detail for Firebase catalogue items. Starter products keep the original rich storefront design. */
 'use strict';
 
 (function publicProductDetailRuntime() {
@@ -16,18 +16,21 @@
     if (!/^[A-Za-z0-9_-]{1,160}$/.test(rawId)) return;
 
     try {
-      const products = await MarketplaceData.getProducts([]);
+      const products = await window.MarketplaceData.getProducts([]);
       const product = products.find(item => String(item.id) === rawId);
       if (!product) {
         root.replaceChildren();
         const empty = element('div', 'empty-state');
         const icon = element('i'); icon.setAttribute('data-lucide', 'package-search');
         const link = element('a', 'btn-primary', 'Retour à la boutique'); link.href = 'shop.html';
-        empty.append(icon, element('h3', '', 'Produit indisponible'), element('p', '', 'Ce produit n’est pas publié dans le catalogue SOKIVA.'), link);
+        empty.append(icon, element('h3', '', 'Produit indisponible'), element('p', '', 'Ce produit n’est pas disponible dans le catalogue SOKIVA.'), link);
         root.append(empty);
         if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
         return;
       }
+
+      // app-core.js already rendered the original full product page for starter products.
+      if (product.status === 'starter') return;
 
       document.title = `${product.name} — SOKIVA`;
       root.replaceChildren();
