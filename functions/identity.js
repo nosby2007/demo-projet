@@ -119,8 +119,9 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
       problem = new HttpsError('failed-precondition', 'Ce compte possède déjà un rôle professionnel.');
       return;
     }
+    const { isSuperAdmin, ...safeCurrent } = current || {};
     return {
-      ...(current || {}),
+      ...safeCurrent,
       uid,
       role: 'customer',
       status: current?.status || 'active',
@@ -139,12 +140,14 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
   }, undefined, false);
 
   if (!result.committed) throw problem || new HttpsError('aborted', 'Le profil n’a pas pu être créé.');
-  await auth.setCustomUserClaims(uid, {
+  const claims = {
     ...(user.customClaims || {}),
     role: result.snapshot.val().role,
     tenantId: result.snapshot.val().tenantId,
     brandId: BRAND_ID
-  });
+  };
+  delete claims.isSuperAdmin;
+  await auth.setCustomUserClaims(uid, claims);
   return publicIdentity(await auth.getUser(uid), result.snapshot.val());
 });
 
