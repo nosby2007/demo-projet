@@ -22,7 +22,7 @@
       ".indexOn": ["role", "tenantId", "status"],
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
-        ".write": "auth != null && ((root.child('profiles').child(auth.uid).child('role').val() == 'admin' && auth.token.isSuperAdmin == true) || (root.child('profiles').child(auth.uid).child('role').val() == 'admin' && data.child('isSuperAdmin').val() != true && newData.child('isSuperAdmin').val() != true) || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer' && (!newData.child('tenantId').exists() || newData.child('tenantId').val() == 'lamylenoise')) || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val()))))",
+        ".write": "auth != null && ((root.child('profiles').child(auth.uid).child('role').val() == 'admin' && auth.token.isSuperAdmin == true) || (root.child('profiles').child(auth.uid).child('role').val() == 'admin' && data.child('isSuperAdmin').val() != true && newData.child('isSuperAdmin').val() != true) || (auth.uid == $uid && data.exists() && newData.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val()))",
         "isSuperAdmin": {
           ".validate": "newData.val() == data.val()"
         }
