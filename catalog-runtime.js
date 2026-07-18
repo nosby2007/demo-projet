@@ -58,6 +58,8 @@
       badge: escapeHtml(product?.badge, 40),
       image: safeImageUrl(product?.image)
     }, safeProductId);
+    normalized.status = String(product?.status || '').trim();
+    normalized.tenantId = String(product?.tenantId || TENANT_ID).trim();
     normalized.price = Number.isFinite(Number(product?.price)) ? Math.max(0, Number(product.price)) : 0;
     normalized.stockAvailable = product?.inventoryTracked === true
       ? Math.max(0, Number(product?.stockAvailable || 0))
@@ -76,8 +78,9 @@
       const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
       const products = Object.entries(values)
+        .filter(([, product]) => product?.status === 'active' && Number(product?.price) > 0)
         .map(([id, product]) => sanitizePublicProduct(id, product))
-        .filter(product => product && product.status === 'active' && product.price > 0);
+        .filter(product => product && product.status === 'active' && product.tenantId === TENANT_ID && product.price > 0);
       window.MarketplaceCatalog = products;
       return products;
     } catch (error) {
