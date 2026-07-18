@@ -159,16 +159,47 @@ exports.registerCustomerProfile = onCall({ region: 'me-central1', maxInstances: 
 
 exports.getMyIdentity = onCall({ region: 'me-central1', maxInstances: 50 }, async request => {
   const { uid, user } = await requireUser(request);
-  let profile = (await db.ref(`profiles/${uid}`).get()).val();
+  const profileRef = db.ref(`profiles/${uid}`);
+  let profile = (await profileRef.get()).val();
   if (!profile) return publicIdentity(user, null);
   if (profile.status === 'disabled') {
     throw new HttpsError('permission-denied', 'Ce compte est désactivé.');
   }
 
-  if (profile.status === 'pending_verification' && user.emailVerified === true) {
+  if (
+    profile.status === 'pending_verification'
+    && user.emailVerified === true
+    && request.auth?.token?.email_verified === true
+  ) {
     const activatedAt = Date.now();
-    await db.ref(`profiles/${uid}`).update({ status: 'active', emailVerifiedAt: activatedAt, updatedAt: activatedAt });
-    profile = { ...profile, status: 'active', emailVerifiedAt: activatedAt, updatedAt: activatedAt };
+    let activationProblem = null;
+    const activation = await profileRef.transaction(current => {
+      activationProblem = null;
+      if (!current) {
+        activationProblem = new HttpsError('not-found', 'Profil introuvable.');
+        return;
+      }
+      if (current.status === 'disabled') {
+        activationProblem = new HttpsError('permission-denied', 'Ce compte est désactivé.');
+        return;
+      }
+      if (current.status !== 'pending_verification') return current;
+      return {
+        ...current,
+        status: 'active',
+        emailVerifiedAt: activatedAt,
+        updatedAt: activatedAt
+      };
+    }, undefined, false);
+
+    if (!activation.committed) {
+      throw activationProblem || new HttpsError('aborted', 'Le profil n’a pas pu être activé.');
+    }
+    profile = activation.snapshot.val();
+  }
+
+  if (profile.status === 'disabled') {
+    throw new HttpsError('permission-denied', 'Ce compte est désactivé.');
   }
   return publicIdentity(user, profile);
 });
