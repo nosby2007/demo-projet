@@ -2,7 +2,8 @@
 'use strict';
 
 (function initMarketplaceFunctions() {
-  if (!window.firebase || !window.AfroMarketFirebase) {
+  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
+  if (!window.firebase || !backend) {
     console.warn('Firebase must be initialized before firebase-functions-config.js');
     return;
   }
@@ -13,7 +14,10 @@
     return;
   }
 
-  window.AfroMarketFirebase.functions = app.functions('me-central1');
-  window.AfroMarketFirebase.tenantId = 'lamylenoise';
-  window.AfroMarketFirebase.region = 'me-central1';
+  backend.functions = app.functions('me-central1');
+  backend.tenantId = backend.tenantId || 'lamylenoise';
+  backend.brandId = 'sokiva';
+  backend.region = 'me-central1';
+  window.SokivaFirebase = backend;
+  window.AfroMarketFirebase = backend;
 })();
