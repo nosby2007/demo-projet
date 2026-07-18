@@ -10,6 +10,7 @@
     [/AfroMarket/gi, 'SOKIVA']
   ];
   let scheduled = false;
+  let observerStarted = false;
 
   function replaceText(value) {
     return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), String(value || ''));
@@ -120,16 +121,21 @@
     queueMicrotask(runMigration);
   }
 
-  function boot() {
-    runMigration();
+  function startObserverAndSession() {
+    if (observerStarted) return;
+    observerStarted = true;
     const observer = new MutationObserver(scheduleMigration);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     const backend = window.SokivaFirebase;
     if (backend?.auth) backend.auth.onAuthStateChanged(updateSessionChrome);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
+  runMigration();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startObserverAndSession, { once: true });
+  } else {
+    startObserverAndSession();
+  }
 
   window.SokivaBrandRuntime = Object.freeze({ migrate: runMigration, replaceText });
 })();
