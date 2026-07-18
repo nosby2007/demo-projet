@@ -33,8 +33,8 @@ if (!approvedScopes.has(deployOnly)) {
   process.exit(1);
 }
 
-if (projectId !== 'sokiva-dev' && deployOnly === 'hosting,database,functions' && process.env.FIREBASE_CONFIRM_FULL !== 'DEPLOY_FULL') {
-  console.error('Full staging or production deployment requires FIREBASE_CONFIRM_FULL=DEPLOY_FULL.');
+if (deployOnly === 'hosting,database,functions' && process.env.FIREBASE_CONFIRM_FULL !== 'DEPLOY_FULL') {
+  console.error('Full deployment requires FIREBASE_CONFIRM_FULL=DEPLOY_FULL.');
   process.exit(1);
 }
 
