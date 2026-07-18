@@ -7,9 +7,26 @@ function contextFor(backend) {
   const window = {
     location: { origin: 'https://sokiva-dev.web.app' },
     SokivaFirebase: backend,
+    PRODUCTS: [
+      {
+        id: 1,
+        name: 'Attiéké starter',
+        brand: 'SOKIVA',
+        price: 22,
+        category: 'epicerie',
+        image: 'https://images.example.com/attieke.jpg'
+      },
+      {
+        id: 2,
+        name: 'Bissap starter',
+        brand: 'SOKIVA',
+        price: 18,
+        category: 'boissons',
+        image: 'https://images.example.com/bissap.jpg'
+      }
+    ],
     MarketplaceData: {
       normalizeProduct(product, id) {
-        // Deliberately model the legacy normalizer that does not preserve status.
         return {
           id,
           name: product.name,
@@ -21,9 +38,6 @@ function contextFor(backend) {
           image: product.image,
           price: Number(product.price || 0)
         };
-      },
-      async getProducts() {
-        return [{ id: 'legacy-demo', status: 'active', price: 1 }];
       }
     }
   };
@@ -66,18 +80,24 @@ const liveContext = contextFor({
 });
 new vm.Script(source, { filename: 'catalog-runtime.js' }).runInContext(liveContext);
 const liveProducts = await liveContext.window.MarketplaceData.getProducts();
-if (liveProducts.length !== 1 || liveProducts[0].id !== 'active') {
-  throw new Error(`Expected only the real active tenant product, received: ${JSON.stringify(liveProducts)}`);
+if (liveProducts.length !== 3 || liveProducts[0].id !== 'active') {
+  throw new Error(`Expected the published product followed by two starter products, received: ${JSON.stringify(liveProducts)}`);
 }
 if (liveProducts[0].status !== 'active' || liveProducts[0].tenantId !== 'lamylenoise') {
-  throw new Error('Catalogue sanitizer must preserve status and tenant identity.');
+  throw new Error('Catalogue sanitizer must preserve published status and tenant identity.');
+}
+if (!liveProducts.slice(1).every(product => product.status === 'starter')) {
+  throw new Error('Original products must remain available as starter catalogue entries.');
+}
+if (liveProducts.some(product => product.id === 'pending' || product.id === 'foreign')) {
+  throw new Error('Pending or foreign-tenant Firebase products must never be exposed.');
 }
 
 const offlineContext = contextFor({ tenantId: 'lamylenoise' });
 new vm.Script(source, { filename: 'catalog-runtime.js' }).runInContext(offlineContext);
-const offlineProducts = await offlineContext.window.MarketplaceData.getProducts([{ id: 'legacy-demo' }]);
-if (!Array.isArray(offlineProducts) || offlineProducts.length !== 0) {
-  throw new Error('Missing Firebase must return an empty catalogue and never legacy demo products.');
+const offlineProducts = await offlineContext.window.MarketplaceData.getProducts();
+if (!Array.isArray(offlineProducts) || offlineProducts.length !== 2) {
+  throw new Error('Missing Firebase must retain the original starter catalogue.');
 }
 
-console.log('Catalogue runtime test passed. Active tenant products survive normalization and degraded mode never restores demo data.');
+console.log('Catalogue runtime test passed. Firebase products remain tenant-scoped and the original SOKIVA products remain available as starter data.');
