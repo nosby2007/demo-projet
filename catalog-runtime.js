@@ -1,4 +1,4 @@
-/* Tenant-scoped public catalogue loader. */
+/* Tenant-scoped public catalogue loader with the original SOKIVA starter catalogue. */
 'use strict';
 
 (function tenantCatalogueRuntime() {
@@ -44,7 +44,7 @@
     return '';
   }
 
-  function sanitizePublicProduct(id, product) {
+  function sanitizeProduct(id, product, status) {
     const safeProductId = safeId(id || product?.id);
     if (!safeProductId) return null;
     const normalized = window.MarketplaceData.normalizeProduct({
@@ -58,7 +58,7 @@
       badge: escapeHtml(product?.badge, 40),
       image: safeImageUrl(product?.image)
     }, safeProductId);
-    normalized.status = String(product?.status || '').trim();
+    normalized.status = status;
     normalized.tenantId = String(product?.tenantId || TENANT_ID).trim();
     normalized.price = Number.isFinite(Number(product?.price)) ? Math.max(0, Number(product.price)) : 0;
     normalized.stockAvailable = product?.inventoryTracked === true
@@ -68,27 +68,50 @@
     return normalized;
   }
 
+  function starterCatalogue() {
+    const starter = Array.isArray(window.PRODUCTS) ? window.PRODUCTS : [];
+    return starter
+      .map(product => sanitizeProduct(product?.id, product, 'starter'))
+      .filter(product => product && product.price > 0);
+  }
+
+  function mergeUnique(primary, starter) {
+    const seen = new Set();
+    return [...primary, ...starter].filter(product => {
+      const key = String(product.id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
   window.MarketplaceData.getProducts = async function getTenantPublicProducts() {
+    const starter = starterCatalogue();
     if (!backend?.db) {
-      console.warn('SOKIVA Firebase catalogue unavailable; demo products are disabled.');
-      window.MarketplaceCatalog = [];
-      return [];
+      window.MarketplaceCatalog = starter;
+      return starter;
     }
+
     try {
       const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
-      const products = Object.entries(values)
+      const published = Object.entries(values)
         .filter(([, product]) => product?.status === 'active' && Number(product?.price) > 0)
-        .map(([id, product]) => sanitizePublicProduct(id, product))
+        .map(([id, product]) => sanitizeProduct(id, product, 'active'))
         .filter(product => product && product.status === 'active' && product.tenantId === TENANT_ID && product.price > 0);
+      const products = mergeUnique(published, starter);
       window.MarketplaceCatalog = products;
       return products;
     } catch (error) {
-      console.warn('SOKIVA public catalogue unavailable.', error);
-      window.MarketplaceCatalog = [];
-      return [];
+      console.warn('SOKIVA public catalogue unavailable; starter catalogue retained.', error);
+      window.MarketplaceCatalog = starter;
+      return starter;
     }
   };
 
-  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, brandId: 'sokiva', source: 'publicCatalog' });
+  window.SokivaCatalogue = Object.freeze({
+    tenantId: TENANT_ID,
+    brandId: 'sokiva',
+    source: 'publicCatalog+starter'
+  });
 })();
