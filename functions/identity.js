@@ -72,7 +72,6 @@ function normalizeAddresses(value) {
 
 function profileStatusForRegistration(currentStatus, emailVerified) {
   if (currentStatus === 'disabled') return 'disabled';
-  if (currentStatus === 'active') return 'active';
   return emailVerified ? 'active' : 'pending_verification';
 }
 
