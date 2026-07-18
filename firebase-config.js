@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 (function initFirebase() {
   if (!window.firebase) {
-    console.warn('Firebase SDK introuvable. Les modules backend passent en mode local.');
+    console.warn('Firebase SDK introuvable. Les modules SOKIVA nécessitent Firebase.');
     return;
   }
 
@@ -27,10 +27,20 @@ const firebaseConfig = {
     config: firebaseConfig,
     projectId: firebaseConfig.projectId,
     environment: 'development',
-    brand: 'SOKIVA'
+    brand: 'SOKIVA',
+    brandId: 'sokiva',
+    tenantId: 'lamylenoise'
   };
 
   window.SokivaFirebase = backend;
-  // Alias temporaire pour les runtimes existants pendant la migration de marque.
+  // Temporary compatibility alias until all legacy runtime names are removed.
   window.AfroMarketFirebase = backend;
+
+  if (!document.querySelector('script[data-sokiva-brand-runtime]')) {
+    const script = document.createElement('script');
+    script.src = 'brand-runtime.js';
+    script.defer = true;
+    script.dataset.sokivaBrandRuntime = 'true';
+    document.head.append(script);
+  }
 })();
