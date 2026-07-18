@@ -77,6 +77,7 @@ for (const [name, source] of [
 }
 
 const rules = JSON.parse(rulesSource).rules || {};
+const profileWriteRule = String(rules.profiles?.['$uid']?.['.write'] || '');
 const superAdminValidation = String(rules.profiles?.['$uid']?.isSuperAdmin?.['.validate'] || '');
 const roleRequestWrite = String(rules.roleRequests?.['$requestId']?.['.write'] || '');
 
@@ -91,8 +92,13 @@ for (const invariant of [
   "role: 'customer'",
   "'pending_verification'",
   'profileStatusForRegistration(current?.status, emailVerified)',
-  "profile.status === 'pending_verification' && user.emailVerified === true",
-  "status: 'active', emailVerifiedAt: activatedAt",
+  "profile.status === 'pending_verification'",
+  'user.emailVerified === true',
+  "request.auth?.token?.email_verified === true",
+  'profileRef.transaction',
+  "current.status === 'disabled'",
+  "current.status !== 'pending_verification'",
+  'emailVerifiedAt: activatedAt',
   "request.auth?.token?.email_verified !== true",
   'auth.setCustomUserClaims',
   'normalizeAddresses(request.data.addresses)',
@@ -107,6 +113,15 @@ for (const invariant of [
 }
 if (identityBackend.includes('isSuperAdmin: true')) {
   errors.push('Public identity callables must never create a superadministrator.');
+}
+if (profileWriteRule.includes('!data.exists()')) {
+  errors.push('Realtime Database rules must not allow browser-created customer profiles.');
+}
+if (!profileWriteRule.includes('auth.token.isSuperAdmin == true')) {
+  errors.push('Protected owner administration must require a signed superadmin claim.');
+}
+if (!profileWriteRule.includes("data.child('isSuperAdmin').val() != true")) {
+  errors.push('Regular administrators must be blocked from protected owner profiles.');
 }
 if (!superAdminValidation.includes('newData.val() == data.val()')) {
   errors.push('Realtime Database rules must make isSuperAdmin immutable for every browser client.');
@@ -145,6 +160,8 @@ for (const invariant of [
   "callable('getMyIdentity')",
   "callable('listOrdersForRole')",
   "callable('updateMyProfile')",
+  'saveAddresses(',
+  'MAX_ADDRESSES = 5',
   'state.orders =',
   'state.addresses =',
   'document.createElement',
@@ -220,6 +237,8 @@ requireText(catalogRuntime, 'MarketplaceData.getProducts = async function getTen
 requireText(catalogRuntime, 'if (!backend?.db)', 'Catalogue runtime must handle missing Firebase explicitly.');
 requireText(catalogRuntime, 'demo products are disabled', 'Missing Firebase must disable demonstration products.');
 requireText(catalogRuntime, 'window.MarketplaceCatalog = []', 'Unavailable catalogue must render as empty rather than demo data.');
+requireText(catalogRuntime, 'normalized.status =', 'Catalogue sanitization must preserve the backend publication status.');
+requireText(catalogRuntime, 'normalized.tenantId =', 'Catalogue sanitization must preserve tenant identity.');
 if (catalogRuntime.includes('return fallback') || catalogRuntime.includes('products.length ? products : fallback')) {
   errors.push('Public catalogue must not fall back to hardcoded demonstration products.');
 }
@@ -264,4 +283,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('SOKIVA identity validation passed. Email verification is enforced server-side, demo catalogue fallbacks are disabled, account data is Firebase-backed and elevated identity requires signed claims.');
+console.log('SOKIVA identity validation passed. Email verification is atomically enforced, profiles are callable-created, owner identity is protected, account addresses persist and demo catalogue fallbacks are disabled.');
