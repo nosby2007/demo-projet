@@ -4,7 +4,7 @@
 (function sokivaIdentityRuntime() {
   if (window.SokivaIdentityRuntime) return;
   const backend = window.SokivaFirebase;
-  if (!backend?.auth || !backend?.db) return;
+  if (!backend?.auth || !backend?.db || !backend?.functions) return;
 
   const allowedPages = new Set([
     'index.html', 'shop.html', 'product.html', 'checkout.html', 'account.html',
@@ -12,13 +12,20 @@
   ]);
 
   function callable(name) {
-    if (!backend.functions) throw new Error('Les fonctions Firebase ne sont pas disponibles.');
     return backend.functions.httpsCallable(name);
   }
 
+  function safeText(value, max = 320) {
+    return String(value || '')
+      .replace(/[<>\u0000-\u001f\u007f]/g, '')
+      .trim()
+      .slice(0, max);
+  }
+
   function toast(message, type = 'default', icon = 'info') {
-    if (window.Toast?.show) return Toast.show(message, type, icon, 4500);
-    window.alert(message);
+    const safeMessage = safeText(message) || 'Opération impossible.';
+    if (window.Toast?.show) return Toast.show(safeMessage, type, icon, 4500);
+    window.alert(safeMessage);
   }
 
   function errorMessage(error) {
@@ -34,7 +41,9 @@
       'popup-closed-by-user': 'Connexion Google annulée.',
       'network-request-failed': 'Connexion réseau indisponible.'
     };
-    return known[code] || String(error?.details?.message || error?.message || 'Opération impossible.').replace(/^FirebaseError:\s*/i, '');
+    const fallback = String(error?.details?.message || error?.message || 'Opération impossible.')
+      .replace(/^FirebaseError:\s*/i, '');
+    return known[code] || safeText(fallback);
   }
 
   function safeNext(raw, fallback = 'account.html') {
@@ -61,21 +70,8 @@
   async function getIdentity() {
     const user = backend.auth.currentUser;
     if (!user) return null;
-    if (backend.functions) {
-      const response = await callable('getMyIdentity')({});
-      return response.data || null;
-    }
-    const profile = (await backend.db.ref(`profiles/${user.uid}`).once('value')).val();
-    return {
-      uid: user.uid,
-      email: user.email || profile?.email || '',
-      emailVerified: user.emailVerified,
-      displayName: user.displayName || profile?.name || '',
-      role: profile?.role || 'customer',
-      status: profile?.status || 'active',
-      isSuperAdmin: profile?.isSuperAdmin === true,
-      profile
-    };
+    const response = await callable('getMyIdentity')({});
+    return response.data || null;
   }
 
   async function register(form) {
@@ -97,34 +93,15 @@
     try {
       const displayName = `${firstName} ${lastName}`.trim();
       await credential.user.updateProfile({ displayName });
-      if (backend.functions) {
-        await callable('registerCustomerProfile')({
-          firstName,
-          lastName,
-          email,
-          phone,
-          language: 'fr',
-          marketingConsent
-        });
-      } else {
-        await backend.db.ref(`profiles/${credential.user.uid}`).set({
-          uid: credential.user.uid,
-          role: 'customer',
-          status: 'active',
-          tenantId: 'lamylenoise',
-          brandId: 'sokiva',
-          name: displayName,
-          firstName,
-          lastName,
-          email,
-          phone,
-          language: 'fr',
-          marketingConsent,
-          createdAt: firebase.database.ServerValue.TIMESTAMP,
-          updatedAt: firebase.database.ServerValue.TIMESTAMP
-        });
-      }
       await credential.user.sendEmailVerification({ url: `${window.location.origin}/login.html?verified=1` });
+      await callable('registerCustomerProfile')({
+        firstName,
+        lastName,
+        email,
+        phone,
+        language: 'fr',
+        marketingConsent
+      });
       await backend.auth.signOut();
       toast('Compte créé. Vérifiez votre email avant de vous connecter.', 'success', 'mail-check');
       setTimeout(() => window.location.assign('login.html?registered=1'), 1200);
@@ -149,6 +126,7 @@
       await backend.auth.signOut();
       throw new Error('Votre email doit être vérifié. Un nouveau lien vient d’être envoyé.');
     }
+    await credential.user.getIdToken(true);
     const identity = await getIdentity();
     const next = safeNext(new URLSearchParams(window.location.search).get('next'), roleHome(identity));
     toast('Connexion réussie.', 'success', 'log-in');
@@ -170,6 +148,7 @@
         language: 'fr',
         marketingConsent: false
       });
+      await credential.user.getIdToken(true);
       identity = await getIdentity();
     }
     const next = safeNext(new URLSearchParams(window.location.search).get('next'), roleHome(identity));
