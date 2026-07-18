@@ -3,38 +3,48 @@
 
 (function sokivaAccountRuntime() {
   const backend = window.SokivaFirebase;
-  if (!backend?.auth || !backend?.functions) return;
   const root = document.getElementById('account-root');
-  if (!root) return;
+  if (!root || !backend?.auth || !backend?.functions) return;
 
-  const state = { identity: null, orders: [], addresses: [] };
+  const state = { identity: null, orders: [], addresses: [], activePanel: 'dashboard' };
 
   function callable(name) {
     return backend.functions.httpsCallable(name);
   }
 
   function create(tag, className, text) {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    if (text !== undefined) element.textContent = text;
-    return element;
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
   }
 
-  function toast(message, type = 'default', icon = 'info') {
-    if (window.Toast?.show) Toast.show(message, type, icon, 4500);
-    else window.alert(message);
+  function icon(name) {
+    const node = create('i');
+    node.setAttribute('data-lucide', name);
+    return node;
   }
 
-  function money(value) {
+  function errorMessage(error) {
+    return window.SokivaIdentityRuntime?.errorMessage(error)
+      || String(error?.details?.message || error?.message || 'Opération impossible.').replace(/[<>]/g, '').slice(0, 320);
+  }
+
+  function toast(message, type = 'default', iconName = 'info') {
+    const safe = String(message || 'Opération impossible.').replace(/[<>]/g, '').slice(0, 320);
+    if (window.Toast?.show) Toast.show(safe, type, iconName, 4500);
+    else window.alert(safe);
+  }
+
+  function formatMoney(value) {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency', currency: 'AED', maximumFractionDigits: 0
     }).format(Number(value || 0));
   }
 
   function formatDate(value) {
-    if (!value) return '—';
-    const date = new Date(Number(value));
-    if (Number.isNaN(date.getTime())) return '—';
+    const date = new Date(Number(value || 0));
+    if (!value || Number.isNaN(date.getTime())) return '—';
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Dubai'
     }).format(date);
@@ -43,135 +53,175 @@
   function statusText(status) {
     return {
       confirmed: 'Confirmée', preparing: 'En préparation', ready_for_pickup: 'Prête au retrait',
-      in_transit: 'En route', delivered: 'Livrée', cancelled: 'Annulée', refunded: 'Remboursée',
-      pending_cod: 'Paiement à la livraison'
+      in_transit: 'En route', delivered: 'Livrée', cancelled: 'Annulée', refunded: 'Remboursée'
     }[status] || status || 'Enregistrée';
-  }
-
-  function initials(identity) {
-    const name = String(identity?.displayName || identity?.profile?.name || identity?.email || 'S K').trim();
-    return name.split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || 'SK';
   }
 
   function roleLabel(identity) {
     if (identity?.isSuperAdmin) return 'Super administrateur';
-    return {
-      admin: 'Administrateur', seller: 'Vendeur', courier: 'Livreur', customer: 'Client'
-    }[identity?.role] || 'Client';
+    return { admin: 'Administrateur', seller: 'Vendeur', courier: 'Livreur', customer: 'Client' }[identity?.role] || 'Client';
   }
 
-  function emptyState(iconName, title, body, link) {
-    const empty = create('div', 'empty-state');
-    const icon = create('i'); icon.setAttribute('data-lucide', iconName);
-    empty.append(icon, create('h3', '', title), create('p', '', body));
-    if (link) {
-      const anchor = create('a', 'btn-primary', link.label);
-      anchor.href = link.href;
-      empty.append(anchor);
+  function initials(identity) {
+    const source = String(identity?.displayName || identity?.profile?.name || identity?.email || 'S K').trim();
+    return source.split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || 'SK';
+  }
+
+  function emptyState(iconName, title, body, action) {
+    const box = create('div', 'empty-state');
+    box.append(icon(iconName), create('h3', '', title), create('p', '', body));
+    if (action) {
+      const link = create('a', 'btn-primary', action.label);
+      link.href = action.href;
+      box.append(link);
     }
-    return empty;
+    return box;
   }
 
-  function profileForm() {
-    const profile = state.identity.profile || {};
-    const form = create('form', 'form-block identity-profile-form');
-    form.id = 'identity-profile-form';
+  function setBusy(button, busy, label) {
+    if (!button) return;
+    if (busy) {
+      button.dataset.previousText = button.textContent;
+      button.disabled = true;
+      button.textContent = label;
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.previousText || 'Enregistrer';
+    }
+  }
 
-    const row = create('div', 'form-row');
-    const first = create('label', 'form-field');
-    first.append(create('span', '', 'Prénom'));
-    const firstInput = create('input'); firstInput.name = 'firstName'; firstInput.required = true; firstInput.value = profile.firstName || '';
-    first.append(firstInput);
-    const last = create('label', 'form-field');
-    last.append(create('span', '', 'Nom'));
-    const lastInput = create('input'); lastInput.name = 'lastName'; lastInput.required = true; lastInput.value = profile.lastName || '';
-    last.append(lastInput);
-    row.append(first, last);
-
-    const row2 = create('div', 'form-row');
-    const emailField = create('label', 'form-field');
-    emailField.append(create('span', '', 'Email'));
-    const emailInput = create('input'); emailInput.type = 'email'; emailInput.value = state.identity.email || ''; emailInput.disabled = true;
-    emailField.append(emailInput);
-    const phoneField = create('label', 'form-field');
-    phoneField.append(create('span', '', 'Téléphone UAE'));
-    const phoneInput = create('input'); phoneInput.type = 'tel'; phoneInput.name = 'phone'; phoneInput.placeholder = '+971501234567'; phoneInput.value = profile.phone || '';
-    phoneField.append(phoneInput);
-    row2.append(emailField, phoneField);
-
-    const languageField = create('label', 'form-field full');
-    languageField.append(create('span', '', 'Langue préférée'));
-    const select = create('select'); select.name = 'language';
-    [['fr', 'Français'], ['en', 'English'], ['ar', 'العربية']].forEach(([value, label]) => {
-      const option = create('option', '', label); option.value = value; option.selected = (profile.language || 'fr') === value; select.append(option);
+  function normalizeDefault(addresses) {
+    if (!addresses.length) return [];
+    let found = false;
+    return addresses.map((address, index) => {
+      const selected = address.isDefault === true && !found;
+      if (selected) found = true;
+      return { ...address, isDefault: selected || (!found && index === 0) };
+    }).map((address, index, rows) => {
+      if (rows.some(row => row.isDefault)) return address;
+      return index === 0 ? { ...address, isDefault: true } : address;
     });
-    languageField.append(select);
+  }
 
-    const submit = create('button', 'btn-primary', 'Enregistrer les modifications'); submit.type = 'submit';
-    form.append(row, row2, languageField, submit);
-    form.addEventListener('submit', saveProfile);
-    return form;
+  async function saveProfile(payload, button, successMessage) {
+    setBusy(button, true, 'Enregistrement…');
+    try {
+      const response = await callable('updateMyProfile')(payload);
+      state.identity = response.data;
+      state.addresses = Array.isArray(response.data?.profile?.addresses) ? response.data.profile.addresses : [];
+      toast(successMessage, 'success', 'circle-check');
+      render();
+      return true;
+    } catch (error) {
+      toast(errorMessage(error), 'error', 'alert-circle');
+      return false;
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
+  async function saveAddresses(nextAddresses, button, message) {
+    const normalized = normalizeDefault(nextAddresses);
+    return saveProfile({ addresses: normalized }, button, message);
+  }
+
+  function orderList() {
+    if (!state.orders.length) {
+      return emptyState('package-open', 'Aucune commande réelle', 'Vos commandes apparaîtront ici après votre premier achat.', {
+        href: 'shop.html', label: 'Découvrir la boutique'
+      });
+    }
+    const list = create('div', 'orders-list');
+    state.orders.forEach(order => {
+      const id = String(order.id || order.orderId || 'SOKIVA');
+      const card = create('article', 'order-card');
+      const info = create('div');
+      info.append(create('strong', '', `#${id}`));
+      info.append(create('p', '', `${formatDate(order.createdAt)}${order.emirate ? ` • ${order.emirate}` : ''}`));
+      const status = create('span', `order-status ${order.status || ''}`, statusText(order.status));
+      const total = create('strong', '', formatMoney(order.total));
+      const link = create('a', 'btn-link', ['in_transit', 'delivered'].includes(order.status) ? 'Suivre' : 'Voir');
+      link.href = `customer.html?order=${encodeURIComponent(id)}`;
+      card.append(info, status, total, link);
+      list.append(card);
+    });
+    return list;
   }
 
   function addressCard(address) {
     const card = create('article', 'address-card');
     if (address.isDefault) card.append(create('span', 'address-tag', 'Principale'));
     card.append(create('strong', '', address.label || 'Adresse'));
-    const text = create('p');
-    text.append(document.createTextNode(address.line1 || ''));
-    text.append(create('br'));
-    text.append(document.createTextNode([address.area, address.emirate].filter(Boolean).join(', ')));
+    const details = create('p');
+    details.append(document.createTextNode(address.line1 || ''));
+    details.append(create('br'));
+    details.append(document.createTextNode([address.area, address.emirate].filter(Boolean).join(', ')));
     if (address.instructions) {
-      text.append(create('br'));
-      text.append(document.createTextNode(address.instructions));
+      details.append(create('br'));
+      details.append(document.createTextNode(address.instructions));
     }
-    card.append(text);
+    card.append(details);
     if (address.phone) card.append(create('p', 'address-phone', address.phone));
+
     const actions = create('div', 'address-actions');
-    const remove = create('button', 'btn-link danger', 'Supprimer'); remove.type = 'button';
-    remove.addEventListener('click', () => {
-      state.addresses = state.addresses.filter(item => item.id !== address.id);
-      if (state.addresses.length && !state.addresses.some(item => item.isDefault)) state.addresses[0].isDefault = true;
-      renderAddresses();
-    });
+    if (!address.isDefault) {
+      const makeDefault = create('button', 'btn-link', 'Définir principale');
+      makeDefault.type = 'button';
+      makeDefault.addEventListener('click', () => saveAddresses(
+        state.addresses.map(item => ({ ...item, isDefault: item.id === address.id })),
+        makeDefault,
+        'Adresse principale mise à jour.'
+      ));
+      actions.append(makeDefault);
+    }
+    const remove = create('button', 'btn-link danger', 'Supprimer');
+    remove.type = 'button';
+    remove.addEventListener('click', () => saveAddresses(
+      state.addresses.filter(item => item.id !== address.id),
+      remove,
+      'Adresse supprimée.'
+    ));
     actions.append(remove);
     card.append(actions);
     return card;
   }
 
-  function newAddressForm() {
+  function addressForm() {
     const form = create('form', 'address-card identity-address-form');
-    form.id = 'identity-address-form';
     const fields = [
-      ['label', 'Nom de l’adresse', 'Domicile'],
-      ['emirate', 'Émirat', 'Abu Dhabi'],
-      ['area', 'Zone / quartier', 'Khalifa City'],
-      ['line1', 'Adresse complète', 'Villa, immeuble, rue'],
-      ['phone', 'Téléphone UAE', '+971501234567'],
-      ['instructions', 'Instructions', 'Étage, point de repère…']
+      ['label', 'Nom de l’adresse', 'Domicile', false],
+      ['emirate', 'Émirat', 'Abu Dhabi', true],
+      ['area', 'Zone / quartier', 'Khalifa City', true],
+      ['line1', 'Adresse complète', 'Villa, immeuble, rue', true],
+      ['phone', 'Téléphone UAE', '+971501234567', false],
+      ['instructions', 'Instructions', 'Étage, point de repère…', false]
     ];
-    fields.forEach(([name, label, placeholder]) => {
-      const field = create('label', 'form-field full');
-      field.append(create('span', '', label));
+    fields.forEach(([name, label, placeholder, required]) => {
+      const wrapper = create('label', 'form-field full');
+      wrapper.append(create('span', '', label));
       const input = create(name === 'instructions' ? 'textarea' : 'input');
-      input.name = name; input.placeholder = placeholder;
-      if (['emirate', 'area', 'line1'].includes(name)) input.required = true;
-      field.append(input); form.append(field);
+      input.name = name;
+      input.placeholder = placeholder;
+      input.required = required;
+      wrapper.append(input);
+      form.append(wrapper);
     });
     const defaultLabel = create('label', 'checkbox-label small');
-    const checkbox = create('input'); checkbox.type = 'checkbox'; checkbox.name = 'isDefault';
+    const checkbox = create('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'isDefault';
     defaultLabel.append(checkbox, document.createTextNode(' Définir comme adresse principale'));
-    const submit = create('button', 'btn-primary', 'Ajouter l’adresse'); submit.type = 'submit';
+    const submit = create('button', 'btn-primary', 'Ajouter l’adresse');
+    submit.type = 'submit';
     form.append(defaultLabel, submit);
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
       const data = Object.fromEntries(new FormData(form).entries());
-      if (!data.emirate || !data.area || !data.line1) return toast('Complétez l’émirat, la zone et l’adresse.', 'error', 'alert-circle');
-      const isDefault = form.elements.isDefault.checked || state.addresses.length === 0;
-      if (isDefault) state.addresses = state.addresses.map(item => ({ ...item, isDefault: false }));
-      state.addresses.push({
+      const isDefault = checkbox.checked || state.addresses.length === 0;
+      const next = isDefault ? state.addresses.map(item => ({ ...item, isDefault: false })) : [...state.addresses];
+      next.push({
         id: `address-${Date.now()}`,
-        label: data.label || `Adresse ${state.addresses.length + 1}`,
+        label: data.label || `Adresse ${next.length + 1}`,
         emirate: data.emirate,
         area: data.area,
         line1: data.line1,
@@ -179,153 +229,170 @@
         instructions: data.instructions || '',
         isDefault
       });
-      renderAddresses();
+      await saveAddresses(next, submit, 'Adresse ajoutée.');
     });
     return form;
   }
 
-  function renderOrders(container) {
-    container.replaceChildren();
-    if (!state.orders.length) {
-      container.append(emptyState('package-open', 'Aucune commande réelle', 'Vos commandes apparaîtront ici après votre premier achat.', { href: 'shop.html', label: 'Découvrir la boutique' }));
-      return;
-    }
-    const list = create('div', 'orders-list');
-    state.orders.forEach(order => {
-      const card = create('article', 'order-card');
-      const info = create('div');
-      info.append(create('strong', '', `#${order.id || order.orderId || 'SOKIVA'}`));
-      info.append(create('p', '', `${formatDate(order.createdAt)}${order.emirate ? ` • ${order.emirate}` : ''}`));
-      const status = create('span', `order-status ${order.status || ''}`, statusText(order.status));
-      const total = create('strong', '', money(order.total));
-      const link = create('a', 'btn-link', ['in_transit', 'delivered'].includes(order.status) ? 'Suivre' : 'Voir');
-      link.href = `customer.html?order=${encodeURIComponent(order.id || order.orderId || '')}`;
-      card.append(info, status, total, link);
-      list.append(card);
+  function profileForm() {
+    const profile = state.identity?.profile || {};
+    const form = create('form', 'form-block identity-profile-form');
+    const firstRow = create('div', 'form-row');
+    const firstName = create('label', 'form-field');
+    firstName.append(create('span', '', 'Prénom'));
+    const firstInput = create('input');
+    firstInput.name = 'firstName';
+    firstInput.required = true;
+    firstInput.value = profile.firstName || '';
+    firstName.append(firstInput);
+    const lastName = create('label', 'form-field');
+    lastName.append(create('span', '', 'Nom'));
+    const lastInput = create('input');
+    lastInput.name = 'lastName';
+    lastInput.required = true;
+    lastInput.value = profile.lastName || '';
+    lastName.append(lastInput);
+    firstRow.append(firstName, lastName);
+
+    const secondRow = create('div', 'form-row');
+    const email = create('label', 'form-field');
+    email.append(create('span', '', 'Email'));
+    const emailInput = create('input');
+    emailInput.type = 'email';
+    emailInput.disabled = true;
+    emailInput.value = state.identity?.email || '';
+    email.append(emailInput);
+    const phone = create('label', 'form-field');
+    phone.append(create('span', '', 'Téléphone UAE'));
+    const phoneInput = create('input');
+    phoneInput.type = 'tel';
+    phoneInput.name = 'phone';
+    phoneInput.placeholder = '+971501234567';
+    phoneInput.value = profile.phone || '';
+    phone.append(phoneInput);
+    secondRow.append(email, phone);
+
+    const language = create('label', 'form-field full');
+    language.append(create('span', '', 'Langue préférée'));
+    const select = create('select');
+    select.name = 'language';
+    [['fr', 'Français'], ['en', 'English'], ['ar', 'العربية']].forEach(([value, label]) => {
+      const option = create('option', '', label);
+      option.value = value;
+      option.selected = (profile.language || 'fr') === value;
+      select.append(option);
     });
-    container.append(list);
+    language.append(select);
+    const submit = create('button', 'btn-primary', 'Enregistrer les modifications');
+    submit.type = 'submit';
+    form.append(firstRow, secondRow, language, submit);
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      saveProfile({
+        firstName: firstInput.value,
+        lastName: lastInput.value,
+        phone: phoneInput.value,
+        language: select.value,
+        addresses: state.addresses
+      }, submit, 'Profil mis à jour.');
+    });
+    return form;
   }
 
-  function renderAddresses() {
-    const container = document.getElementById('identity-addresses-grid');
-    if (!container) return;
-    container.replaceChildren();
-    state.addresses.forEach(address => container.append(addressCard(address)));
-    container.append(newAddressForm());
-    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [container] });
+  function panel(id, title) {
+    const section = create('section', `account-panel${state.activePanel === id ? ' active' : ''}`);
+    section.id = `panel-${id}`;
+    section.append(create('h2', 'section-title', title));
+    return section;
   }
 
   function render() {
     root.replaceChildren();
     const identity = state.identity;
-    const profile = identity.profile || {};
-    const layout = create('div', 'account-layout');
+    if (!identity?.profile) {
+      root.append(emptyState('user-x', 'Profil SOKIVA manquant', 'Ce compte Firebase ne possède pas encore de profil applicatif valide.', {
+        href: 'login.html', label: 'Revenir à la connexion'
+      }));
+      return;
+    }
 
+    const layout = create('div', 'account-layout');
     const sidebar = create('aside', 'account-sidebar');
-    const user = create('div', 'account-user');
-    user.append(create('div', 'account-avatar', initials(identity)));
-    const userCopy = create('div');
-    userCopy.append(create('strong', '', identity.displayName || identity.email || 'Compte SOKIVA'));
-    userCopy.append(create('p', '', identity.email || ''));
-    userCopy.append(create('span', 'identity-role-badge', roleLabel(identity)));
-    user.append(userCopy);
-    const tabs = create('nav', 'account-tabs');
-    const tabDefinitions = [
+    const userCard = create('div', 'account-user');
+    userCard.append(create('div', 'account-avatar', initials(identity)));
+    const copy = create('div');
+    copy.append(create('strong', '', identity.displayName || identity.email || 'Compte SOKIVA'));
+    copy.append(create('p', '', identity.email || ''));
+    copy.append(create('span', 'identity-role-badge', roleLabel(identity)));
+    userCard.append(copy);
+
+    const nav = create('nav', 'account-tabs');
+    const definitions = [
       ['dashboard', 'layout-dashboard', 'Tableau de bord'],
       ['orders', 'package', 'Mes commandes'],
       ['addresses', 'map-pin', 'Adresses UAE'],
       ['profile', 'user', 'Profil']
     ];
-    tabDefinitions.forEach(([target, iconName, label], index) => {
-      const link = create('a', `account-tab${index === 0 ? ' active' : ''}`);
-      link.href = `#${target}`; link.dataset.target = `panel-${target}`;
-      const icon = create('i'); icon.setAttribute('data-lucide', iconName);
-      link.append(icon, document.createTextNode(` ${label}`)); tabs.append(link);
-    });
-    const workspace = create('a', 'account-tab'); workspace.href = window.SokivaIdentityRuntime?.roleHome(identity) || 'customer.html';
-    const workspaceIcon = create('i'); workspaceIcon.setAttribute('data-lucide', identity.isSuperAdmin ? 'shield-check' : 'external-link');
-    workspace.append(workspaceIcon, document.createTextNode(identity.isSuperAdmin ? ' Super administration' : ' Ouvrir mon espace'));
-    const logout = create('a', 'account-tab logout'); logout.href = '#'; logout.id = 'account-logout';
-    const logoutIcon = create('i'); logoutIcon.setAttribute('data-lucide', 'log-out'); logout.append(logoutIcon, document.createTextNode(' Déconnexion'));
-    tabs.append(workspace, logout); sidebar.append(user, tabs);
-
-    const content = create('div', 'account-content');
-    const dashboard = create('section', 'account-panel active'); dashboard.id = 'panel-dashboard';
-    dashboard.append(create('h2', 'section-title', 'Tableau de bord'));
-    const verification = create('div', `identity-verification ${identity.emailVerified ? 'verified' : 'pending'}`);
-    verification.textContent = identity.emailVerified ? 'Email vérifié' : 'Email non vérifié';
-    dashboard.append(verification);
-    const stats = create('div', 'stats-row');
-    [[state.orders.length, 'Commandes', 'package'], [state.addresses.length, 'Adresses', 'map-pin'], [roleLabel(identity), 'Rôle', 'badge-check']].forEach(([value, label, iconName]) => {
-      const card = create('div', 'stat-card'); const icon = create('i'); icon.setAttribute('data-lucide', iconName);
-      card.append(icon, create('strong', '', String(value)), create('span', '', label)); stats.append(card);
-    });
-    dashboard.append(stats);
-    const lastHeading = create('h3', 'account-h3', 'Dernière commande'); dashboard.append(lastHeading);
-    const lastContainer = create('div'); renderOrders(lastContainer); dashboard.append(lastContainer);
-
-    const orders = create('section', 'account-panel'); orders.id = 'panel-orders';
-    orders.append(create('h2', 'section-title', 'Mes commandes'));
-    const ordersContainer = create('div'); renderOrders(ordersContainer); orders.append(ordersContainer);
-
-    const addresses = create('section', 'account-panel'); addresses.id = 'panel-addresses';
-    addresses.append(create('h2', 'section-title', 'Mes adresses UAE'));
-    const addressGrid = create('div', 'addresses-grid'); addressGrid.id = 'identity-addresses-grid'; addresses.append(addressGrid);
-
-    const profilePanel = create('section', 'account-panel'); profilePanel.id = 'panel-profile';
-    profilePanel.append(create('h2', 'section-title', 'Mon profil'), profileForm());
-
-    content.append(dashboard, orders, addresses, profilePanel);
-    layout.append(sidebar, content); root.append(layout);
-
-    root.querySelectorAll('.account-tab[data-target]').forEach(tab => {
-      tab.addEventListener('click', event => {
+    definitions.forEach(([id, iconName, label]) => {
+      const link = create('a', `account-tab${state.activePanel === id ? ' active' : ''}`);
+      link.href = `#${id}`;
+      link.append(icon(iconName), document.createTextNode(` ${label}`));
+      link.addEventListener('click', event => {
         event.preventDefault();
-        root.querySelectorAll('.account-tab[data-target]').forEach(item => item.classList.remove('active'));
-        root.querySelectorAll('.account-panel').forEach(panel => panel.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.target)?.classList.add('active');
-        history.replaceState(null, '', tab.getAttribute('href'));
+        state.activePanel = id;
+        history.replaceState(null, '', `#${id}`);
+        render();
       });
+      nav.append(link);
     });
-    document.getElementById('account-logout')?.addEventListener('click', async event => {
-      event.preventDefault();
+
+    const workspace = create('a', 'account-tab');
+    workspace.href = window.SokivaIdentityRuntime?.roleHome(identity) || 'customer.html';
+    workspace.append(icon(identity.isSuperAdmin ? 'shield-check' : 'external-link'), document.createTextNode(identity.isSuperAdmin ? ' Super administration' : ' Ouvrir mon espace'));
+    const logout = create('button', 'account-tab logout');
+    logout.type = 'button';
+    logout.append(icon('log-out'), document.createTextNode(' Déconnexion'));
+    logout.addEventListener('click', async () => {
       await backend.auth.signOut();
       window.location.assign('login.html');
     });
-    renderAddresses();
-    const hash = window.location.hash.slice(1);
-    if (hash) root.querySelector(`.account-tab[data-target="panel-${CSS.escape(hash)}"]`)?.click();
-    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
-  }
+    nav.append(workspace, logout);
+    sidebar.append(userCard, nav);
 
-  async function saveProfile(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const button = form.querySelector('button[type="submit"]');
-    button.disabled = true;
-    try {
-      const response = await callable('updateMyProfile')({
-        firstName: form.elements.firstName.value,
-        lastName: form.elements.lastName.value,
-        phone: form.elements.phone.value,
-        language: form.elements.language.value,
-        addresses: state.addresses
-      });
-      state.identity = response.data;
-      state.addresses = Array.isArray(response.data?.profile?.addresses) ? response.data.profile.addresses : [];
-      toast('Profil mis à jour.', 'success', 'user-check');
-      render();
-    } catch (error) {
-      toast(window.SokivaIdentityRuntime?.errorMessage(error) || error.message, 'error', 'alert-circle');
-    } finally {
-      button.disabled = false;
-    }
+    const content = create('div', 'account-content');
+    const dashboard = panel('dashboard', 'Tableau de bord');
+    dashboard.append(create('div', `identity-verification ${identity.emailVerified ? 'verified' : 'pending'}`, identity.emailVerified ? 'Email vérifié' : 'Email non vérifié'));
+    const stats = create('div', 'stats-row');
+    [[state.orders.length, 'Commandes', 'package'], [state.addresses.length, 'Adresses', 'map-pin'], [roleLabel(identity), 'Rôle', 'badge-check']].forEach(([value, label, iconName]) => {
+      const card = create('div', 'stat-card');
+      card.append(icon(iconName), create('strong', '', String(value)), create('span', '', label));
+      stats.append(card);
+    });
+    dashboard.append(stats, create('h3', 'account-h3', 'Dernière commande'), orderList());
+
+    const orders = panel('orders', 'Mes commandes');
+    orders.append(orderList());
+
+    const addresses = panel('addresses', 'Mes adresses UAE');
+    const grid = create('div', 'addresses-grid');
+    state.addresses.forEach(address => grid.append(addressCard(address)));
+    grid.append(addressForm());
+    addresses.append(grid);
+
+    const profile = panel('profile', 'Mon profil');
+    profile.append(profileForm());
+    content.append(dashboard, orders, addresses, profile);
+    layout.append(sidebar, content);
+    root.append(layout);
+    if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
   }
 
   async function load() {
     const user = await new Promise(resolve => {
-      const unsubscribe = backend.auth.onAuthStateChanged(value => { unsubscribe(); resolve(value); });
+      const unsubscribe = backend.auth.onAuthStateChanged(value => {
+        unsubscribe();
+        resolve(value);
+      });
     });
     if (!user) {
       window.location.replace(`login.html?next=${encodeURIComponent('account.html')}`);
@@ -339,11 +406,15 @@
       state.identity = identityResponse.data;
       state.orders = Array.isArray(ordersResponse.data?.orders) ? ordersResponse.data.orders : [];
       state.addresses = Array.isArray(state.identity?.profile?.addresses) ? state.identity.profile.addresses : [];
-      const heroTitle = document.getElementById('account-page-title');
-      if (heroTitle) heroTitle.textContent = `Bonjour ${state.identity.profile?.firstName || state.identity.displayName || ''}`.trim();
+      const requestedPanel = window.location.hash.slice(1);
+      if (['dashboard', 'orders', 'addresses', 'profile'].includes(requestedPanel)) state.activePanel = requestedPanel;
+      const title = document.getElementById('account-page-title');
+      if (title) title.textContent = `Bonjour ${state.identity.profile?.firstName || state.identity.displayName || ''}`.trim();
       render();
     } catch (error) {
-      root.replaceChildren(emptyState('shield-alert', 'Compte indisponible', window.SokivaIdentityRuntime?.errorMessage(error) || error.message, { href: 'login.html', label: 'Revenir à la connexion' }));
+      root.replaceChildren(emptyState('shield-alert', 'Compte indisponible', errorMessage(error), {
+        href: 'login.html', label: 'Revenir à la connexion'
+      }));
       if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
     }
   }
