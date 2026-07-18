@@ -19,15 +19,16 @@ test('identity constants expose SOKIVA public brand with compatibility tenant', 
   assert.equal(identityConstants.COMPAT_TENANT_ID, 'lamylenoise');
 });
 
-test('new email accounts remain pending until Firebase verifies the email', () => {
+test('every unverified customer registration remains pending', () => {
   assert.equal(profileStatusForRegistration(undefined, false), 'pending_verification');
   assert.equal(profileStatusForRegistration('pending_verification', false), 'pending_verification');
-  assert.equal(profileStatusForRegistration(undefined, true), 'active');
-  assert.equal(profileStatusForRegistration('pending_verification', true), 'active');
+  assert.equal(profileStatusForRegistration('active', false), 'pending_verification');
 });
 
-test('existing active and disabled account states cannot be weakened by registration', () => {
-  assert.equal(profileStatusForRegistration('active', false), 'active');
+test('verified customers activate while disabled accounts stay disabled', () => {
+  assert.equal(profileStatusForRegistration(undefined, true), 'active');
+  assert.equal(profileStatusForRegistration('pending_verification', true), 'active');
+  assert.equal(profileStatusForRegistration('active', true), 'active');
   assert.equal(profileStatusForRegistration('disabled', true), 'disabled');
 });
 
