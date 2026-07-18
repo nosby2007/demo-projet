@@ -101,13 +101,13 @@ test('browser clients cannot modify public catalogue indexes', async () => {
   }));
 });
 
-test('new customer profile can use the pilot tenant or omit it', async () => {
+test('browser clients cannot create customer profiles directly', async () => {
   const withoutTenant = testEnv.authenticatedContext('new-customer-1').database();
-  await assertSucceeds(set(ref(withoutTenant, 'profiles/new-customer-1'), {
-    role: 'customer', status: 'active', name: 'Client Pilot'
+  await assertFails(set(ref(withoutTenant, 'profiles/new-customer-1'), {
+    role: 'customer', status: 'pending_verification', name: 'Client Pilot'
   }));
   const pilotTenant = testEnv.authenticatedContext('new-customer-2').database();
-  await assertSucceeds(set(ref(pilotTenant, 'profiles/new-customer-2'), {
+  await assertFails(set(ref(pilotTenant, 'profiles/new-customer-2'), {
     role: 'customer', status: 'active', tenantId: 'lamylenoise', name: 'Client Pilot Deux'
   }));
 });
@@ -117,6 +117,13 @@ test('new customer cannot self-enroll into another tenant', async () => {
   await assertFails(set(ref(db, 'profiles/new-customer-foreign'), {
     role: 'customer', status: 'active', tenantId: 'other-tenant', name: 'Foreign Tenant Attempt'
   }));
+});
+
+test('existing customer can update non-authority profile fields only', async () => {
+  const db = testEnv.authenticatedContext('customer-1').database();
+  await assertSucceeds(update(ref(db, 'profiles/customer-1'), { name: 'Nom mis à jour' }));
+  await assertFails(update(ref(db, 'profiles/customer-1'), { status: 'disabled' }));
+  await assertFails(remove(ref(db, 'profiles/customer-1')));
 });
 
 test('browser clients cannot create or change the superadmin flag', async () => {
