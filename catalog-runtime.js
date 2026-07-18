@@ -8,7 +8,7 @@
     return;
   }
 
-  const TENANT_ID = 'lamylenoise';
+  const TENANT_ID = backend.tenantId || 'lamylenoise';
   const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i;
   const HTML_ENTITIES = Object.freeze({
     '&': '&amp;',
@@ -32,9 +32,7 @@
   function safeImageUrl(value) {
     const url = String(value || '').trim();
     if (!url) return '';
-    if (/^data:/i.test(url)) {
-      return SAFE_DATA_IMAGE.test(url) ? escapeHtml(url, 1200) : '';
-    }
+    if (/^data:/i.test(url)) return SAFE_DATA_IMAGE.test(url) ? escapeHtml(url, 1200) : '';
     try {
       const parsed = new URL(url, window.location.origin);
       if (parsed.origin === window.location.origin || parsed.protocol === 'https:') {
@@ -68,7 +66,7 @@
     return normalized;
   }
 
-  MarketplaceData.getProducts = async function getTenantPublicProducts(fallback = []) {
+  MarketplaceData.getProducts = async function getTenantPublicProducts() {
     try {
       const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
@@ -76,13 +74,13 @@
         .map(([id, product]) => sanitizePublicProduct(id, product))
         .filter(product => product && product.status === 'active' && product.price > 0);
       window.MarketplaceCatalog = products;
-      return products.length ? products : fallback;
+      return products;
     } catch (error) {
-      console.warn('Tenant public catalogue unavailable.', error);
-      return fallback;
+      console.warn('SOKIVA public catalogue unavailable.', error);
+      window.MarketplaceCatalog = [];
+      return [];
     }
   };
 
-  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, source: 'publicCatalog' });
-  window.LamylenoiseCatalogue = window.SokivaCatalogue;
+  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, brandId: 'sokiva', source: 'publicCatalog' });
 })();
