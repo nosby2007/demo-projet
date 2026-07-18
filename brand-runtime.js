@@ -15,6 +15,19 @@
     return replacements.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), String(value || ''));
   }
 
+  function migrateElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+    for (const attr of ['aria-label', 'title', 'placeholder', 'content']) {
+      if (!element.hasAttribute(attr)) continue;
+      const current = element.getAttribute(attr);
+      const next = replaceText(current);
+      if (next !== current) element.setAttribute(attr, next);
+    }
+    if (element.classList?.contains('logo-nova') && element.textContent !== 'SOKIVA') {
+      element.textContent = 'SOKIVA';
+    }
+  }
+
   function migrateNode(root) {
     if (!root) return;
     if (root.nodeType === Node.TEXT_NODE) {
@@ -24,42 +37,28 @@
     }
     if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_NODE) return;
 
-    const element = root.nodeType === Node.ELEMENT_NODE ? root : null;
-    if (element) {
-      for (const attr of ['aria-label', 'title', 'placeholder', 'content']) {
-        if (!element.hasAttribute(attr)) continue;
-        const current = element.getAttribute(attr);
-        const next = replaceText(current);
-        if (next !== current) element.setAttribute(attr, next);
-      }
-      if (element.classList?.contains('logo-nova')) element.textContent = 'SOKIVA';
-    }
-
+    migrateElement(root.nodeType === Node.ELEMENT_NODE ? root : null);
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
     let node;
     while ((node = walker.nextNode())) {
       if (node.nodeType === Node.TEXT_NODE) {
         const next = replaceText(node.nodeValue);
         if (next !== node.nodeValue) node.nodeValue = next;
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        if (node.classList?.contains('logo-nova')) node.textContent = 'SOKIVA';
-        for (const attr of ['aria-label', 'title', 'placeholder', 'content']) {
-          if (!node.hasAttribute(attr)) continue;
-          const current = node.getAttribute(attr);
-          const next = replaceText(current);
-          if (next !== current) node.setAttribute(attr, next);
-        }
+      } else {
+        migrateElement(node);
       }
     }
   }
 
   function migrateMetadata() {
-    document.title = replaceText(document.title);
+    const title = replaceText(document.title);
+    if (title !== document.title) document.title = title;
     document.querySelectorAll('meta[name="description"], meta[name="application-name"]').forEach(meta => {
-      meta.content = replaceText(meta.content);
+      const next = replaceText(meta.content);
+      if (next !== meta.content) meta.content = next;
     });
     document.querySelectorAll('link[rel="icon"]').forEach(link => {
-      if (link.href.includes("%3EL%3C")) link.href = link.href.replace('%3EL%3C', '%3ES%3C');
+      if (link.href.includes('%3EL%3C')) link.href = link.href.replace('%3EL%3C', '%3ES%3C');
     });
   }
 
