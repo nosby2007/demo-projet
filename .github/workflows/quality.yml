@@ -43,6 +43,9 @@ jobs:
       - name: Validate private notification stack
         run: node scripts/validate-notification-stack.mjs
 
+      - name: Validate SOKIVA identity and frontend migration
+        run: node scripts/validate-identity-stack.mjs
+
       - name: Validate Firebase deployment pipeline
         run: node scripts/validate-deploy-pipeline.mjs
 
@@ -69,6 +72,10 @@ jobs:
       - name: Test notification units
         working-directory: functions
         run: node --test test/notifications.test.js
+
+      - name: Test identity and address units
+        working-directory: functions
+        run: node --test test/identity.test.js
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
