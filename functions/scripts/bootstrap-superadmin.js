@@ -1,6 +1,7 @@
 'use strict';
 
-const { applicationDefault, getApps, initializeApp } = require('firebase-admin/app');
+const { readFileSync } = require('node:fs');
+const { cert, getApps, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getDatabase } = require('firebase-admin/database');
 
@@ -12,16 +13,27 @@ async function main() {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error('Usage: npm --prefix functions run bootstrap:superadmin -- owner@example.com');
   }
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  const credentialsPath = String(process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim();
+  if (!credentialsPath) {
     throw new Error('GOOGLE_APPLICATION_CREDENTIALS must point to the SOKIVA service-account JSON file.');
   }
 
-  const app = getApps().length ? getApps()[0] : initializeApp({ credential: applicationDefault() });
-  const projectId = app.options.projectId || process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || '';
+  let credentials;
+  try {
+    credentials = JSON.parse(readFileSync(credentialsPath, 'utf8'));
+  } catch (error) {
+    throw new Error(`Unable to read the service-account JSON: ${error.message}`);
+  }
+  const projectId = String(credentials.project_id || '').trim();
   if (!/^sokiva-(dev|staging|prod)$/.test(projectId)) {
     throw new Error(`Bootstrap blocked: credentials target '${projectId || 'unknown'}', not an approved SOKIVA project.`);
   }
 
+  const app = getApps().length ? getApps()[0] : initializeApp({
+    credential: cert(credentials),
+    projectId,
+    databaseURL: `https://${projectId}-default-rtdb.firebaseio.com`
+  });
   const auth = getAuth(app);
   const database = getDatabase(app);
   const user = await auth.getUserByEmail(email);
