@@ -18,6 +18,7 @@ const APP_SHELL = [
   '/contact.html',
   '/faq.html',
   '/style.css',
+  '/identity.css',
   '/audit.css',
   '/tracking.css',
   '/notifications.css',
@@ -93,7 +94,6 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
