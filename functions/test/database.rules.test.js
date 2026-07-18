@@ -8,7 +8,7 @@ const {
   assertFails,
   assertSucceeds
 } = require('@firebase/rules-unit-testing');
-const { ref, set, update, get } = require('firebase/database');
+const { ref, set, update, get, remove } = require('firebase/database');
 
 let testEnv;
 
@@ -131,6 +131,19 @@ test('browser clients cannot create or change the superadmin flag', async () => 
   const adminDb = testEnv.authenticatedContext('admin-1').database();
   await assertFails(update(ref(adminDb, 'profiles/admin-1'), { isSuperAdmin: true }));
   await assertFails(update(ref(adminDb, 'profiles/owner-1'), { isSuperAdmin: false }));
+});
+
+test('regular administrator cannot alter or delete the owner profile', async () => {
+  const adminDb = testEnv.authenticatedContext('admin-1', { role: 'admin', isSuperAdmin: false }).database();
+  await assertFails(update(ref(adminDb, 'profiles/owner-1'), { role: 'customer' }));
+  await assertFails(update(ref(adminDb, 'profiles/owner-1'), { status: 'disabled' }));
+  await assertFails(remove(ref(adminDb, 'profiles/owner-1')));
+});
+
+test('signed superadministrator can manage ordinary profiles but not mutate the protected flag', async () => {
+  const ownerDb = testEnv.authenticatedContext('owner-1', { role: 'admin', isSuperAdmin: true }).database();
+  await assertSucceeds(update(ref(ownerDb, 'profiles/seller-1'), { status: 'disabled' }));
+  await assertFails(update(ref(ownerDb, 'profiles/owner-1'), { isSuperAdmin: false }));
 });
 
 test('verified user can submit a professional application linked to their account', async () => {
