@@ -3,9 +3,13 @@ import vm from 'node:vm';
 
 const errors = [];
 const read = path => readFile(path, 'utf8');
+const requireText = (source, value, message) => {
+  if (!source.includes(value)) errors.push(message);
+};
 
 const [
   identityBackend,
+  checkoutWrapper,
   main,
   rulesSource,
   identityRuntime,
@@ -31,6 +35,7 @@ const [
   documentation
 ] = await Promise.all([
   read('functions/identity.js'),
+  read('functions/checkout-v4.js'),
   read('functions/main.js'),
   read('database.rules.json'),
   read('identity-runtime.js'),
@@ -58,6 +63,7 @@ const [
 
 for (const [name, source] of [
   ['functions/identity.js', identityBackend],
+  ['functions/checkout-v4.js', checkoutWrapper],
   ['identity-runtime.js', identityRuntime],
   ['account-runtime.js', accountRuntime],
   ['brand-runtime.js', brandRuntime],
@@ -72,17 +78,22 @@ for (const [name, source] of [
 
 const rules = JSON.parse(rulesSource).rules || {};
 const superAdminValidation = String(rules.profiles?.['$uid']?.isSuperAdmin?.['.validate'] || '');
+const roleRequestWrite = String(rules.roleRequests?.['$requestId']?.['.write'] || '');
 
 for (const functionName of ['registerCustomerProfile', 'getMyIdentity', 'updateMyProfile']) {
-  if (!identityBackend.includes(`exports.${functionName}`)) errors.push(`Identity backend is missing ${functionName}.`);
-  if (!main.includes(`${functionName}: identity.${functionName}`)) errors.push(`Functions composition is missing ${functionName}.`);
+  requireText(identityBackend, `exports.${functionName}`, `Identity backend is missing ${functionName}.`);
+  requireText(main, `${functionName}: identity.${functionName}`, `Functions composition is missing ${functionName}.`);
 }
 
 for (const invariant of [
   "const BRAND_ID = 'sokiva'",
   "const COMPAT_TENANT_ID = 'lamylenoise'",
   "role: 'customer'",
-  "status: current?.status || 'active'",
+  "'pending_verification'",
+  'profileStatusForRegistration(current?.status, emailVerified)',
+  "profile.status === 'pending_verification' && user.emailVerified === true",
+  "status: 'active', emailVerifiedAt: activatedAt",
+  "request.auth?.token?.email_verified !== true",
   'auth.setCustomUserClaims',
   'normalizeAddresses(request.data.addresses)',
   'MAX_ADDRESSES = 5',
@@ -92,14 +103,18 @@ for (const invariant of [
   'delete claims.isSuperAdmin',
   'const { isSuperAdmin, ...safeCurrent }'
 ]) {
-  if (!identityBackend.includes(invariant)) errors.push(`Identity backend invariant missing: ${invariant}`);
+  requireText(identityBackend, invariant, `Identity backend invariant missing: ${invariant}`);
 }
-if (identityBackend.includes("role: 'admin',\n      status") || identityBackend.includes('isSuperAdmin: true')) {
-  errors.push('Public identity callables must never create an administrator or superadministrator.');
+if (identityBackend.includes('isSuperAdmin: true')) {
+  errors.push('Public identity callables must never create a superadministrator.');
 }
 if (!superAdminValidation.includes('newData.val() == data.val()')) {
   errors.push('Realtime Database rules must make isSuperAdmin immutable for every browser client.');
 }
+if (!roleRequestWrite.includes('auth.token.email_verified == true')) {
+  errors.push('Professional applications must require a verified Firebase email token.');
+}
+requireText(checkoutWrapper, "request.auth.token?.email_verified !== true", 'Secure checkout must reject unverified email accounts.');
 
 for (const invariant of [
   'createUserWithEmailAndPassword',
@@ -110,11 +125,21 @@ for (const invariant of [
   "callable('registerCustomerProfile')",
   "callable('getMyIdentity')",
   'safeNext(',
-  'allowedPages'
+  'allowedPages',
+  'safeText(',
+  'credential.user.getIdToken(true)'
 ]) {
-  if (!identityRuntime.includes(invariant)) errors.push(`Identity client invariant missing: ${invariant}`);
+  requireText(identityRuntime, invariant, `Identity client invariant missing: ${invariant}`);
 }
-if (identityRuntime.includes('window.location.assign(String(')) errors.push('Identity redirects must remain allowlisted and same-origin.');
+if (identityRuntime.includes('backend.db.ref(`profiles/${credential.user.uid}`).set')) {
+  errors.push('Customer registration must never fall back to direct browser profile writes.');
+}
+if (identityRuntime.includes('profile?.isSuperAdmin === true')) {
+  errors.push('Client identity must not trust the profile superadmin flag without signed claims.');
+}
+if (identityRuntime.includes('window.location.assign(String(')) {
+  errors.push('Identity redirects must remain allowlisted and same-origin.');
+}
 
 for (const invariant of [
   "callable('getMyIdentity')",
@@ -125,7 +150,7 @@ for (const invariant of [
   'document.createElement',
   'textContent'
 ]) {
-  if (!accountRuntime.includes(invariant)) errors.push(`Account workspace invariant missing: ${invariant}`);
+  requireText(accountRuntime, invariant, `Account workspace invariant missing: ${invariant}`);
 }
 if (accountRuntime.includes('.innerHTML')) errors.push('Authenticated account data must not render with innerHTML.');
 
@@ -142,7 +167,6 @@ const publicPages = {
   'faq.html': faqHtml,
   'legal.html': legalHtml
 };
-
 const forbiddenDemoValues = [
   'Bonjour Aminata',
   'Aminata Diop',
@@ -165,15 +189,15 @@ for (const [name, html] of Object.entries(publicPages)) {
 }
 
 for (const [name, html] of [['account.html', accountHtml], ['login.html', loginHtml], ['register.html', registerHtml]]) {
-  if (!html.includes('firebase-functions-compat.js')) errors.push(`${name} must load Firebase Functions.`);
-  if (!html.includes('firebase-functions-config.js')) errors.push(`${name} must configure the Functions client.`);
-  if (!html.includes('identity-runtime.js')) errors.push(`${name} must load identity-runtime.js.`);
+  requireText(html, 'firebase-functions-compat.js', `${name} must load Firebase Functions.`);
+  requireText(html, 'firebase-functions-config.js', `${name} must configure the Functions client.`);
+  requireText(html, 'identity-runtime.js', `${name} must load identity-runtime.js.`);
 }
-if (!accountHtml.includes('account-runtime.js')) errors.push('account.html must load the authenticated account runtime.');
-if (!accountHtml.includes('identity.css')) errors.push('account.html must load identity.css.');
-if (!loginHtml.includes('sokiva-login-form')) errors.push('Login must use the new SOKIVA authentication form.');
-if (!registerHtml.includes('sokiva-register-form')) errors.push('Registration must use the new SOKIVA authentication form.');
-if (!registerHtml.includes('confirmPassword')) errors.push('Registration must confirm the password.');
+requireText(accountHtml, 'account-runtime.js', 'account.html must load the authenticated account runtime.');
+requireText(accountHtml, 'identity.css', 'account.html must load identity.css.');
+requireText(loginHtml, 'sokiva-login-form', 'Login must use the new SOKIVA authentication form.');
+requireText(registerHtml, 'sokiva-register-form', 'Registration must use the new SOKIVA authentication form.');
+requireText(registerHtml, 'confirmPassword', 'Registration must confirm the password.');
 
 for (const invariant of [
   "[/LAMYLENOISE/gi, 'SOKIVA']",
@@ -186,17 +210,20 @@ for (const invariant of [
   'COD pilote',
   'Aucun profil, commande ou contact fictif'
 ]) {
-  if (!brandRuntime.includes(invariant)) errors.push(`Brand migration invariant missing: ${invariant}`);
+  requireText(brandRuntime, invariant, `Brand migration invariant missing: ${invariant}`);
 }
 
-if (!homeRuntime.includes('publicCatalog/${tenantId}')) errors.push('Home catalogue must read the Firebase public catalogue.');
-if (!indexHtml.includes('home-catalogue-preview')) errors.push('Homepage must expose the live catalogue preview root.');
-if (!indexHtml.includes('home-runtime.js')) errors.push('Homepage must load home-runtime.js.');
+requireText(homeRuntime, 'publicCatalog/${tenantId}', 'Home catalogue must read the Firebase public catalogue.');
+requireText(indexHtml, 'home-catalogue-preview', 'Homepage must expose the live catalogue preview root.');
+requireText(indexHtml, 'home-runtime.js', 'Homepage must load home-runtime.js.');
+requireText(catalogRuntime, 'MarketplaceData.getProducts = async function getTenantPublicProducts()', 'Catalogue runtime must override the legacy product source before checking Firebase availability.');
+requireText(catalogRuntime, 'if (!backend?.db)', 'Catalogue runtime must handle missing Firebase explicitly.');
+requireText(catalogRuntime, 'demo products are disabled', 'Missing Firebase must disable demonstration products.');
+requireText(catalogRuntime, 'window.MarketplaceCatalog = []', 'Unavailable catalogue must render as empty rather than demo data.');
 if (catalogRuntime.includes('return fallback') || catalogRuntime.includes('products.length ? products : fallback')) {
   errors.push('Public catalogue must not fall back to hardcoded demonstration products.');
 }
-if (!catalogRuntime.includes('window.MarketplaceCatalog = []')) errors.push('Unavailable catalogue must render as empty rather than demo data.');
-if (!productRuntime.includes('Produit indisponible')) errors.push('Unknown product pages must show an honest unavailable state.');
+requireText(productRuntime, 'Produit indisponible', 'Unknown product pages must show an honest unavailable state.');
 
 for (const invariant of [
   'GOOGLE_APPLICATION_CREDENTIALS',
@@ -206,20 +233,20 @@ for (const invariant of [
   'isSuperAdmin: true',
   'auth.getUserByEmail'
 ]) {
-  if (!bootstrap.includes(invariant)) errors.push(`Superadmin bootstrap invariant missing: ${invariant}`);
+  requireText(bootstrap, invariant, `Superadmin bootstrap invariant missing: ${invariant}`);
 }
 if (loginHtml.includes('isSuperAdmin') || registerHtml.includes('isSuperAdmin') || registerHtml.includes('superadmin')) {
   errors.push('Public authentication forms must not expose superadministrator creation fields.');
 }
 
 for (const asset of ['/identity.css', '/brand-runtime.js', '/identity-runtime.js', '/account-runtime.js', '/home-runtime.js']) {
-  if (!serviceWorker.includes(`'${asset}'`)) errors.push(`PWA shell must cache ${asset}.`);
+  requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }
-if (!serviceWorker.includes("CACHE_VERSION = 'sokiva-v2.0.0'")) errors.push('Identity migration must invalidate the old PWA cache.');
+requireText(serviceWorker, "CACHE_VERSION = 'sokiva-v2.0.0'", 'Identity migration must invalidate the old PWA cache.');
 
-if (!functionsPackage.includes('node --check identity.js')) errors.push('Function syntax validation must include identity.js.');
-if (!functionsPackage.includes('test/identity.test.js')) errors.push('Function unit tests must include identity.test.js.');
-if (!functionsPackage.includes('bootstrap:superadmin')) errors.push('Functions package must expose the protected superadmin bootstrap command.');
+requireText(functionsPackage, 'node --check identity.js', 'Function syntax validation must include identity.js.');
+requireText(functionsPackage, 'test/identity.test.js', 'Function unit tests must include identity.test.js.');
+requireText(functionsPackage, 'bootstrap:superadmin', 'Functions package must expose the protected superadmin bootstrap command.');
 
 for (const phrase of [
   'Public account creation creates only a `customer` profile',
@@ -228,7 +255,7 @@ for (const phrase of [
   'DEPLOY_FULL',
   'compatibility tenant'
 ]) {
-  if (!documentation.includes(phrase)) errors.push(`Identity documentation is missing: ${phrase}`);
+  requireText(documentation, phrase, `Identity documentation is missing: ${phrase}`);
 }
 
 if (errors.length) {
@@ -237,4 +264,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('SOKIVA identity validation passed. Verified customers use Firebase data, public demo claims are removed, browser superadmin writes are denied and elevated identity requires signed claims.');
+console.log('SOKIVA identity validation passed. Email verification is enforced server-side, demo catalogue fallbacks are disabled, account data is Firebase-backed and elevated identity requires signed claims.');
