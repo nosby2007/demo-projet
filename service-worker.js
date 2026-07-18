@@ -1,11 +1,14 @@
 /* SOKIVA resilient offline shell and notification navigation */
-const CACHE_VERSION = 'sokiva-v1.9.0';
+const CACHE_VERSION = 'sokiva-v2.0.0';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/shop.html',
   '/product.html',
   '/checkout.html',
+  '/account.html',
+  '/login.html',
+  '/register.html',
   '/customer.html',
   '/seller.html',
   '/courier.html',
@@ -15,10 +18,15 @@ const APP_SHELL = [
   '/contact.html',
   '/faq.html',
   '/style.css',
+  '/identity.css',
   '/audit.css',
   '/tracking.css',
   '/notifications.css',
   '/app.js',
+  '/brand-runtime.js',
+  '/identity-runtime.js',
+  '/account-runtime.js',
+  '/home-runtime.js',
   '/marketplace.js',
   '/saas-runtime.js',
   '/catalog-runtime.js',
@@ -34,7 +42,7 @@ const APP_SHELL = [
   '/app.webmanifest',
   '/404.html'
 ];
-const NOTIFICATION_PAGES = new Set(['customer.html', 'seller.html', 'courier.html', 'admin.html']);
+const NOTIFICATION_PAGES = new Set(['customer.html', 'seller.html', 'courier.html', 'admin.html', 'account.html']);
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_VERSION).then(cache => cache.addAll(APP_SHELL)));
@@ -58,14 +66,14 @@ function navigationCacheKey(pathname) {
 
 function safeNotificationUrl(value) {
   try {
-    const url = new URL(String(value || 'customer.html'), self.location.origin);
+    const url = new URL(String(value || 'account.html'), self.location.origin);
     const page = url.pathname.split('/').filter(Boolean).pop() || '';
     if (url.origin !== self.location.origin || !NOTIFICATION_PAGES.has(page)) {
-      return new URL('/customer.html', self.location.origin).href;
+      return new URL('/account.html', self.location.origin).href;
     }
     return url.href;
   } catch {
-    return new URL('/customer.html', self.location.origin).href;
+    return new URL('/account.html', self.location.origin).href;
   }
 }
 
@@ -86,7 +94,6 @@ self.addEventListener('notificationclick', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 

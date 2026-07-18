@@ -8,13 +8,13 @@ const {
   assertFails,
   assertSucceeds
 } = require('@firebase/rules-unit-testing');
-const { ref, set, update, get } = require('firebase/database');
+const { ref, set, update, get, remove } = require('firebase/database');
 
 let testEnv;
 
 before(async () => {
   testEnv = await initializeTestEnvironment({
-    projectId: 'lamylenoise-rules-test',
+    projectId: 'sokiva-rules-test',
     database: {
       rules: readFileSync(path.join(__dirname, '../../database.rules.json'), 'utf8')
     }
@@ -37,6 +37,9 @@ beforeEach(async () => {
     });
     await set(ref(db, 'profiles/admin-1'), {
       role: 'admin', status: 'active', tenantId: 'lamylenoise'
+    });
+    await set(ref(db, 'profiles/owner-1'), {
+      role: 'admin', status: 'active', tenantId: 'lamylenoise', isSuperAdmin: true
     });
     await set(ref(db, 'products/product-active'), {
       name: 'Bissap interne', price: 20, category: 'boissons', status: 'active',
@@ -98,13 +101,13 @@ test('browser clients cannot modify public catalogue indexes', async () => {
   }));
 });
 
-test('new customer profile can use the pilot tenant or omit it', async () => {
+test('browser clients cannot create customer profiles directly', async () => {
   const withoutTenant = testEnv.authenticatedContext('new-customer-1').database();
-  await assertSucceeds(set(ref(withoutTenant, 'profiles/new-customer-1'), {
-    role: 'customer', status: 'active', name: 'Client Pilot'
+  await assertFails(set(ref(withoutTenant, 'profiles/new-customer-1'), {
+    role: 'customer', status: 'pending_verification', name: 'Client Pilot'
   }));
   const pilotTenant = testEnv.authenticatedContext('new-customer-2').database();
-  await assertSucceeds(set(ref(pilotTenant, 'profiles/new-customer-2'), {
+  await assertFails(set(ref(pilotTenant, 'profiles/new-customer-2'), {
     role: 'customer', status: 'active', tenantId: 'lamylenoise', name: 'Client Pilot Deux'
   }));
 });
@@ -116,10 +119,52 @@ test('new customer cannot self-enroll into another tenant', async () => {
   }));
 });
 
-test('authenticated user can submit an employment application linked to their account', async () => {
+test('existing customer can update non-authority profile fields only', async () => {
   const db = testEnv.authenticatedContext('customer-1').database();
+  await assertSucceeds(update(ref(db, 'profiles/customer-1'), { name: 'Nom mis à jour' }));
+  await assertFails(update(ref(db, 'profiles/customer-1'), { status: 'disabled' }));
+  await assertFails(remove(ref(db, 'profiles/customer-1')));
+});
+
+test('browser clients cannot create or change the superadmin flag', async () => {
+  const newCustomerDb = testEnv.authenticatedContext('new-customer-owner').database();
+  await assertFails(set(ref(newCustomerDb, 'profiles/new-customer-owner'), {
+    role: 'customer', status: 'active', tenantId: 'lamylenoise', isSuperAdmin: true
+  }));
+
+  const customerDb = testEnv.authenticatedContext('customer-1').database();
+  await assertFails(update(ref(customerDb, 'profiles/customer-1'), { isSuperAdmin: true }));
+
+  const adminDb = testEnv.authenticatedContext('admin-1').database();
+  await assertFails(update(ref(adminDb, 'profiles/admin-1'), { isSuperAdmin: true }));
+  await assertFails(update(ref(adminDb, 'profiles/owner-1'), { isSuperAdmin: false }));
+});
+
+test('regular administrator cannot alter or delete the owner profile', async () => {
+  const adminDb = testEnv.authenticatedContext('admin-1', { role: 'admin', isSuperAdmin: false }).database();
+  await assertFails(update(ref(adminDb, 'profiles/owner-1'), { role: 'customer' }));
+  await assertFails(update(ref(adminDb, 'profiles/owner-1'), { status: 'disabled' }));
+  await assertFails(remove(ref(adminDb, 'profiles/owner-1')));
+});
+
+test('signed superadministrator can manage ordinary profiles but not mutate the protected flag', async () => {
+  const ownerDb = testEnv.authenticatedContext('owner-1', { role: 'admin', isSuperAdmin: true }).database();
+  await assertSucceeds(update(ref(ownerDb, 'profiles/seller-1'), { status: 'disabled' }));
+  await assertFails(update(ref(ownerDb, 'profiles/owner-1'), { isSuperAdmin: false }));
+});
+
+test('verified user can submit a professional application linked to their account', async () => {
+  const db = testEnv.authenticatedContext('customer-1', { email_verified: true }).database();
   await assertSucceeds(set(ref(db, 'roleRequests/request-1'), {
-    type: 'seller', name: 'Aminata Diop', email: 'aminata@example.com',
+    type: 'seller', name: 'Client Test', email: 'client@example.com',
+    phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
+  }));
+});
+
+test('unverified user cannot submit a professional application', async () => {
+  const db = testEnv.authenticatedContext('customer-1', { email_verified: false }).database();
+  await assertFails(set(ref(db, 'roleRequests/request-unverified'), {
+    type: 'courier', name: 'Client Test', email: 'client@example.com',
     phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
   }));
 });

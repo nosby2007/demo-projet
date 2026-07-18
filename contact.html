@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Contactez LAMYLENOISE — Abu Dhabi, livraison UAE." />
+  <meta name="description" content="Contacter SOKIVA pendant la phase pilote." />
   <meta name="theme-color" content="#FF6B2B" />
-  <meta name="application-name" content="LAMYLENOISE" />
+  <meta name="application-name" content="SOKIVA" />
   <link rel="manifest" href="app.webmanifest" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3EL%3C/text%3E%3C/svg%3E" />
-  <title>Contact — LAMYLENOISE</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6b2b'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-size='30' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E" />
+  <title>Contact — SOKIVA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -16,86 +16,40 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body data-shell="full" data-page="contact.html">
-
   <main class="page">
     <section class="page-hero">
       <div class="container">
         <nav class="breadcrumb"><a href="index.html">Accueil</a> › <span>Contact</span></nav>
-        <h1 class="page-title">On vous répond en moins de 2 heures</h1>
-        <p class="page-subtitle">Service client en français, anglais et arabe — 7j/7 de 8h à 22h.</p>
+        <h1 class="page-title">Support SOKIVA — phase pilote</h1>
+        <p class="page-subtitle">Aucun faux numéro, faux entrepôt ou délai de réponse n’est publié.</p>
       </div>
     </section>
-
     <section class="contact-section">
       <div class="container">
-        <div class="contact-grid">
-
-          <div class="contact-info">
-            <div class="contact-method">
-              <i data-lucide="message-circle"></i>
-              <div>
-                <strong>WhatsApp</strong>
-                <a href="https://wa.me/971500000000">+971 50 000 0000</a>
-                <p>Réponse moyenne : 5 minutes</p>
-              </div>
-            </div>
-            <div class="contact-method">
-              <i data-lucide="mail"></i>
-              <div>
-                <strong>Email</strong>
-                <a href="mailto:contact@lamylenoise.ae">contact@lamylenoise.ae</a>
-                <p>Réponse sous 2 heures</p>
-              </div>
-            </div>
-            <div class="contact-method">
-              <i data-lucide="phone"></i>
-              <div>
-                <strong>Téléphone</strong>
-                <a href="tel:+97120000000">+971 2 000 0000</a>
-                <p>Du lundi au dimanche, 8h-22h</p>
-              </div>
-            </div>
-            <div class="contact-method">
-              <i data-lucide="map-pin"></i>
-              <div>
-                <strong>Entrepôt &amp; pickup</strong>
-                <p>Mussafah Industrial Area<br/>M-37, Abu Dhabi, UAE</p>
-              </div>
-            </div>
-            <div class="contact-socials">
-              <a href="#" aria-label="Instagram"><i data-lucide="instagram"></i></a>
-              <a href="#" aria-label="Facebook"><i data-lucide="facebook"></i></a>
-              <a href="#" aria-label="TikTok"><i data-lucide="music"></i></a>
-              <a href="#" aria-label="YouTube"><i data-lucide="youtube"></i></a>
-            </div>
+        <div class="about-cta-cards">
+          <div class="cta-card">
+            <i data-lucide="package-search"></i>
+            <h3>Question sur une commande</h3>
+            <p>Connectez-vous pour retrouver la commande réelle, son statut, ses notifications et son suivi.</p>
+            <a href="account.html#orders" class="btn-primary">Ouvrir mon compte</a>
           </div>
-
-          <form class="contact-form" id="contact-form" novalidate>
-            <h3>Envoyez-nous un message</h3>
-            <div class="form-row">
-              <label class="form-field"><span>Nom complet</span><input type="text" id="ct-name" required placeholder="Aminata Diop" /></label>
-              <label class="form-field"><span>Email</span><input type="email" id="ct-email" required placeholder="vous@exemple.ae" /></label>
-            </div>
-            <label class="form-field full">
-              <span>Sujet</span>
-              <select id="ct-subject">
-                <option>Question sur une commande</option>
-                <option>Question sur un produit</option>
-                <option>Devenir vendeur</option>
-                <option>Devenir livreur</option>
-                <option>Partenariat / Presse</option>
-                <option>Autre</option>
-              </select>
-            </label>
-            <label class="form-field full"><span>Message</span><textarea id="ct-msg" required rows="6" placeholder="Comment pouvons-nous vous aider ?"></textarea></label>
-            <button type="submit" class="btn-primary"><i data-lucide="send"></i> Envoyer le message</button>
-          </form>
-
+          <div class="cta-card">
+            <i data-lucide="badge-check"></i>
+            <h3>Vendeur ou livreur</h3>
+            <p>Les demandes professionnelles sont enregistrées dans Firebase puis examinées par un administrateur.</p>
+            <a href="request.html" class="btn-secondary">Envoyer une demande</a>
+          </div>
+          <div class="cta-card">
+            <i data-lucide="messages-square"></i>
+            <h3>Canal de support général</h3>
+            <p>Le canal public officiel sera affiché après sa configuration et sa validation. Aucun message n’est simulé pendant le pilote.</p>
+            <a href="faq.html" class="btn-secondary">Consulter la FAQ</a>
+          </div>
         </div>
       </div>
     </section>
   </main>
-
   <script src="app.js"></script>
+  <script src="brand-runtime.js"></script>
 </body>
 </html>

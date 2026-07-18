@@ -2,13 +2,13 @@
 'use strict';
 
 (function tenantCatalogueRuntime() {
-  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
-  if (!window.MarketplaceData || !backend?.db) {
-    console.warn('Marketplace and Firebase must load before catalog-runtime.js');
+  if (!window.MarketplaceData) {
+    console.warn('Marketplace runtime must load before catalog-runtime.js');
     return;
   }
 
-  const TENANT_ID = 'lamylenoise';
+  const backend = window.SokivaFirebase || window.AfroMarketFirebase;
+  const TENANT_ID = backend?.tenantId || 'lamylenoise';
   const SAFE_DATA_IMAGE = /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\s]+$/i;
   const HTML_ENTITIES = Object.freeze({
     '&': '&amp;',
@@ -32,9 +32,7 @@
   function safeImageUrl(value) {
     const url = String(value || '').trim();
     if (!url) return '';
-    if (/^data:/i.test(url)) {
-      return SAFE_DATA_IMAGE.test(url) ? escapeHtml(url, 1200) : '';
-    }
+    if (/^data:/i.test(url)) return SAFE_DATA_IMAGE.test(url) ? escapeHtml(url, 1200) : '';
     try {
       const parsed = new URL(url, window.location.origin);
       if (parsed.origin === window.location.origin || parsed.protocol === 'https:') {
@@ -60,6 +58,8 @@
       badge: escapeHtml(product?.badge, 40),
       image: safeImageUrl(product?.image)
     }, safeProductId);
+    normalized.status = String(product?.status || '').trim();
+    normalized.tenantId = String(product?.tenantId || TENANT_ID).trim();
     normalized.price = Number.isFinite(Number(product?.price)) ? Math.max(0, Number(product.price)) : 0;
     normalized.stockAvailable = product?.inventoryTracked === true
       ? Math.max(0, Number(product?.stockAvailable || 0))
@@ -68,21 +68,27 @@
     return normalized;
   }
 
-  MarketplaceData.getProducts = async function getTenantPublicProducts(fallback = []) {
+  MarketplaceData.getProducts = async function getTenantPublicProducts() {
+    if (!backend?.db) {
+      console.warn('SOKIVA Firebase catalogue unavailable; demo products are disabled.');
+      window.MarketplaceCatalog = [];
+      return [];
+    }
     try {
       const snapshot = await backend.db.ref(`publicCatalog/${TENANT_ID}`).once('value');
       const values = snapshot.val() || {};
       const products = Object.entries(values)
+        .filter(([, product]) => product?.status === 'active' && Number(product?.price) > 0)
         .map(([id, product]) => sanitizePublicProduct(id, product))
-        .filter(product => product && product.status === 'active' && product.price > 0);
+        .filter(product => product && product.status === 'active' && product.tenantId === TENANT_ID && product.price > 0);
       window.MarketplaceCatalog = products;
-      return products.length ? products : fallback;
+      return products;
     } catch (error) {
-      console.warn('Tenant public catalogue unavailable.', error);
-      return fallback;
+      console.warn('SOKIVA public catalogue unavailable.', error);
+      window.MarketplaceCatalog = [];
+      return [];
     }
   };
 
-  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, source: 'publicCatalog' });
-  window.LamylenoiseCatalogue = window.SokivaCatalogue;
+  window.SokivaCatalogue = Object.freeze({ tenantId: TENANT_ID, brandId: 'sokiva', source: 'publicCatalog' });
 })();

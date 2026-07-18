@@ -1,0 +1,64 @@
+.identity-role-badge {
+  display: inline-flex;
+  margin-top: .25rem;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.identity-verification {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  padding: .45rem .7rem;
+  border-radius: .7rem;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.identity-verification.verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.identity-verification.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.identity-address-form {
+  display: grid;
+  gap: .7rem;
+  min-width: 16rem;
+}
+
+.identity-address-form textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.identity-profile-form {
+  max-width: 52rem;
+}
+
+.empty-state [data-lucide="loader-circle"] {
+  animation: sokiva-spin 1s linear infinite;
+}
+
+@keyframes sokiva-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 700px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-sidebar {
+    position: static;
+  }
+}

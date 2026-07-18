@@ -13,7 +13,7 @@
     "roleRequests": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
       "$requestId": {
-        ".write": "auth != null && ((!data.exists() && newData.child('requesterUid').val() == auth.uid && newData.child('status').val() == 'pending') || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
+        ".write": "auth != null && ((!data.exists() && auth.token.email_verified == true && newData.child('requesterUid').val() == auth.uid && newData.child('status').val() == 'pending') || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
         ".validate": "newData.hasChildren(['type', 'name', 'email', 'phone', 'requesterUid', 'status']) && (newData.child('type').val() == 'seller' || newData.child('type').val() == 'courier')"
       }
     },
@@ -22,7 +22,10 @@
       ".indexOn": ["role", "tenantId", "status"],
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
-        ".write": "auth != null && (root.child('profiles').child(auth.uid).child('role').val() == 'admin' || (auth.uid == $uid && ((!data.exists() && newData.child('role').val() == 'customer' && (!newData.child('tenantId').exists() || newData.child('tenantId').val() == 'lamylenoise')) || (data.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val()))))"
+        ".write": "auth != null && ((root.child('profiles').child(auth.uid).child('role').val() == 'admin' && auth.token.isSuperAdmin == true) || (auth.uid == $uid && data.exists() && newData.exists() && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val() && newData.child('isSuperAdmin').val() == data.child('isSuperAdmin').val()))",
+        "isSuperAdmin": {
+          ".validate": "newData.val() == data.val()"
+        }
       }
     },
     "products": {

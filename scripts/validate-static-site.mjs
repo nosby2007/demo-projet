@@ -8,6 +8,9 @@ const requiredFiles = [
   'shop.html',
   'product.html',
   'checkout.html',
+  'account.html',
+  'login.html',
+  'register.html',
   'customer.html',
   'seller.html',
   'courier.html',
@@ -15,6 +18,11 @@ const requiredFiles = [
   'app.js',
   'marketplace.js',
   'saas-runtime.js',
+  'brand-runtime.js',
+  'identity-runtime.js',
+  'account-runtime.js',
+  'home-runtime.js',
+  'identity.css',
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
@@ -29,6 +37,7 @@ const requiredFiles = [
   'functions/package.json',
   'functions/main.js',
   'functions/index.js',
+  'functions/identity.js',
   'functions/marketplace-v3.js',
   'functions/checkout-v5.js',
   'functions/checkout-v4.js',
@@ -37,12 +46,15 @@ const requiredFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
   'functions/test/tracking.rules.test.js',
   'scripts/deploy-safe.mjs',
   'scripts/validate-tracking-stack.mjs',
+  'scripts/validate-identity-stack.mjs',
+  'scripts/test-catalog-runtime.mjs',
   'app.webmanifest',
   'service-worker.js',
   'health.json',
@@ -61,6 +73,10 @@ const jsFiles = [
   'app.js',
   'marketplace.js',
   'saas-runtime.js',
+  'brand-runtime.js',
+  'identity-runtime.js',
+  'account-runtime.js',
+  'home-runtime.js',
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
@@ -73,6 +89,7 @@ const jsFiles = [
   'functions/main.js',
   'functions/index.js',
   'functions/safe-claims.js',
+  'functions/identity.js',
   'functions/marketplace-v2.js',
   'functions/marketplace-v3.js',
   'functions/checkout-v5.js',
@@ -82,6 +99,7 @@ const jsFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
@@ -89,6 +107,7 @@ const jsFiles = [
 ];
 const esModuleFiles = ['scripts/deploy-safe.mjs'];
 const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
+const identityPages = ['account.html', 'login.html', 'register.html'];
 const errors = [];
 
 async function assertReadable(file) {
@@ -140,6 +159,11 @@ async function validateHtmlPages() {
       if (!html.includes('<script src="firebase-functions-config.js"')) errors.push(`${file} is missing functions config`);
       if (!html.includes('<script src="saas-runtime.js"')) errors.push(`${file} is missing trusted SaaS runtime`);
     }
+    if (identityPages.includes(file)) {
+      if (!html.includes('firebase-functions-compat.js')) errors.push(`${file} is missing Firebase Functions SDK`);
+      if (!html.includes('<script src="firebase-functions-config.js"')) errors.push(`${file} is missing functions config`);
+      if (!html.includes('<script src="identity-runtime.js"')) errors.push(`${file} is missing the trusted identity runtime`);
+    }
   }
 
   const checkout = await readFile('checkout.html', 'utf8');
@@ -157,6 +181,8 @@ async function validateHtmlPages() {
   if (!product.includes('<script src="catalog-runtime.js"') || !product.includes('<script src="product-public-runtime.js"')) {
     errors.push('product.html is missing tenant catalogue product runtime');
   }
+  const account = await readFile('account.html', 'utf8');
+  if (!account.includes('<script src="account-runtime.js"')) errors.push('account.html is missing Firebase-backed account runtime');
   const admin = await readFile('admin.html', 'utf8');
   if (!admin.includes('<script src="role-sync-runtime.js"')) errors.push('admin.html is missing Auth claims recovery runtime');
 }
@@ -185,8 +211,18 @@ async function validateDatabaseRules() {
     if (!trackingReadRule.includes(fragment)) errors.push(`live tracking read rule is missing ${fragment}`);
   }
   const profileWriteRule = String(rules.profiles?.['$uid']?.['.write'] || '');
-  if (!profileWriteRule.includes("newData.child('tenantId').val() == 'lamylenoise'")) {
-    errors.push('new customer profiles must be bound to the pilot tenant');
+  if (profileWriteRule.includes('!data.exists()')) {
+    errors.push('new customer profiles must be created only by the trusted identity callable');
+  }
+  if (!profileWriteRule.includes('auth.token.isSuperAdmin == true')) {
+    errors.push('owner profile administration must require the signed superadmin claim');
+  }
+  if (!profileWriteRule.includes("data.child('isSuperAdmin').val() != true")) {
+    errors.push('regular administrators must be blocked from protected owner profiles');
+  }
+  const superAdminValidation = String(rules.profiles?.['$uid']?.isSuperAdmin?.['.validate'] || '');
+  if (!superAdminValidation.includes('newData.val() == data.val()')) {
+    errors.push('browser clients must not create or change the superadmin flag');
   }
 }
 
@@ -197,6 +233,7 @@ async function validateEmploymentBackend() {
   const catalog = await readFile('functions/catalog-v4.js', 'utf8');
   const approval = await readFile('functions/role-approval.js', 'utf8');
   const tracking = await readFile('functions/tracking.js', 'utf8');
+  const identity = await readFile('functions/identity.js', 'utf8');
   const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const checkoutRuntime = await readFile('checkout-runtime-v5.js', 'utf8');
@@ -216,6 +253,7 @@ async function validateEmploymentBackend() {
   if (!checkout.includes('inventoryTracked: item.inventoryTracked')) errors.push('Order items must snapshot inventory mode');
   if (!checkout.includes('exports.cleanupExpiredCheckoutReservations')) errors.push('Checkout must clean expired reservations');
   if (!checkoutCompat.includes("require('./checkout-v5')")) errors.push('Checkout compatibility module must route to v5');
+  if (!checkoutCompat.includes('email_verified')) errors.push('Checkout must require verified Firebase email');
   if (!checkoutRuntime.includes('idempotencyKey: attempt.key')) errors.push('Checkout client must send an idempotency key');
   if (!checkoutRuntime.includes('button.disabled = true')) errors.push('Checkout client must block double submit');
 
@@ -225,6 +263,7 @@ async function validateEmploymentBackend() {
   if (!catalog.includes("product.inventoryTracked !== true")) errors.push('Inventory tracking mode must be immutable');
   if (!catalog.includes('publicCatalog')) errors.push('Active products must be published through tenant catalogue index');
   if (!catalogRuntime.includes('publicCatalog/${TENANT_ID}')) errors.push('Storefront must read the explicit tenant catalogue path');
+  if (!catalogRuntime.includes('demo products are disabled')) errors.push('Missing Firebase must never restore demo products');
 
   if (!approval.includes("roleRequest.status !== 'pending'")) errors.push('Role approval must require a pending application');
   if (!approval.includes('exports.resyncRoleClaims')) errors.push('Role claims synchronization must have a recovery callable');
@@ -232,6 +271,10 @@ async function validateEmploymentBackend() {
 
   if (!main.includes('...marketplace') || !main.includes('...checkout') || !main.includes('...catalog') || !main.includes('...roleApproval')) {
     errors.push('Deployed Functions must compose marketplace, checkout, catalogue and role approval modules');
+  }
+  for (const functionName of ['registerCustomerProfile', 'getMyIdentity', 'updateMyProfile']) {
+    if (!identity.includes(`exports.${functionName}`)) errors.push(`Identity backend is missing ${functionName}`);
+    if (!main.includes(`${functionName}: identity.${functionName}`)) errors.push(`Functions composition is missing ${functionName}`);
   }
   for (const functionName of ['syncOrderTracking', 'setDeliveryDestination', 'updateCourierLocation']) {
     if (!tracking.includes(`exports.${functionName}`)) errors.push(`Tracking backend is missing ${functionName}`);
@@ -267,4 +310,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Static build validation passed. Checkout, catalogue, roles, audit and private live tracking are composed and protected.');
+console.log('Static build validation passed. Identity, checkout, catalogue, roles, audit and private live tracking are composed and protected.');
