@@ -7,6 +7,7 @@ const read = path => readFile(path, 'utf8');
 const [
   identityBackend,
   main,
+  rulesSource,
   identityRuntime,
   accountRuntime,
   brandRuntime,
@@ -20,6 +21,10 @@ const [
   aboutHtml,
   shopHtml,
   productHtml,
+  contactHtml,
+  deliveryHtml,
+  faqHtml,
+  legalHtml,
   bootstrap,
   functionsPackage,
   serviceWorker,
@@ -27,6 +32,7 @@ const [
 ] = await Promise.all([
   read('functions/identity.js'),
   read('functions/main.js'),
+  read('database.rules.json'),
   read('identity-runtime.js'),
   read('account-runtime.js'),
   read('brand-runtime.js'),
@@ -40,6 +46,10 @@ const [
   read('about.html'),
   read('shop.html'),
   read('product.html'),
+  read('contact.html'),
+  read('delivery.html'),
+  read('faq.html'),
+  read('legal.html'),
   read('functions/scripts/bootstrap-superadmin.js'),
   read('functions/package.json'),
   read('service-worker.js'),
@@ -60,6 +70,9 @@ for (const [name, source] of [
   catch (error) { errors.push(`Invalid JavaScript in ${name}: ${error.message}`); }
 }
 
+const rules = JSON.parse(rulesSource).rules || {};
+const superAdminValidation = String(rules.profiles?.['$uid']?.isSuperAdmin?.['.validate'] || '');
+
 for (const functionName of ['registerCustomerProfile', 'getMyIdentity', 'updateMyProfile']) {
   if (!identityBackend.includes(`exports.${functionName}`)) errors.push(`Identity backend is missing ${functionName}.`);
   if (!main.includes(`${functionName}: identity.${functionName}`)) errors.push(`Functions composition is missing ${functionName}.`);
@@ -73,12 +86,19 @@ for (const invariant of [
   'auth.setCustomUserClaims',
   'normalizeAddresses(request.data.addresses)',
   'MAX_ADDRESSES = 5',
-  'UAE_PHONE'
+  'UAE_PHONE',
+  'signedSuperAdmin',
+  "user.customClaims?.role === 'admin'",
+  'delete claims.isSuperAdmin',
+  'const { isSuperAdmin, ...safeCurrent }'
 ]) {
   if (!identityBackend.includes(invariant)) errors.push(`Identity backend invariant missing: ${invariant}`);
 }
-if (identityBackend.includes("role: 'admin'") || identityBackend.includes('isSuperAdmin: true')) {
+if (identityBackend.includes("role: 'admin',\n      status") || identityBackend.includes('isSuperAdmin: true')) {
   errors.push('Public identity callables must never create an administrator or superadministrator.');
+}
+if (!superAdminValidation.includes('newData.val() == data.val()')) {
+  errors.push('Realtime Database rules must make isSuperAdmin immutable for every browser client.');
 }
 
 for (const invariant of [
@@ -94,7 +114,7 @@ for (const invariant of [
 ]) {
   if (!identityRuntime.includes(invariant)) errors.push(`Identity client invariant missing: ${invariant}`);
 }
-if (identityRuntime.includes("window.location.assign(String(")) errors.push('Identity redirects must remain allowlisted and same-origin.');
+if (identityRuntime.includes('window.location.assign(String(')) errors.push('Identity redirects must remain allowlisted and same-origin.');
 
 for (const invariant of [
   "callable('getMyIdentity')",
@@ -109,33 +129,39 @@ for (const invariant of [
 }
 if (accountRuntime.includes('.innerHTML')) errors.push('Authenticated account data must not render with innerHTML.');
 
+const publicPages = {
+  'account.html': accountHtml,
+  'login.html': loginHtml,
+  'register.html': registerHtml,
+  'index.html': indexHtml,
+  'about.html': aboutHtml,
+  'shop.html': shopHtml,
+  'product.html': productHtml,
+  'contact.html': contactHtml,
+  'delivery.html': deliveryHtml,
+  'faq.html': faqHtml,
+  'legal.html': legalHtml
+};
+
 const forbiddenDemoValues = [
   'Bonjour Aminata',
   'Aminata Diop',
   'aminata.d@exemple.ae',
-  '540',
   '#LYN-A7K3M9',
   'Villa 12, Street 5',
   '5 000+',
-  '800+ produits'
+  '800+ produits',
+  '+971 50 000 0000',
+  'contact@lamylenoise.ae',
+  'Trade License : 12345678',
+  'TRN (TVA UAE) : 100000000000003'
 ];
-for (const value of forbiddenDemoValues) {
-  if (accountHtml.includes(value) || indexHtml.includes(value) || aboutHtml.includes(value)) {
-    errors.push(`Legacy demonstration value remains visible: ${value}`);
-  }
-}
-
-for (const [name, html] of [
-  ['account.html', accountHtml],
-  ['login.html', loginHtml],
-  ['register.html', registerHtml],
-  ['index.html', indexHtml],
-  ['about.html', aboutHtml],
-  ['shop.html', shopHtml],
-  ['product.html', productHtml]
-]) {
+for (const [name, html] of Object.entries(publicPages)) {
   if (!html.includes('SOKIVA')) errors.push(`${name} must visibly identify SOKIVA.`);
   if (html.includes('LAMYLENOISE')) errors.push(`${name} must not contain the legacy visible brand.`);
+  for (const value of forbiddenDemoValues) {
+    if (html.includes(value)) errors.push(`${name} contains legacy demonstration value: ${value}`);
+  }
 }
 
 for (const [name, html] of [['account.html', accountHtml], ['login.html', loginHtml], ['register.html', registerHtml]]) {
@@ -153,12 +179,14 @@ for (const invariant of [
   "[/LAMYLENOISE/gi, 'SOKIVA']",
   "element.textContent !== 'SOKIVA'",
   'MutationObserver',
-  'onAuthStateChanged(updateSessionChrome)'
+  'onAuthStateChanged(updateSessionChrome)',
+  'user.getIdTokenResult()',
+  "token.claims?.role === 'admin'",
+  'sanitizeSharedChrome',
+  'COD pilote',
+  'Aucun profil, commande ou contact fictif'
 ]) {
   if (!brandRuntime.includes(invariant)) errors.push(`Brand migration invariant missing: ${invariant}`);
-}
-if (brandRuntime.includes("element.textContent = 'SOKIVA';\n    }\n\n    const walker")) {
-  // conditional assignment is required; the exact guarded block above is validated.
 }
 
 if (!homeRuntime.includes('publicCatalog/${tenantId}')) errors.push('Home catalogue must read the Firebase public catalogue.');
@@ -209,4 +237,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('SOKIVA identity validation passed. Public accounts are verified customers, account data is Firebase-backed, demo identities are removed, and superadmin bootstrap is offline and project-bound.');
+console.log('SOKIVA identity validation passed. Verified customers use Firebase data, public demo claims are removed, browser superadmin writes are denied and elevated identity requires signed claims.');
