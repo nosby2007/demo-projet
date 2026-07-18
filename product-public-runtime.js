@@ -18,8 +18,18 @@
     try {
       const products = await MarketplaceData.getProducts([]);
       const product = products.find(item => String(item.id) === rawId);
-      if (!product) return;
+      if (!product) {
+        root.replaceChildren();
+        const empty = element('div', 'empty-state');
+        const icon = element('i'); icon.setAttribute('data-lucide', 'package-search');
+        const link = element('a', 'btn-primary', 'Retour à la boutique'); link.href = 'shop.html';
+        empty.append(icon, element('h3', '', 'Produit indisponible'), element('p', '', 'Ce produit n’est pas publié dans le catalogue SOKIVA.'), link);
+        root.append(empty);
+        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
+        return;
+      }
 
+      document.title = `${product.name} — SOKIVA`;
       root.replaceChildren();
       const breadcrumb = element('nav', 'breadcrumb');
       const home = element('a', '', 'Accueil');
@@ -38,7 +48,7 @@
 
       const info = element('div', 'pd-info');
       info.append(
-        element('span', 'product-brand', product.brand || product.sellerName || 'LAMYLENOISE'),
+        element('span', 'product-brand', product.brand || product.sellerName || 'SOKIVA'),
         element('h1', '', product.name || 'Produit'),
         element('p', 'pd-price', `${new Intl.NumberFormat('fr-FR').format(Number(product.price || 0))} AED`),
         element('p', '', product.delivery || 'Livraison UAE avec suivi')
@@ -65,7 +75,7 @@
         if (typeof CartModule !== 'undefined') CartModule.addItem(product);
       });
     } catch (error) {
-      console.warn('Unable to render public product detail.', error);
+      console.warn('Unable to render SOKIVA public product detail.', error);
     }
   });
 })();
