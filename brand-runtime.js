@@ -117,8 +117,8 @@
     });
   }
 
-  function safePageForRole(profile) {
-    if (profile?.isSuperAdmin === true) return 'admin.html';
+  function safePageForRole(profile, isSuperAdmin) {
+    if (isSuperAdmin) return 'admin.html';
     return {
       admin: 'admin.html',
       seller: 'seller.html',
@@ -133,9 +133,17 @@
     if (!accountLinks.length) return;
 
     let profile = null;
+    let isSuperAdmin = false;
     if (user && backend?.db) {
       try {
-        profile = (await backend.db.ref(`profiles/${user.uid}`).once('value')).val();
+        const [snapshot, token] = await Promise.all([
+          backend.db.ref(`profiles/${user.uid}`).once('value'),
+          user.getIdTokenResult()
+        ]);
+        profile = snapshot.val();
+        isSuperAdmin = token.claims?.isSuperAdmin === true
+          && token.claims?.role === 'admin'
+          && profile?.role === 'admin';
       } catch (error) {
         console.warn('[SOKIVA] Unable to read session profile', error);
       }
@@ -144,9 +152,9 @@
     accountLinks.forEach(link => {
       const label = link.querySelector('.action-label');
       if (user) {
-        link.href = safePageForRole(profile);
-        link.setAttribute('aria-label', profile?.isSuperAdmin ? 'Super administration' : 'Mon compte');
-        if (label) label.textContent = profile?.isSuperAdmin ? 'Super admin' : 'Compte';
+        link.href = safePageForRole(profile, isSuperAdmin);
+        link.setAttribute('aria-label', isSuperAdmin ? 'Super administration' : 'Mon compte');
+        if (label) label.textContent = isSuperAdmin ? 'Super admin' : 'Compte';
       } else {
         link.href = 'login.html';
         link.setAttribute('aria-label', 'Se connecter');
