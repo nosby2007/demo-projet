@@ -78,6 +78,9 @@ async function requireUser(request) {
 }
 
 function publicIdentity(user, profile) {
+  const signedSuperAdmin = user.customClaims?.isSuperAdmin === true
+    && user.customClaims?.role === 'admin'
+    && profile?.role === 'admin';
   return {
     uid: user.uid,
     email: user.email || profile?.email || '',
@@ -87,7 +90,7 @@ function publicIdentity(user, profile) {
     status: profile?.status || 'active',
     tenantId: profile?.tenantId || COMPAT_TENANT_ID,
     brandId: profile?.brandId || BRAND_ID,
-    isSuperAdmin: profile?.isSuperAdmin === true || user.customClaims?.isSuperAdmin === true,
+    isSuperAdmin: signedSuperAdmin,
     profile: profile || null
   };
 }
