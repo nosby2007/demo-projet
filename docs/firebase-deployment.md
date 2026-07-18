@@ -4,7 +4,8 @@
 
 The workflow `.github/workflows/firebase-deploy.yml` provides two deployment paths:
 
-1. **Automatic development Hosting deployment**
+1. **Opt-in automatic development Hosting deployment**
+   - remains disabled until repository variable `FIREBASE_AUTO_DEPLOY_DEV=true` is created;
    - runs only after the `Sokiva marketplace quality gate` succeeds on `main`;
    - deploys only Firebase Hosting;
    - targets only `sokiva-dev`.
@@ -63,9 +64,32 @@ gh secret list --env development --repo nosby2007/demo-projet
 
 The secret value is never displayed, which is expected.
 
-## Automatic development deployment
+## First manual development deployment
 
-After the pipeline is merged and the `development` environment is configured:
+Keep automatic deployment disabled for the first test.
+
+Open GitHub:
+
+1. **Actions**
+2. **Sokiva Firebase deployment**
+3. **Run workflow**
+4. Environment: `development`
+5. Scope: `hosting`
+6. Confirmation: `DEPLOY`
+
+After the workflow succeeds, verify the development Hosting site and its deployment summary.
+
+## Enable automatic development deployment
+
+Only after a successful manual Hosting test, enable the repository-level opt-in:
+
+```bash
+gh variable set FIREBASE_AUTO_DEPLOY_DEV \
+  --repo nosby2007/demo-projet \
+  --body true
+```
+
+Then the automatic sequence becomes:
 
 1. changes are merged into `main`;
 2. the quality workflow runs;
@@ -73,6 +97,14 @@ After the pipeline is merged and the `development` environment is configured:
 4. the deployment summary displays the environment, project, scope and revision.
 
 The automatic path never deploys Database rules or Cloud Functions.
+
+Disable automatic development deployment at any time with:
+
+```bash
+gh variable set FIREBASE_AUTO_DEPLOY_DEV \
+  --repo nosby2007/demo-projet \
+  --body false
+```
 
 ## Manual deployment
 
