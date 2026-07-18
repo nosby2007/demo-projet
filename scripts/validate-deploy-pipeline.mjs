@@ -22,6 +22,7 @@ for (const [expected, message] of [
   ['workflow_dispatch:', 'Firebase deployment must support controlled manual runs.'],
   ["github.event.workflow_run.conclusion == 'success'", 'Automatic deployment must require a successful quality run.'],
   ["github.event.workflow_run.head_branch == 'main'", 'Automatic deployment must verify the validated branch is main.'],
+  ["vars.FIREBASE_AUTO_DEPLOY_DEV == 'true'", 'Automatic development deployment must require an explicit repository opt-in.'],
   ["github.event_name == 'workflow_run' && 'hosting'", 'Automatic deployment must be Hosting-only.'],
   ['environment: ${{ github.event_name', 'Deployments must use protected GitHub Environments.'],
   ['FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}', 'The Firebase project must come from an Environment variable.'],
@@ -66,7 +67,8 @@ for (const [expected, message] of [
   ['ACTUAL_PROJECT_ID', 'The setup helper must verify the service-account project ID.'],
   ['repos/$REPOSITORY/environments/$ENVIRONMENT', 'The setup helper must create the GitHub Environment.'],
   ['gh variable set FIREBASE_PROJECT_ID', 'The setup helper must configure the Firebase project variable.'],
-  ['gh secret set FIREBASE_SERVICE_ACCOUNT_JSON', 'The setup helper must encrypt the service-account JSON as a GitHub secret.']
+  ['gh secret set FIREBASE_SERVICE_ACCOUNT_JSON', 'The setup helper must encrypt the service-account JSON as a GitHub secret.'],
+  ['gh variable set FIREBASE_AUTO_DEPLOY_DEV', 'The setup helper must explain how to opt in to automatic development deployment.']
 ]) {
   requireText(configureScript, expected, message);
 }
@@ -76,7 +78,9 @@ if (!gitignore.includes('*service-account*.json') || !gitignore.includes('fireba
 }
 
 for (const phrase of [
-  'Automatic development Hosting deployment',
+  'Opt-in automatic development Hosting deployment',
+  'FIREBASE_AUTO_DEPLOY_DEV',
+  'First manual development deployment',
   'DEPLOY_FULL',
   'configure-firebase-github.sh development',
   'required reviewers',
@@ -91,4 +95,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log('Firebase deployment pipeline validation passed. Automatic deploy is development Hosting-only; manual full deploys require explicit confirmation and protected credentials.');
+console.log('Firebase deployment pipeline validation passed. Automatic dev Hosting deployment is explicit opt-in; manual full deploys require protected credentials and DEPLOY_FULL.');
