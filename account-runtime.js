@@ -7,6 +7,7 @@
   if (!root || !backend?.auth || !backend?.functions) return;
 
   const state = { identity: null, orders: [], addresses: [], activePanel: 'dashboard' };
+  const MAX_ADDRESSES = 5;
 
   function callable(name) {
     return backend.functions.httpsCallable(name);
@@ -92,15 +93,9 @@
 
   function normalizeDefault(addresses) {
     if (!addresses.length) return [];
-    let found = false;
-    return addresses.map((address, index) => {
-      const selected = address.isDefault === true && !found;
-      if (selected) found = true;
-      return { ...address, isDefault: selected || (!found && index === 0) };
-    }).map((address, index, rows) => {
-      if (rows.some(row => row.isDefault)) return address;
-      return index === 0 ? { ...address, isDefault: true } : address;
-    });
+    let defaultIndex = addresses.findIndex(address => address.isDefault === true);
+    if (defaultIndex < 0) defaultIndex = 0;
+    return addresses.map((address, index) => ({ ...address, isDefault: index === defaultIndex }));
   }
 
   async function saveProfile(payload, button, successMessage) {
@@ -120,9 +115,8 @@
     }
   }
 
-  async function saveAddresses(nextAddresses, button, message) {
-    const normalized = normalizeDefault(nextAddresses);
-    return saveProfile({ addresses: normalized }, button, message);
+  function saveAddresses(nextAddresses, button, message) {
+    return saveProfile({ addresses: normalizeDefault(nextAddresses) }, button, message);
   }
 
   function orderList() {
@@ -216,6 +210,10 @@
     form.append(defaultLabel, submit);
     form.addEventListener('submit', async event => {
       event.preventDefault();
+      if (state.addresses.length >= MAX_ADDRESSES) {
+        toast(`Vous pouvez enregistrer au maximum ${MAX_ADDRESSES} adresses.`, 'error', 'map-pin-off');
+        return;
+      }
       const data = Object.fromEntries(new FormData(form).entries());
       const isDefault = checkbox.checked || state.addresses.length === 0;
       const next = isDefault ? state.addresses.map(item => ({ ...item, isDefault: false })) : [...state.addresses];
@@ -376,7 +374,7 @@
     const addresses = panel('addresses', 'Mes adresses UAE');
     const grid = create('div', 'addresses-grid');
     state.addresses.forEach(address => grid.append(addressCard(address)));
-    grid.append(addressForm());
+    if (state.addresses.length < MAX_ADDRESSES) grid.append(addressForm());
     addresses.append(grid);
 
     const profile = panel('profile', 'Mon profil');
