@@ -3,6 +3,7 @@
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
+const { onValueWritten } = require('firebase-functions/v2/database');
 const roleApproval = require('./role-approval');
 const audit = require('./audit');
 const {
@@ -10,6 +11,7 @@ const {
   buildAdminDashboard,
   reconciliationRows
 } = require('./admin-control-center-core');
+const { applyDelta, buildDailyMetrics, contribution, dayKey, summarizeDaily } = require('./admin-analytics-core');
 
 if (!getApps().length) initializeApp();
 const db = getDatabase();
@@ -77,12 +79,13 @@ exports.getAdminCommandCenter = onCall({
   const tenantId = assertTenant(request.data?.tenantId, admin.tenantId);
   const limit = boundedLimit(request.data?.limit);
 
-  const [roleRequestsSnapshot, ordersSnapshot, profilesSnapshot, productsSnapshot, deliveryJobsSnapshot] = await Promise.all([
+  const [roleRequestsSnapshot, ordersSnapshot, profilesSnapshot, productsSnapshot, deliveryJobsSnapshot, dailySnapshot] = await Promise.all([
     recent('roleRequests', 'createdAt', limit),
     recent('orders', 'createdAt', limit),
     recent('profiles', 'updatedAt', limit),
     recent('products', 'updatedAt', limit),
-    recent('deliveryJobs', 'updatedAt', limit)
+    recent('deliveryJobs', 'updatedAt', limit),
+    db.ref(`adminDailyMetrics/${tenantId}/days`).limitToLast(35).get()
   ]);
 
   const permissions = admin.isSuperAdmin
@@ -117,12 +120,49 @@ exports.getAdminCommandCenter = onCall({
     environment: tenantId === DEFAULT_TENANT ? 'development' : 'configured',
     region: REGION
   });
+  dashboard.analytics = summarizeDaily(Object.entries(dailySnapshot.val() || {}).map(([date, row]) => ({ date, ...row })));
 
   if (!hasPermission(admin.profile, request.auth?.token || {}, 'access.read')) {
     dashboard.access.pendingRequests = dashboard.access.pendingRequests.map(({ email, phone, ...row }) => row);
     dashboard.access.recentRequests = dashboard.access.recentRequests.map(({ email, phone, ...row }) => row);
   }
   return dashboard;
+});
+
+exports.aggregateAdminOrderMetrics = onValueWritten({ ref: '/orders/{orderId}', region: 'us-central1' }, async event => {
+  const beforeOrder = event.data.before.exists() ? event.data.before.val() : null;
+  const afterOrder = event.data.after.exists() ? event.data.after.val() : null;
+  const source = afterOrder || beforeOrder;
+  if (!source?.createdAt) return null;
+  const tenantId = clean(source.tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
+  if (beforeOrder && afterOrder && clean(beforeOrder.tenantId || DEFAULT_TENANT, 80) !== tenantId) return null;
+  const date = dayKey(source.createdAt);
+  const eventKey = Buffer.from(String(event.id)).toString('base64url').slice(0, 240);
+  return db.ref(`adminDailyMetrics/${tenantId}`).transaction(current => {
+    const analytics = current || { days: {}, processedEvents: {} };
+    analytics.days = analytics.days || {};
+    analytics.processedEvents = analytics.processedEvents || {};
+    if (analytics.processedEvents[eventKey]) return;
+    const now = Date.now();
+    analytics.days[date] = applyDelta(analytics.days[date], contribution(beforeOrder), contribution(afterOrder), now);
+    analytics.processedEvents[eventKey] = now;
+    const oldest = Object.entries(analytics.processedEvents).sort((a, b) => a[1] - b[1]).slice(0, -1000);
+    for (const [key] of oldest) delete analytics.processedEvents[key];
+    return analytics;
+  });
+});
+
+exports.rebuildAdminDailyMetrics = onCall({ region: REGION, maxInstances: 1, timeoutSeconds: 60 }, async request => {
+  const admin = await requireAdmin(request, 'analytics.write');
+  const tenantId = assertTenant(request.data?.tenantId, admin.tenantId);
+  const snapshot = await db.ref('orders').orderByChild('createdAt').limitToLast(MAX_LIMIT).get();
+  const orders = snapshot.val() || {};
+  const days = buildDailyMetrics(orders, tenantId, Date.now());
+  await db.ref(`adminDailyMetrics/${tenantId}`).set({ days, processedEvents: {} });
+  await audit.appendAuditEvent({ tenantId, action: 'analytics.daily_rebuilt', entityType: 'analytics', entityId: tenantId,
+    actorUid: admin.uid, actorType: 'admin', source: 'admin_callable', changedKeys: ['days'],
+    metadata: { sourceOrderCount: Object.keys(orders).length, dayCount: Object.keys(days).length, truncated: Object.keys(orders).length >= MAX_LIMIT } });
+  return { dayCount: Object.keys(days).length, sourceOrderCount: Object.keys(orders).length, truncated: Object.keys(orders).length >= MAX_LIMIT };
 });
 
 exports.approveRoleRequestEnterprise = onCall({

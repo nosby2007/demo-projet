@@ -1,7 +1,7 @@
 /* SOKIVA enterprise operations control center. */
 'use strict';
 
-window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '2.0.0' });
+window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' });
 
 (function enterpriseAdminRuntime() {
   const ROOT_ID = 'enterprise-admin-root';
@@ -195,6 +195,9 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '2.0.0' }
   function panelOverview(data) {
     const executive = data.executive;
     const statuses = data.operations.orderStatusCounts || {};
+    const analytics = data.analytics || { daily: [], last7Days: {}, last30Days: {} };
+    const maxOrders = Math.max(1, ...analytics.daily.map(day => Number(day.orderCount || 0)));
+    const canRebuildAnalytics = data.viewer.permissions.includes('*') || data.viewer.permissions.includes('analytics.write');
     return `
       <section class="enterprise-admin-panel active" data-enterprise-panel="overview">
         <div class="enterprise-admin-grid two">
@@ -210,6 +213,17 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '2.0.0' }
             ${warningList(data.security.warnings)}
           </article>
         </div>
+        <article class="enterprise-admin-card">
+          <header><div><span>Analytics durables</span><h3>Tendance des commandes sur 30 jours</h3></div><small>${analytics.last30Days.orderCount || 0} commande(s)</small></header>
+          <div class="enterprise-admin-trend-summary">
+            <div><span>7 jours</span><strong>${analytics.last7Days.orderCount || 0}</strong><small>${escape(money(analytics.last7Days.grossVolume))} GMV</small></div>
+            <div><span>30 jours</span><strong>${analytics.last30Days.orderCount || 0}</strong><small>${escape(money(analytics.last30Days.grossVolume))} GMV</small></div>
+            <div><span>Livrees</span><strong>${analytics.last30Days.deliveredCount || 0}</strong><small>${escape(money(analytics.last30Days.recognizedPlatformRevenue))} reconnu</small></div>
+          </div>
+          <div class="enterprise-admin-trend" aria-label="Commandes quotidiennes des 30 derniers jours">
+            ${analytics.daily.map(day => `<div class="enterprise-admin-trend-day" title="${escape(day.date)} · ${Number(day.orderCount || 0)} commande(s)"><span style="height:${Math.max(4, Math.round(Number(day.orderCount || 0) / maxOrders * 100))}%"></span><small>${escape(day.date.slice(5))}</small></div>`).join('') || `<div class="enterprise-admin-empty"><strong>Historique en construction</strong><span>${canRebuildAnalytics ? 'Initialisez les agregats depuis les commandes existantes.' : 'La permission analytics.write est requise pour initialiser les tendances.'}</span>${canRebuildAnalytics ? '<button class="btn-primary" type="button" data-analytics-rebuild>Initialiser les tendances</button>' : ''}</div>`}
+          </div>
+        </article>
         <article class="enterprise-admin-card">
           <header><div><span>Activite recente</span><h3>Dernieres commandes</h3></div><button class="btn-link" type="button" data-enterprise-tab-target="orders">Voir tout</button></header>
           <div class="enterprise-admin-list">${data.operations.recentOrders.slice(0, 8).map(orderRow).join('') || emptyState('package-open', 'Aucune commande', 'Les premieres commandes apparaitront ici.')}</div>
@@ -476,6 +490,19 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '2.0.0' }
     target.querySelectorAll('[data-dialog-close]').forEach(button => button.addEventListener('click', closeDecision));
     target.querySelector('#enterprise-admin-decision-form')?.addEventListener('submit', submitDecision);
     target.querySelector('#enterprise-admin-settlement-form')?.addEventListener('submit', submitSettlement);
+    target.querySelector('[data-analytics-rebuild]')?.addEventListener('click', rebuildAnalytics);
+  }
+
+  async function rebuildAnalytics(event) {
+    event.currentTarget.disabled = true;
+    try {
+      const response = await callable('rebuildAdminDailyMetrics')({ tenantId: TENANT_ID });
+      notify(`${response.data.dayCount} jour(s) d historique initialise(s).`, 'success', 'chart-no-axes-column');
+      await loadDashboard();
+    } catch (error) {
+      event.currentTarget.disabled = false;
+      notify(messageFrom(error, 'Initialisation des tendances impossible.'), 'error', 'alert-circle');
+    }
   }
 
   async function submitSettlement(event) {

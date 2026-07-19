@@ -64,3 +64,15 @@ Phase 2 turns the trusted read console into an operational command surface:
 ## Roadmap
 
 Later phases will add delegated admin roles, granular permissions, durable daily aggregates, advanced order actions, payouts and reconciliation, customer support SLA, promotions, campaign operations, fraud review, system health, cost telemetry and AI-assisted operational analysis.
+
+## Phase 3
+
+Phase 3 introduces durable operational analytics:
+
+1. Every order write updates a tenant-scoped daily aggregate through an idempotent delta calculation with bounded event deduplication.
+2. Status changes replace the previous contribution instead of double-counting the order.
+3. The aggregate stores order count, GMV, delivery, cancellation, payment and recognized platform revenue metrics.
+4. The dashboard reads only the latest bounded daily series through the trusted admin callable.
+5. The executive view exposes 7-day and 30-day summaries plus a responsive daily trend.
+6. Browser access to `adminDailyMetrics` remains completely denied by Realtime Database rules.
+7. An administrator with `analytics.write` can initialize the durable series from the latest 500 historical orders; the response explicitly reports truncation.
