@@ -8,12 +8,14 @@ const audit = require('./audit');
 const tracking = require('./tracking');
 const notifications = require('./notifications');
 const identity = require('./identity');
+const adminControlCenter = require('./admin-control-center');
 
 module.exports = {
   ...marketplace,
   ...checkout,
   ...catalog,
   ...roleApproval,
+  ...adminControlCenter,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,
