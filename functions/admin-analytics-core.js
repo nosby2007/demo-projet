@@ -53,4 +53,25 @@ function buildDailyMetrics(orders, tenantId, now = Date.now()) {
   return days;
 }
 
-module.exports = { applyDelta, buildDailyMetrics, contribution, dayKey, summarizeDaily };
+function mergeContributionLedger(current, orders, tenantId) {
+  const ledger = { ...(current || {}) };
+  for (const [orderId, order] of Object.entries(orders || {})) {
+    if (!order || String(order.tenantId || 'lamylenoise') !== tenantId || !order.createdAt) continue;
+    const existingVersion = finite(ledger[orderId]?.version);
+    const version = finite(order.updatedAt || order.createdAt);
+    if (existingVersion > version) continue;
+    ledger[orderId] = { date: dayKey(order.createdAt), metrics: contribution(order), version };
+  }
+  return ledger;
+}
+
+function metricsFromLedger(ledger, now = Date.now()) {
+  const days = {};
+  for (const row of Object.values(ledger || {})) {
+    if (!row?.date || !row.metrics) continue;
+    days[row.date] = applyDelta(days[row.date], null, row.metrics, now);
+  }
+  return days;
+}
+
+module.exports = { applyDelta, buildDailyMetrics, contribution, dayKey, mergeContributionLedger, metricsFromLedger, summarizeDaily };
