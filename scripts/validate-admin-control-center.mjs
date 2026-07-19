@@ -54,6 +54,9 @@ for (const invariant of [
   'resyncRoleClaimsEnterprise',
   'listAuditEventsEnterprise',
   'rejectRoleRequest',
+  'getAdminReconciliation',
+  'settleAdminEarnings',
+  'adminTransitionOrderEnterprise',
   "requireAdmin(request, 'dashboard.read')",
   "requireAdmin(request, 'access.write')",
   "requireAdmin(request, 'audit.read')",
@@ -100,6 +103,9 @@ for (const invariant of [
   'renderError',
   'data-enterprise-tab',
   'enterprise-admin-decision-dialog',
+  "callable('getAdminReconciliation')",
+  "callable('settleAdminEarnings')",
+  "callable('adminTransitionOrderEnterprise')",
   'user.getIdToken(true)'
 ]) {
   requireText(adminRuntime, invariant, `Admin runtime invariant missing: ${invariant}`);

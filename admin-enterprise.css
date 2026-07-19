@@ -106,6 +106,12 @@
 .enterprise-admin-reason { display: grid; gap: 7px; }
 .enterprise-admin-reason span { color: #334155; font-weight: 700; font-size: .86rem; }
 .enterprise-admin-reason textarea { width: 100%; resize: vertical; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font: inherit; }
+.enterprise-admin-payment-row { cursor: pointer; }
+.enterprise-admin-payment-row input { width: 18px; height: 18px; accent-color: var(--enterprise-accent); }
+.enterprise-admin-payment-row .enterprise-admin-record-main { display: grid; gap: 5px; }
+.enterprise-admin-settlement-actions { display: flex; justify-content: flex-end; align-items: end; gap: 12px; margin-top: 18px; }
+.enterprise-admin-settlement-actions label { display: grid; gap: 6px; min-width: min(300px, 100%); color: #334155; font-size: .82rem; font-weight: 700; }
+.enterprise-admin-settlement-actions input { padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 11px; font: inherit; }
 @media (max-width: 1120px) {
   .enterprise-admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .enterprise-admin-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -118,6 +124,7 @@
   .enterprise-admin-kpi-grid, .enterprise-admin-grid.two, .enterprise-admin-grid.four { grid-template-columns: 1fr; }
   .enterprise-admin-nav { display: flex; overflow-x: auto; }
   .enterprise-admin-nav button { min-width: 175px; }
+  .enterprise-admin-settlement-actions { align-items: stretch; flex-direction: column; }
   .enterprise-admin-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .enterprise-admin-record { align-items: flex-start; flex-direction: column; }
   .enterprise-admin-record-money { min-width: 0; text-align: left; }

@@ -59,6 +59,8 @@ function orderSummary(order) {
     customerLabel: maskName(order.customerName),
     sellerCount: Math.max(1, Object.keys(order.sellerUids || {}).length || finite(order.sellerCount, 1)),
     courierAssigned: Boolean(order.courierUid),
+    canCancel: ['confirmed', 'preparing', 'ready_for_pickup'].includes(order.status),
+    canForceReady: ['confirmed', 'preparing'].includes(order.status) && Object.values(order.sellerStatuses || {}).length > 0 && Object.values(order.sellerStatuses || {}).every(status => status === 'ready_for_pickup'),
     payout
   };
 }
@@ -107,6 +109,22 @@ function countBy(rows, selector) {
     result[key] = (result[key] || 0) + 1;
     return result;
   }, {});
+}
+
+function reconciliationRows(value, tenantId) {
+  const rows = [];
+  for (const group of ['sellers', 'couriers']) {
+    for (const [beneficiaryUid, earnings] of Object.entries(value?.[group] || {})) {
+      for (const [orderId, earning] of Object.entries(earnings || {})) {
+        rows.push({ id: `${group}:${beneficiaryUid}:${orderId}`, tenantId, group,
+          beneficiaryUid: clean(beneficiaryUid, 160), orderId: clean(orderId, 160),
+          amount: finite(earning?.amount), currency: clean(earning?.currency || 'AED', 8),
+          status: clean(earning?.status || 'eligible', 40), earnedAt: finite(earning?.earnedAt),
+          settledAt: finite(earning?.settledAt), settlementReference: clean(earning?.settlementReference, 120) });
+      }
+    }
+  }
+  return rows.sort((a, b) => b.earnedAt - a.earnedAt);
 }
 
 function buildAdminDashboard(input = {}) {
@@ -212,5 +230,6 @@ module.exports = {
   maskEmail,
   maskName,
   orderSummary,
-  payoutFor
+  payoutFor,
+  reconciliationRows
 };

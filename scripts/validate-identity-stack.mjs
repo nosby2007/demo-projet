@@ -280,7 +280,9 @@ for (const asset of ['/app-core.js', '/brand-runtime.js', '/identity-runtime.js'
   requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }
 
-requireText(serviceWorker, "CACHE_VERSION = 'sokiva-v2.1.1'", 'Storefront restoration must invalidate the broken PWA cache.');
+if (!/CACHE_VERSION = 'sokiva-v2\.[2-9]\.[0-9]+'/.test(serviceWorker)) {
+  errors.push('Enterprise phase 2 must preserve or advance the restored storefront PWA cache.');
+}
 
 requireText(functionsPackage, 'node --check identity.js', 'Function syntax validation must include identity.js.');
 requireText(functionsPackage, 'test/identity.test.js', 'Function unit tests must include identity.test.js.');
