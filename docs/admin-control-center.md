@@ -100,3 +100,15 @@ Phase 5 adds trusted Risk & Fraud Operations:
 5. Clearing, restricting, escalating and reopening require a reason; restriction state and the case decision are committed atomically.
 6. Personal data and private decision reasons never appear in queue summaries or audit payloads.
 7. Browser access to `riskCases` and `riskRestrictions` remains denied; only trusted functions can evaluate or mutate risk state.
+
+## Phase 6
+
+Phase 6 adds trusted System Health & Cost Telemetry:
+
+1. Administrators require `system.read` for live health and `system.write` to capture a durable snapshot.
+2. Server-side checks cover stalled orders, stale deliveries, breached support SLA, critical risk and analytics freshness.
+3. Overall health is derived deterministically as healthy, degraded or critical from documented thresholds.
+4. Capacity telemetry reports bounded estimated read units and explicitly states that it is neither billing data nor a Firebase invoice.
+5. Snapshots contain only aggregate counts and statuses; raw operational records and personal data are never persisted.
+6. The latest 30 snapshots provide a bounded health history through a trusted callable.
+7. Browser access to `adminSystemTelemetry` remains denied by Realtime Database rules.
