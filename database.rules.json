@@ -93,6 +93,11 @@
       ".read": false,
       ".write": false
     },
+    "adminSystemTelemetry": {
+      ".read": false,
+      ".write": false,
+      "$tenantId": { ".indexOn": ["generatedAt", "status"] }
+    },
     "orderTracking": {
       "$orderId": {
         ".read": "auth != null && (root.child('orders').child($orderId).child('customerUid').val() == auth.uid || (root.child('orders').child($orderId).child('courierUid').val() == auth.uid && root.child('orders').child($orderId).child('status').val() == 'in_transit') || (root.child('profiles').child(auth.uid).child('role').val() == 'admin' && root.child('profiles').child(auth.uid).child('status').val() != 'disabled' && root.child('profiles').child(auth.uid).child('tenantId').val() == root.child('orders').child($orderId).child('tenantId').val()))",
