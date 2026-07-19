@@ -19,6 +19,7 @@ const [
   main,
   functionsPackage,
   serviceWorker,
+  rulesSource,
   documentation
 ] = await Promise.all([
   read('admin.html'),
@@ -32,6 +33,7 @@ const [
   read('functions/main.js'),
   read('functions/package.json'),
   read('service-worker.js'),
+  read('database.rules.json'),
   read('docs/admin-control-center.md')
 ]);
 
@@ -50,9 +52,11 @@ for (const invariant of [
   'getAdminCommandCenter',
   'approveRoleRequestEnterprise',
   'resyncRoleClaimsEnterprise',
+  'listAuditEventsEnterprise',
   'rejectRoleRequest',
   "requireAdmin(request, 'dashboard.read')",
   "requireAdmin(request, 'access.write')",
+  "requireAdmin(request, 'audit.read')",
   'adminPermissions',
   'isSuperAdmin',
   'buildAdminDashboard',
@@ -103,16 +107,16 @@ for (const invariant of [
 for (const invariant of [
   "callable('getAdminCommandCenter')",
   "callable('resyncRoleClaimsEnterprise')",
-  'data-resync-claims',
+  'dataset.resyncClaims',
   'MutationObserver'
 ]) {
   requireText(accessRuntime, invariant, `Admin IAM recovery invariant missing: ${invariant}`);
 }
 for (const invariant of [
-  "callable('listAuditEvents')",
+  "callable('listAuditEventsEnterprise')",
   'document.createElement',
   'textContent = JSON.stringify',
-  'data-enterprise-panel',
+  'dataset.enterprisePanel',
   'MutationObserver'
 ]) {
   requireText(auditRuntime, invariant, `Enterprise audit invariant missing: ${invariant}`);
@@ -136,6 +140,19 @@ for (const invariant of [
   requireText(adminCss, invariant, `Admin responsive design invariant missing: ${invariant}`);
 }
 requireText(auditCss, '.enterprise-admin-audit-filters', 'Enterprise audit filters are missing responsive styles.');
+
+const rules = JSON.parse(rulesSource).rules || {};
+for (const [path, index] of [
+  ['roleRequests', 'createdAt'],
+  ['profiles', 'updatedAt'],
+  ['products', 'updatedAt'],
+  ['orders', 'createdAt'],
+  ['deliveryJobs', 'updatedAt']
+]) {
+  if (!rules[path]?.['.indexOn']?.includes(index)) {
+    errors.push(`${path} must index ${index} for bounded enterprise queries.`);
+  }
+}
 
 requireText(main, "require('./admin-control-center')", 'Functions composition must import the admin control center.');
 requireText(main, '...adminControlCenter', 'Functions composition must export the admin control center callables.');
