@@ -4,6 +4,7 @@ const { getApps, initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 const roleApproval = require('./role-approval');
+const audit = require('./audit');
 const {
   DEFAULT_TENANT,
   buildAdminDashboard
@@ -142,6 +143,17 @@ exports.resyncRoleClaimsEnterprise = onCall({
   const admin = await requireAdmin(request, 'access.write');
   assertTenant(request.data?.tenantId, admin.tenantId);
   return roleApproval.resyncRoleClaims.run(request);
+});
+
+exports.listAuditEventsEnterprise = onCall({
+  region: REGION,
+  maxInstances: 10,
+  timeoutSeconds: 30,
+  memory: '256MiB'
+}, async request => {
+  const admin = await requireAdmin(request, 'audit.read');
+  assertTenant(request.data?.tenantId, admin.tenantId);
+  return audit.listAuditEvents.run(request);
 });
 
 exports.rejectRoleRequest = onCall({
