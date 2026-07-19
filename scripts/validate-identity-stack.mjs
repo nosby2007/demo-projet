@@ -279,28 +279,8 @@ if (loginHtml.includes('isSuperAdmin') || registerHtml.includes('isSuperAdmin') 
 for (const asset of ['/app-core.js', '/brand-runtime.js', '/identity-runtime.js', '/account-runtime.js']) {
   requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }
-const cachePrefix = "const CACHE_VERSION = 'sokiva-v";
-const cacheStart = serviceWorker.indexOf(cachePrefix);
-const cacheEnd = cacheStart >= 0
-  ? serviceWorker.indexOf("';", cacheStart)
-  : -1;
 
-const cacheVersion = cacheStart >= 0 && cacheEnd > cacheStart
-  ? serviceWorker
-      .slice(cacheStart + cachePrefix.length, cacheEnd)
-      .split('.')
-      .map(Number)
-  : null;
-
-if (
-  !cacheVersion
-  || cacheVersion.length !== 3
-  || cacheVersion.some(value => !Number.isInteger(value))
-  || cacheVersion[0] < 2
-  || (cacheVersion[0] === 2 && cacheVersion[1] < 1)
-) {
-  errors.push('Storefront restoration must invalidate the broken PWA cache.');
-}
+requireText(serviceWorker, "CACHE_VERSION = 'sokiva-v2.1.1'", 'Storefront restoration must invalidate the broken PWA cache.');
 
 requireText(functionsPackage, 'node --check identity.js', 'Function syntax validation must include identity.js.');
 requireText(functionsPackage, 'test/identity.test.js', 'Function unit tests must include identity.test.js.');
