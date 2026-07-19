@@ -10,7 +10,10 @@ const requireText = (source, value, message) => {
 const [
   adminHtml,
   adminRuntime,
+  accessRuntime,
+  auditRuntime,
   adminCss,
+  auditCss,
   backend,
   core,
   main,
@@ -20,7 +23,10 @@ const [
 ] = await Promise.all([
   read('admin.html'),
   read('admin-runtime.js'),
+  read('admin-access-runtime.js'),
+  read('admin-audit-runtime.js'),
   read('admin-enterprise.css'),
+  read('audit.css'),
   read('functions/admin-control-center.js'),
   read('functions/admin-control-center-core.js'),
   read('functions/main.js'),
@@ -31,6 +37,8 @@ const [
 
 for (const [name, source] of [
   ['admin-runtime.js', adminRuntime],
+  ['admin-access-runtime.js', accessRuntime],
+  ['admin-audit-runtime.js', auditRuntime],
   ['functions/admin-control-center.js', backend],
   ['functions/admin-control-center-core.js', core]
 ]) {
@@ -41,6 +49,7 @@ for (const [name, source] of [
 for (const invariant of [
   'getAdminCommandCenter',
   'approveRoleRequestEnterprise',
+  'resyncRoleClaimsEnterprise',
   'rejectRoleRequest',
   "requireAdmin(request, 'dashboard.read')",
   "requireAdmin(request, 'access.write')",
@@ -69,12 +78,14 @@ for (const invariant of [
   'enterprise-admin-root',
   'admin-enterprise.css',
   'admin-runtime.js',
+  'admin-access-runtime.js',
+  'admin-audit-runtime.js',
   'firebase-functions-compat.js'
 ]) {
   requireText(adminHtml, invariant, `Admin page invariant missing: ${invariant}`);
 }
-if (adminHtml.includes('marketplace.js') || adminHtml.includes('saas-runtime.js')) {
-  errors.push('Enterprise admin page must not initialize the legacy direct-read marketplace dashboard.');
+if (adminHtml.includes('admin-command-root') || adminHtml.includes('data-role-page="admin"')) {
+  errors.push('Enterprise admin page must not mount the legacy direct-read administrator root.');
 }
 
 for (const invariant of [
@@ -89,8 +100,31 @@ for (const invariant of [
 ]) {
   requireText(adminRuntime, invariant, `Admin runtime invariant missing: ${invariant}`);
 }
-if (/\.ref\s*\(/.test(adminRuntime) || adminRuntime.includes('firebase.database')) {
-  errors.push('Enterprise admin runtime must not read sensitive Realtime Database paths directly.');
+for (const invariant of [
+  "callable('getAdminCommandCenter')",
+  "callable('resyncRoleClaimsEnterprise')",
+  'data-resync-claims',
+  'MutationObserver'
+]) {
+  requireText(accessRuntime, invariant, `Admin IAM recovery invariant missing: ${invariant}`);
+}
+for (const invariant of [
+  "callable('listAuditEvents')",
+  'document.createElement',
+  'textContent = JSON.stringify',
+  'data-enterprise-panel',
+  'MutationObserver'
+]) {
+  requireText(auditRuntime, invariant, `Enterprise audit invariant missing: ${invariant}`);
+}
+for (const [name, source] of [
+  ['admin-runtime.js', adminRuntime],
+  ['admin-access-runtime.js', accessRuntime],
+  ['admin-audit-runtime.js', auditRuntime]
+]) {
+  if (/\.ref\s*\(/.test(source) || source.includes('firebase.database')) {
+    errors.push(`${name} must not read sensitive Realtime Database paths directly.`);
+  }
 }
 
 for (const invariant of [
@@ -101,13 +135,15 @@ for (const invariant of [
 ]) {
   requireText(adminCss, invariant, `Admin responsive design invariant missing: ${invariant}`);
 }
+requireText(auditCss, '.enterprise-admin-audit-filters', 'Enterprise audit filters are missing responsive styles.');
 
 requireText(main, "require('./admin-control-center')", 'Functions composition must import the admin control center.');
 requireText(main, '...adminControlCenter', 'Functions composition must export the admin control center callables.');
 requireText(functionsPackage, 'admin-control-center.test.js', 'Functions unit tests must include the admin control center.');
 requireText(functionsPackage, 'node --check admin-control-center.js', 'Function syntax tests must include the admin backend.');
-requireText(serviceWorker, "'/admin-runtime.js'", 'PWA shell must cache the admin runtime.');
-requireText(serviceWorker, "'/admin-enterprise.css'", 'PWA shell must cache the admin stylesheet.');
+for (const asset of ['/admin-runtime.js', '/admin-access-runtime.js', '/admin-audit-runtime.js', '/admin-enterprise.css']) {
+  requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
+}
 
 for (const phrase of [
   'trusted callable',
