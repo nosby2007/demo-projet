@@ -9,6 +9,7 @@ const tracking = require('./tracking');
 const notifications = require('./notifications');
 const identity = require('./identity');
 const adminControlCenter = require('./admin-control-center');
+const supportOperations = require('./support-operations');
 
 module.exports = {
   ...marketplace,
@@ -16,6 +17,7 @@ module.exports = {
   ...catalog,
   ...roleApproval,
   ...adminControlCenter,
+  ...supportOperations,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,

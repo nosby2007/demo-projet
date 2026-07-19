@@ -77,3 +77,14 @@ Phase 3 introduces durable operational analytics:
 6. Browser access to `adminDailyMetrics` remains completely denied by Realtime Database rules.
 7. An administrator with `analytics.write` can initialize the durable series from up to 500 tenant-filtered historical orders; the response explicitly reports truncation.
 8. Backfill uses a transaction and preserves newer live order contributions committed while the rebuild is running.
+
+## Phase 4
+
+Phase 4 adds trusted Support Operations:
+
+1. Active authenticated users create support cases only through a callable; direct database access remains denied.
+2. Priority determines a server-calculated SLA target: critical 1 hour, high 4 hours, normal 12 hours and low 24 hours.
+3. Administrators require `support.read` to view the privacy-minimized queue and `support.write` to act.
+4. The queue exposes assignment, start, escalation, resolution and reopening workflows.
+5. Escalation and resolution require an administrative note and every case mutation is audited.
+6. Descriptions and private administrative notes are excluded from list summaries.
