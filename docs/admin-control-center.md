@@ -69,10 +69,11 @@ Later phases will add delegated admin roles, granular permissions, durable daily
 
 Phase 3 introduces durable operational analytics:
 
-1. Every order write updates a tenant-scoped daily aggregate through an idempotent delta calculation with bounded event deduplication.
+1. Every order write updates a tenant-scoped daily aggregate from a per-order contribution ledger, making trigger retries idempotent.
 2. Status changes replace the previous contribution instead of double-counting the order.
 3. The aggregate stores order count, GMV, delivery, cancellation, payment and recognized platform revenue metrics.
 4. The dashboard reads only the latest bounded daily series through the trusted admin callable.
 5. The executive view exposes 7-day and 30-day summaries plus a responsive daily trend.
 6. Browser access to `adminDailyMetrics` remains completely denied by Realtime Database rules.
-7. An administrator with `analytics.write` can initialize the durable series from the latest 500 historical orders; the response explicitly reports truncation.
+7. An administrator with `analytics.write` can initialize the durable series from up to 500 tenant-filtered historical orders; the response explicitly reports truncation.
+8. Backfill uses a transaction and preserves newer live order contributions committed while the rebuild is running.

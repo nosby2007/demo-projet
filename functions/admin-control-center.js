@@ -11,7 +11,7 @@ const {
   buildAdminDashboard,
   reconciliationRows
 } = require('./admin-control-center-core');
-const { applyDelta, buildDailyMetrics, contribution, dayKey, summarizeDaily } = require('./admin-analytics-core');
+const { applyDelta, contribution, dayKey, mergeContributionLedger, metricsFromLedger, summarizeDaily } = require('./admin-analytics-core');
 
 if (!getApps().length) initializeApp();
 const db = getDatabase();
@@ -137,17 +137,18 @@ exports.aggregateAdminOrderMetrics = onValueWritten({ ref: '/orders/{orderId}', 
   const tenantId = clean(source.tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
   if (beforeOrder && afterOrder && clean(beforeOrder.tenantId || DEFAULT_TENANT, 80) !== tenantId) return null;
   const date = dayKey(source.createdAt);
-  const eventKey = Buffer.from(String(event.id)).toString('base64url').slice(0, 240);
   return db.ref(`adminDailyMetrics/${tenantId}`).transaction(current => {
-    const analytics = current || { days: {}, processedEvents: {} };
+    const analytics = current || { days: {}, orderContributions: {} };
     analytics.days = analytics.days || {};
-    analytics.processedEvents = analytics.processedEvents || {};
-    if (analytics.processedEvents[eventKey]) return;
+    analytics.orderContributions = analytics.orderContributions || {};
+    const orderId = clean(event.params.orderId, 160);
+    const stored = analytics.orderContributions[orderId];
+    const storedMetrics = stored?.metrics || null;
+    const nextMetrics = contribution(afterOrder);
     const now = Date.now();
-    analytics.days[date] = applyDelta(analytics.days[date], contribution(beforeOrder), contribution(afterOrder), now);
-    analytics.processedEvents[eventKey] = now;
-    const oldest = Object.entries(analytics.processedEvents).sort((a, b) => a[1] - b[1]).slice(0, -1000);
-    for (const [key] of oldest) delete analytics.processedEvents[key];
+    analytics.days[date] = applyDelta(analytics.days[date], storedMetrics, nextMetrics, now);
+    if (afterOrder) analytics.orderContributions[orderId] = { date, metrics: nextMetrics, version: Number(afterOrder.updatedAt || afterOrder.createdAt || now) };
+    else delete analytics.orderContributions[orderId];
     return analytics;
   });
 });
@@ -155,14 +156,20 @@ exports.aggregateAdminOrderMetrics = onValueWritten({ ref: '/orders/{orderId}', 
 exports.rebuildAdminDailyMetrics = onCall({ region: REGION, maxInstances: 1, timeoutSeconds: 60 }, async request => {
   const admin = await requireAdmin(request, 'analytics.write');
   const tenantId = assertTenant(request.data?.tenantId, admin.tenantId);
-  const snapshot = await db.ref('orders').orderByChild('createdAt').limitToLast(MAX_LIMIT).get();
+  const snapshot = await db.ref('orders').orderByChild('tenantId').equalTo(tenantId).limitToLast(MAX_LIMIT).get();
   const orders = snapshot.val() || {};
-  const days = buildDailyMetrics(orders, tenantId, Date.now());
-  await db.ref(`adminDailyMetrics/${tenantId}`).set({ days, processedEvents: {} });
+  let dayCount = 0;
+  await db.ref(`adminDailyMetrics/${tenantId}`).transaction(current => {
+    const analytics = current || {};
+    const orderContributions = mergeContributionLedger(analytics.orderContributions, orders, tenantId);
+    const days = metricsFromLedger(orderContributions, Date.now());
+    dayCount = Object.keys(days).length;
+    return { ...analytics, days, orderContributions };
+  });
   await audit.appendAuditEvent({ tenantId, action: 'analytics.daily_rebuilt', entityType: 'analytics', entityId: tenantId,
     actorUid: admin.uid, actorType: 'admin', source: 'admin_callable', changedKeys: ['days'],
-    metadata: { sourceOrderCount: Object.keys(orders).length, dayCount: Object.keys(days).length, truncated: Object.keys(orders).length >= MAX_LIMIT } });
-  return { dayCount: Object.keys(days).length, sourceOrderCount: Object.keys(orders).length, truncated: Object.keys(orders).length >= MAX_LIMIT };
+    metadata: { sourceOrderCount: Object.keys(orders).length, dayCount, truncated: Object.keys(orders).length >= MAX_LIMIT } });
+  return { dayCount, sourceOrderCount: Object.keys(orders).length, truncated: Object.keys(orders).length >= MAX_LIMIT };
 });
 
 exports.approveRoleRequestEnterprise = onCall({
