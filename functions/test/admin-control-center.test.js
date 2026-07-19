@@ -6,7 +6,8 @@ const {
   buildAdminDashboard,
   maskEmail,
   maskName,
-  payoutFor
+  payoutFor,
+  reconciliationRows
 } = require('../admin-control-center-core');
 
 test('admin dashboard masks the viewer email and avoids customer contact data in orders', () => {
@@ -83,4 +84,24 @@ test('privacy and payout helpers are deterministic', () => {
   assert.equal(maskEmail('a@example.com'), 'a**@example.com');
   assert.equal(maskName('Jepthe Nkwanmen'), 'Jepthe N.');
   assert.deepEqual(payoutFor({ total: 100 }), { platform: 15, courier: 10, seller: 75 });
+});
+
+test('phase 2 exposes only valid administrative order actions', () => {
+  const dashboard = buildAdminDashboard({ tenantId: 'lamylenoise', orders: {
+    cancellable: { tenantId: 'lamylenoise', status: 'preparing', sellerStatuses: { seller: 'preparing' } },
+    ready: { tenantId: 'lamylenoise', status: 'preparing', sellerStatuses: { seller: 'ready_for_pickup' } },
+    delivered: { tenantId: 'lamylenoise', status: 'delivered' }
+  }});
+  const byId = Object.fromEntries(dashboard.operations.recentOrders.map(row => [row.id, row]));
+  assert.equal(byId.cancellable.canCancel, true);
+  assert.equal(byId.ready.canForceReady, true);
+  assert.equal(byId.delivered.canCancel, false);
+});
+
+test('reconciliation rows flatten seller and courier earnings without profile data', () => {
+  const rows = reconciliationRows({ sellers: { seller1: { order1: { amount: 75, status: 'eligible', earnedAt: 10 } } }, couriers: { courier1: { order1: { amount: 10, status: 'settled', earnedAt: 11, settlementReference: 'BANK-1' } } } }, 'lamylenoise');
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].id, 'couriers:courier1:order1');
+  assert.equal(rows[1].amount, 75);
+  assert.equal('email' in rows[0], false);
 });

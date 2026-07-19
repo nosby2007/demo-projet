@@ -50,6 +50,17 @@ This phase adds Cloud Functions and frontend assets. Run the GitHub Actions work
 
 After deployment, sign out and sign in again before opening `admin.html` so the latest signed claims are available.
 
+## Phase 2
+
+Phase 2 turns the trusted read console into an operational command surface:
+
+1. Administrators with `orders.write` can cancel eligible orders or force the ready-for-pickup transition when every seller leg is ready.
+2. Every order intervention requires a reason and creates a privacy-safe audit event.
+3. Administrators with `finance.read` receive a server-consolidated reconciliation queue; the browser never reads `earnings` directly.
+4. Administrators with `finance.write` can settle up to 50 eligible seller or courier earnings atomically against a required payment reference.
+5. A batch fails completely if one selected earning is missing or was already settled, preventing partial and duplicate reconciliation.
+6. Delegated administrators see only modules allowed by granular permissions; the platform owner retains `*` access.
+
 ## Roadmap
 
 Later phases will add delegated admin roles, granular permissions, durable daily aggregates, advanced order actions, payouts and reconciliation, customer support SLA, promotions, campaign operations, fraud review, system health, cost telemetry and AI-assisted operational analysis.

@@ -1,12 +1,12 @@
 /* SOKIVA enterprise operations control center. */
 'use strict';
 
-window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' });
+window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '2.0.0' });
 
 (function enterpriseAdminRuntime() {
   const ROOT_ID = 'enterprise-admin-root';
   const TENANT_ID = 'lamylenoise';
-  const state = { data: null, loading: false, activeTab: 'overview', decision: null };
+  const state = { data: null, reconciliation: null, loading: false, activeTab: 'overview', decision: null };
 
   function backend() {
     return window.SokivaFirebase || window.AfroMarketFirebase || null;
@@ -169,6 +169,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
         <div class="enterprise-admin-record-money">
           <strong>${escape(money(order.total))}</strong>
           <small>P ${escape(money(order.payout?.platform))} · L ${escape(money(order.payout?.courier))} · V ${escape(money(order.payout?.seller))}</small>
+          ${(order.canCancel || order.canForceReady) ? `<div class="enterprise-admin-record-actions">
+            ${order.canForceReady ? `<button class="btn-link" type="button" data-order-action="ready_for_pickup" data-order-id="${escape(order.id)}">Forcer prete</button>` : ''}
+            ${order.canCancel ? `<button class="btn-link danger" type="button" data-order-action="cancelled" data-order-id="${escape(order.id)}">Annuler</button>` : ''}
+          </div>` : ''}
         </div>
       </article>`;
   }
@@ -255,6 +259,8 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
 
   function panelFinance(data) {
     const executive = data.executive;
+    const reconciliation = state.reconciliation;
+    const eligible = reconciliation?.rows?.filter(row => row.status === 'eligible') || [];
     return `
       <section class="enterprise-admin-panel" data-enterprise-panel="finance">
         <div class="enterprise-admin-grid four">
@@ -270,6 +276,17 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
             <div><span>Livreurs</span><strong>10%</strong><em>${escape(money(executive.expectedCourierPayout))}</em></div>
             <div><span>Vendeurs</span><strong>75%</strong><em>${escape(money(executive.expectedSellerPayout))}</em></div>
           </div>
+        </article>
+        <article class="enterprise-admin-card">
+          <header><div><span>Rapprochement</span><h3>Paiements eligibles</h3></div><small>${reconciliation ? money(reconciliation.summary.eligibleAmount) : 'Acces non accorde'}</small></header>
+          ${reconciliation ? `<form id="enterprise-admin-settlement-form">
+            <div class="enterprise-admin-list">${eligible.slice(0, 50).map(row => `<label class="enterprise-admin-record enterprise-admin-payment-row">
+              <input type="checkbox" name="earningId" value="${escape(row.id)}" />
+              <span class="enterprise-admin-record-main"><strong>${escape(row.group === 'sellers' ? 'Vendeur' : 'Livreur')} · ${escape(row.orderId)}</strong><small>${escape(dateTime(row.earnedAt))}</small></span>
+              <strong>${escape(money(row.amount))}</strong>
+            </label>`).join('') || emptyState('badge-check', 'Aucun paiement en attente', 'Tous les revenus eligibles ont ete rapproches.')}</div>
+            ${eligible.length ? `<div class="enterprise-admin-settlement-actions"><label><span>Reference bancaire</span><input name="reference" maxlength="120" required /></label><button class="btn-primary" type="submit">Marquer comme paye</button></div>` : ''}
+          </form>` : emptyState('lock-keyhole', 'Permission finance requise', 'Demandez la permission finance.read pour consulter le rapprochement.')}
         </article>
       </section>`;
   }
@@ -400,6 +417,24 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
     dialog.showModal();
   }
 
+  function openOrderDecision(status, orderId) {
+    const dialog = document.getElementById('enterprise-admin-decision-dialog');
+    const title = document.getElementById('enterprise-admin-decision-title');
+    const copy = document.getElementById('enterprise-admin-decision-copy');
+    const reasonField = document.getElementById('enterprise-admin-reason-field');
+    const reason = document.getElementById('enterprise-admin-decision-reason');
+    const submit = document.getElementById('enterprise-admin-decision-submit');
+    if (!dialog || !orderId) return;
+    state.decision = { type: 'order', orderId, status };
+    title.textContent = status === 'cancelled' ? 'Annuler la commande' : 'Forcer le retrait';
+    copy.textContent = `L action sur ${orderId} sera appliquee par le backend et journalisee.`;
+    reasonField.hidden = false;
+    reason.required = true;
+    reason.value = '';
+    submit.textContent = 'Confirmer l action';
+    dialog.showModal();
+  }
+
   function closeDecision() {
     document.getElementById('enterprise-admin-decision-dialog')?.close();
     state.decision = null;
@@ -413,7 +448,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
     const reason = document.getElementById('enterprise-admin-decision-reason')?.value.trim() || '';
     submit.disabled = true;
     try {
-      if (decision.type === 'approve') {
+      if (decision.type === 'order') {
+        await callable('adminTransitionOrderEnterprise')({ tenantId: TENANT_ID, orderId: decision.orderId, status: decision.status, reason });
+        notify('Commande mise a jour et action auditee.', 'success', 'package-check');
+      } else if (decision.type === 'approve') {
         await callable('approveRoleRequestEnterprise')({ tenantId: TENANT_ID, requestId: decision.requestId, role: decision.roleType });
         notify('Candidature approuvee et droits synchronises.', 'success', 'badge-check');
       } else {
@@ -434,8 +472,28 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
     target.querySelectorAll('[data-enterprise-tab-target]').forEach(button => button.addEventListener('click', () => setActiveTab(button.dataset.enterpriseTabTarget)));
     target.querySelectorAll('[data-role-approve]').forEach(button => button.addEventListener('click', () => openDecision('approve', button.dataset.roleApprove, button.dataset.roleType)));
     target.querySelectorAll('[data-role-reject]').forEach(button => button.addEventListener('click', () => openDecision('reject', button.dataset.roleReject)));
+    target.querySelectorAll('[data-order-action]').forEach(button => button.addEventListener('click', () => openOrderDecision(button.dataset.orderAction, button.dataset.orderId)));
     target.querySelectorAll('[data-dialog-close]').forEach(button => button.addEventListener('click', closeDecision));
     target.querySelector('#enterprise-admin-decision-form')?.addEventListener('submit', submitDecision);
+    target.querySelector('#enterprise-admin-settlement-form')?.addEventListener('submit', submitSettlement);
+  }
+
+  async function submitSettlement(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const earningIds = [...form.querySelectorAll('input[name="earningId"]:checked')].map(input => input.value);
+    const reference = form.elements.reference?.value.trim() || '';
+    if (!earningIds.length) return notify('Selectionnez au moins un paiement.', 'error', 'alert-circle');
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    try {
+      await callable('settleAdminEarnings')({ tenantId: TENANT_ID, earningIds, reference });
+      notify(`${earningIds.length} paiement(s) rapproche(s).`, 'success', 'badge-dollar-sign');
+      await loadDashboard();
+    } catch (error) {
+      submit.disabled = false;
+      notify(messageFrom(error, 'Le rapprochement a echoue.'), 'error', 'alert-circle');
+    }
   }
 
   async function currentUser() {
@@ -462,6 +520,12 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '1.0.0' }
       }
       await user.getIdToken(true);
       const response = await callable('getAdminCommandCenter')({ tenantId: TENANT_ID, limit: 250 });
+      const permissions = response.data?.viewer?.permissions || [];
+      state.reconciliation = null;
+      if (permissions.includes('*') || permissions.includes('finance.read')) {
+        const reconciliation = await callable('getAdminReconciliation')({ tenantId: TENANT_ID, limit: 250 });
+        state.reconciliation = reconciliation.data;
+      }
       renderDashboard(response.data);
     } catch (error) {
       renderError(error);
