@@ -74,7 +74,7 @@
             try {
               await callable('resyncRoleClaimsEnterprise')({ tenantId: TENANT_ID, requestId: request.id });
               if (window.Toast?.show) window.Toast.show('Claims Firebase Auth resynchronises.', 'success', 'badge-check');
-              await loadRecovery(card);
+              setTimeout(() => loadRecovery(card), 0);
             } catch (error) {
               action.disabled = false;
               if (window.Toast?.show) window.Toast.show(messageFrom(error, 'Synchronisation Auth impossible.'), 'error', 'alert-circle');
