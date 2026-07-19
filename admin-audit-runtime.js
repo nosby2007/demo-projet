@@ -5,7 +5,6 @@
   const ROOT_ID = 'enterprise-admin-root';
   const TENANT_ID = 'lamylenoise';
   let loading = false;
-  let loadedOnce = false;
 
   function backend() {
     return window.SokivaFirebase || window.AfroMarketFirebase || null;
@@ -100,7 +99,7 @@
     status.textContent = 'Chargement du journal securise...';
     list.replaceChildren();
     try {
-      const response = await callable('listAuditEvents')({
+      const response = await callable('listAuditEventsEnterprise')({
         tenantId: TENANT_ID,
         limit: 100,
         entityType,
@@ -115,7 +114,7 @@
       } else {
         events.forEach(event => list.append(createAuditRow(event)));
       }
-      loadedOnce = true;
+      panel.dataset.auditLoaded = 'true';
       refreshIcons(panel);
     } catch (error) {
       status.textContent = messageFrom(error, 'Impossible de charger le journal d audit.');
@@ -203,7 +202,7 @@
     workspace.append(panel);
     button.addEventListener('click', () => {
       setActiveTab('audit');
-      if (!loadedOnce) loadEvents(panel);
+      if (panel.dataset.auditLoaded !== 'true') loadEvents(panel);
     });
     refreshIcons(root);
   }
