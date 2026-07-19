@@ -12,15 +12,63 @@
   word-break: break-word;
 }
 
-[data-audit-panel] details {
+[data-audit-panel] details,
+.enterprise-admin-audit-record details {
   margin-top: 0.75rem;
 }
 
-[data-audit-panel] summary {
+[data-audit-panel] summary,
+.enterprise-admin-audit-record summary {
   cursor: pointer;
   font-weight: 600;
+  color: #334155;
 }
 
 [data-audit-panel] [data-audit-refresh] {
   margin: 0.75rem 0;
+}
+
+.enterprise-admin-audit-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.enterprise-admin-audit-field {
+  display: grid;
+  gap: 7px;
+}
+
+.enterprise-admin-audit-field span {
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.enterprise-admin-audit-field select,
+.enterprise-admin-audit-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.enterprise-admin-audit-record {
+  align-items: flex-start;
+}
+
+.enterprise-admin-audit-record details {
+  width: min(100%, 520px);
+}
+
+@media (max-width: 760px) {
+  .enterprise-admin-audit-filters {
+    grid-template-columns: 1fr;
+  }
 }
