@@ -12,6 +12,7 @@
     },
     "roleRequests": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
+      ".indexOn": ["createdAt", "updatedAt", "status", "tenantId"],
       "$requestId": {
         ".write": "auth != null && ((!data.exists() && auth.token.email_verified == true && newData.child('requesterUid').val() == auth.uid && newData.child('status').val() == 'pending') || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
         ".validate": "newData.hasChildren(['type', 'name', 'email', 'phone', 'requesterUid', 'status']) && (newData.child('type').val() == 'seller' || newData.child('type').val() == 'courier')"
@@ -19,7 +20,7 @@
     },
     "profiles": {
       ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
-      ".indexOn": ["role", "tenantId", "status"],
+      ".indexOn": ["role", "tenantId", "status", "updatedAt"],
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
         ".write": "auth != null && ((root.child('profiles').child(auth.uid).child('role').val() == 'admin' && auth.token.isSuperAdmin == true) || (auth.uid == $uid && data.exists() && newData.exists() && data.child('isSuperAdmin').val() != true && newData.child('isSuperAdmin').val() != true && newData.child('role').val() == data.child('role').val() && newData.child('status').val() == data.child('status').val() && newData.child('tenantId').val() == data.child('tenantId').val() && newData.child('isSuperAdmin').val() == data.child('isSuperAdmin').val()))",
@@ -31,7 +32,7 @@
     "products": {
       ".read": false,
       ".write": false,
-      ".indexOn": ["status", "sellerUid", "tenantId"],
+      ".indexOn": ["status", "sellerUid", "tenantId", "updatedAt"],
       "$productId": {
         ".write": false,
         ".validate": "newData.hasChildren(['name', 'price', 'category', 'status'])"
@@ -55,7 +56,7 @@
     "orders": {
       ".read": false,
       ".write": false,
-      ".indexOn": ["tenantId", "customerUid", "status", "paymentStatus"]
+      ".indexOn": ["tenantId", "customerUid", "status", "paymentStatus", "createdAt", "updatedAt"]
     },
     "customerOrders": {
       ".read": false,
@@ -68,7 +69,7 @@
     "deliveryJobs": {
       ".read": false,
       ".write": false,
-      ".indexOn": ["tenantId", "courierUid", "status"]
+      ".indexOn": ["tenantId", "courierUid", "status", "updatedAt"]
     },
     "earnings": {
       ".read": false,
