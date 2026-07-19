@@ -133,6 +133,17 @@ exports.approveRoleRequestEnterprise = onCall({
   return roleApproval.approveRoleRequest.run(request);
 });
 
+exports.resyncRoleClaimsEnterprise = onCall({
+  region: REGION,
+  maxInstances: 10,
+  timeoutSeconds: 30,
+  memory: '256MiB'
+}, async request => {
+  const admin = await requireAdmin(request, 'access.write');
+  assertTenant(request.data?.tenantId, admin.tenantId);
+  return roleApproval.resyncRoleClaims.run(request);
+});
+
 exports.rejectRoleRequest = onCall({
   region: REGION,
   maxInstances: 10,
