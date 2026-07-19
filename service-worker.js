@@ -40,6 +40,8 @@ const APP_SHELL = [
   '/role-sync-runtime.js',
   '/audit-runtime.js',
   '/admin-runtime.js',
+  '/admin-access-runtime.js',
+  '/admin-audit-runtime.js',
   '/firebase-config.js',
   '/firebase-functions-config.js',
   '/app.webmanifest',
