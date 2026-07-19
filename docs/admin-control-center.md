@@ -124,3 +124,15 @@ Phase 7 adds trusted Promotions & Campaign Operations:
 5. Queue summaries expose budget, spend and usage aggregates without private administrative reasons.
 6. Creation and every lifecycle decision are attributed to the administrator in the audit log.
 7. Browser access to `campaigns` remains denied; all reads and mutations use trusted callable functions.
+
+## Phase 8
+
+Phase 8 adds owner-controlled Delegated Admin Governance:
+
+1. Only a profile and signed claim both marked `isSuperAdmin` may manage delegated administrators.
+2. The owner can promote an existing same-tenant profile, assign bounded permissions, suspend, reactivate or demote it.
+3. A super-admin, the acting owner and profiles from another tenant cannot be targeted.
+4. Permissions are selected from a fixed allowlist; wildcard and unknown permissions are rejected.
+5. Profile state changes precede Auth claim synchronization so partially synchronized promotions never gain access.
+6. Every governance action requires a reason and creates an administrator-attributed, privacy-safe audit event.
+7. `delegatedAdmin.read` is available for delegated permission catalogs, while all governance mutations remain owner-only.

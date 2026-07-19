@@ -1,5 +1,5 @@
 /* SOKIVA resilient offline shell and notification navigation */
-const CACHE_VERSION = 'sokiva-v2.7.0';
+const CACHE_VERSION = 'sokiva-v2.8.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -46,6 +46,7 @@ const APP_SHELL = [
   '/admin-risk-runtime.js',
   '/admin-system-runtime.js',
   '/admin-campaign-runtime.js',
+  '/admin-governance-runtime.js',
   '/firebase-config.js',
   '/firebase-functions-config.js',
   '/app.webmanifest',
