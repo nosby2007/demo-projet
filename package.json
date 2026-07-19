@@ -4,7 +4,7 @@
   "private": true,
   "description": "SOKIVA marketplace frontend and trusted Firebase backend.",
   "scripts": {
-    "build": "node scripts/validate-static-site.mjs && node scripts/validate-hardening-v2.mjs && node scripts/validate-audit-stack.mjs && node scripts/validate-tracking-stack.mjs && node scripts/validate-notification-stack.mjs && node scripts/validate-identity-stack.mjs && node scripts/test-catalog-runtime.mjs && node scripts/validate-deploy-pipeline.mjs",
+    "build": "node scripts/validate-static-site.mjs && node scripts/validate-hardening-v2.mjs && node scripts/validate-audit-stack.mjs && node scripts/validate-tracking-stack.mjs && node scripts/validate-notification-stack.mjs && node scripts/validate-identity-stack.mjs && node scripts/validate-admin-control-center.mjs && node scripts/test-catalog-runtime.mjs && node scripts/validate-deploy-pipeline.mjs",
     "test:functions": "npm --prefix functions install --ignore-scripts && npm --prefix functions test",
     "test:rules": "firebase emulators:exec --project sokiva-rules-test --only database \"npm --prefix functions run test:rules\"",
     "check": "npm run build && npm run test:functions",
