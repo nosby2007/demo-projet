@@ -16,6 +16,7 @@ const [
   auditCss,
   backend,
   core,
+  analyticsCore,
   main,
   functionsPackage,
   serviceWorker,
@@ -30,6 +31,7 @@ const [
   read('audit.css'),
   read('functions/admin-control-center.js'),
   read('functions/admin-control-center-core.js'),
+  read('functions/admin-analytics-core.js'),
   read('functions/main.js'),
   read('functions/package.json'),
   read('service-worker.js'),
@@ -43,6 +45,7 @@ for (const [name, source] of [
   ['admin-audit-runtime.js', auditRuntime],
   ['functions/admin-control-center.js', backend],
   ['functions/admin-control-center-core.js', core]
+  ,['functions/admin-analytics-core.js', analyticsCore]
 ]) {
   try { new vm.Script(source, { filename: name }); }
   catch (error) { errors.push(`Invalid JavaScript in ${name}: ${error.message}`); }
@@ -57,6 +60,8 @@ for (const invariant of [
   'getAdminReconciliation',
   'settleAdminEarnings',
   'adminTransitionOrderEnterprise',
+  'aggregateAdminOrderMetrics',
+  'rebuildAdminDailyMetrics',
   "requireAdmin(request, 'dashboard.read')",
   "requireAdmin(request, 'access.write')",
   "requireAdmin(request, 'audit.read')",
@@ -66,6 +71,9 @@ for (const invariant of [
   "region: REGION"
 ]) {
   requireText(backend, invariant, `Admin backend invariant missing: ${invariant}`);
+}
+for (const invariant of ['contribution', 'applyDelta', 'summarizeDaily', 'recognizedPlatformRevenue']) {
+  requireText(analyticsCore, invariant, `Durable analytics invariant missing: ${invariant}`);
 }
 
 for (const invariant of [
@@ -103,9 +111,11 @@ for (const invariant of [
   'renderError',
   'data-enterprise-tab',
   'enterprise-admin-decision-dialog',
+  'enterprise-admin-trend',
   "callable('getAdminReconciliation')",
   "callable('settleAdminEarnings')",
   "callable('adminTransitionOrderEnterprise')",
+  "callable('rebuildAdminDailyMetrics')",
   'user.getIdToken(true)'
 ]) {
   requireText(adminRuntime, invariant, `Admin runtime invariant missing: ${invariant}`);
@@ -164,6 +174,10 @@ requireText(main, "require('./admin-control-center')", 'Functions composition mu
 requireText(main, '...adminControlCenter', 'Functions composition must export the admin control center callables.');
 requireText(functionsPackage, 'admin-control-center.test.js', 'Functions unit tests must include the admin control center.');
 requireText(functionsPackage, 'node --check admin-control-center.js', 'Function syntax tests must include the admin backend.');
+requireText(functionsPackage, 'admin-analytics.test.js', 'Functions unit tests must include durable admin analytics.');
+if (rules.adminDailyMetrics?.['.read'] !== false || rules.adminDailyMetrics?.['.write'] !== false) {
+  errors.push('Durable admin analytics must remain private to trusted Functions.');
+}
 for (const asset of ['/admin-runtime.js', '/admin-access-runtime.js', '/admin-audit-runtime.js', '/admin-enterprise.css']) {
   requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }

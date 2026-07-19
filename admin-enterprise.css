@@ -112,6 +112,14 @@
 .enterprise-admin-settlement-actions { display: flex; justify-content: flex-end; align-items: end; gap: 12px; margin-top: 18px; }
 .enterprise-admin-settlement-actions label { display: grid; gap: 6px; min-width: min(300px, 100%); color: #334155; font-size: .82rem; font-weight: 700; }
 .enterprise-admin-settlement-actions input { padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 11px; font: inherit; }
+.enterprise-admin-trend-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.enterprise-admin-trend-summary div { display: grid; gap: 4px; padding: 14px; border-radius: 14px; background: var(--enterprise-soft); }
+.enterprise-admin-trend-summary span, .enterprise-admin-trend-summary small { color: var(--enterprise-muted); font-size: .78rem; }
+.enterprise-admin-trend-summary strong { color: #0f172a; font-size: 1.25rem; }
+.enterprise-admin-trend { display: flex; gap: 5px; align-items: end; min-height: 170px; padding: 18px 10px 0; overflow-x: auto; border-bottom: 1px solid #dbe2ea; }
+.enterprise-admin-trend-day { display: grid; grid-template-rows: 125px auto; gap: 7px; align-items: end; min-width: 20px; flex: 1; }
+.enterprise-admin-trend-day span { display: block; min-height: 4px; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, var(--enterprise-accent), #ff9a6f); }
+.enterprise-admin-trend-day small { color: var(--enterprise-muted); font-size: .58rem; writing-mode: vertical-rl; }
 @media (max-width: 1120px) {
   .enterprise-admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .enterprise-admin-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -125,6 +133,7 @@
   .enterprise-admin-nav { display: flex; overflow-x: auto; }
   .enterprise-admin-nav button { min-width: 175px; }
   .enterprise-admin-settlement-actions { align-items: stretch; flex-direction: column; }
+  .enterprise-admin-trend-summary { grid-template-columns: 1fr; }
   .enterprise-admin-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .enterprise-admin-record { align-items: flex-start; flex-direction: column; }
   .enterprise-admin-record-money { min-width: 0; text-align: left; }

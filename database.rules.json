@@ -75,6 +75,10 @@
       ".read": false,
       ".write": false
     },
+    "adminDailyMetrics": {
+      ".read": false,
+      ".write": false
+    },
     "orderTracking": {
       "$orderId": {
         ".read": "auth != null && (root.child('orders').child($orderId).child('customerUid').val() == auth.uid || (root.child('orders').child($orderId).child('courierUid').val() == auth.uid && root.child('orders').child($orderId).child('status').val() == 'in_transit') || (root.child('profiles').child(auth.uid).child('role').val() == 'admin' && root.child('profiles').child(auth.uid).child('status').val() != 'disabled' && root.child('profiles').child(auth.uid).child('tenantId').val() == root.child('orders').child($orderId).child('tenantId').val()))",
