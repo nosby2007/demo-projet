@@ -112,3 +112,15 @@ Phase 6 adds trusted System Health & Cost Telemetry:
 5. Snapshots contain only aggregate counts and statuses; raw operational records and personal data are never persisted.
 6. The latest 30 snapshots provide a bounded health history through a trusted callable.
 7. Browser access to `adminSystemTelemetry` remains denied by Realtime Database rules.
+
+## Phase 7
+
+Phase 7 adds trusted Promotions & Campaign Operations:
+
+1. Administrators require `campaign.read` to inspect campaigns and `campaign.write` to create or transition them.
+2. Campaign names, atomically unique normalized codes, discount values, budgets and time windows are validated by the backend.
+3. The lifecycle supports draft, scheduled, active, paused, completed and cancelled states with explicit allowed transitions.
+4. Activation and resumption require a currently valid campaign window; pause and cancellation require a reason.
+5. Queue summaries expose budget, spend and usage aggregates without private administrative reasons.
+6. Creation and every lifecycle decision are attributed to the administrator in the audit log.
+7. Browser access to `campaigns` remains denied; all reads and mutations use trusted callable functions.
