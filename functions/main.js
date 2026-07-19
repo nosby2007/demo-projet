@@ -12,6 +12,7 @@ const adminControlCenter = require('./admin-control-center');
 const supportOperations = require('./support-operations');
 const riskOperations = require('./risk-operations');
 const systemHealth = require('./system-health');
+const campaignOperations = require('./campaign-operations');
 
 module.exports = {
   ...marketplace,
@@ -22,6 +23,7 @@ module.exports = {
   ...supportOperations,
   ...riskOperations,
   ...systemHealth,
+  ...campaignOperations,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,
