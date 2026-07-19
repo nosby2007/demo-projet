@@ -46,6 +46,9 @@ jobs:
       - name: Validate SOKIVA identity and frontend migration
         run: node scripts/validate-identity-stack.mjs
 
+      - name: Validate enterprise operations control center
+        run: node scripts/validate-admin-control-center.mjs
+
       - name: Validate Firebase deployment pipeline
         run: node scripts/validate-deploy-pipeline.mjs
 
@@ -76,6 +79,10 @@ jobs:
       - name: Test identity and address units
         working-directory: functions
         run: node --test test/identity.test.js
+
+      - name: Test enterprise admin units
+        working-directory: functions
+        run: node --test test/admin-control-center.test.js
 
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
