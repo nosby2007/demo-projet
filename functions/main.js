@@ -10,6 +10,7 @@ const notifications = require('./notifications');
 const identity = require('./identity');
 const adminControlCenter = require('./admin-control-center');
 const supportOperations = require('./support-operations');
+const riskOperations = require('./risk-operations');
 
 module.exports = {
   ...marketplace,
@@ -18,6 +19,7 @@ module.exports = {
   ...roleApproval,
   ...adminControlCenter,
   ...supportOperations,
+  ...riskOperations,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,

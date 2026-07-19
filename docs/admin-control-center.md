@@ -88,3 +88,15 @@ Phase 4 adds trusted Support Operations:
 4. The queue exposes assignment, start, escalation, resolution and reopening workflows.
 5. Escalation and resolution require an administrative note and every case mutation is audited.
 6. Descriptions and private administrative notes are excluded from list summaries.
+
+## Phase 5
+
+Phase 5 adds trusted Risk & Fraud Operations:
+
+1. Order writes are evaluated by deterministic rules with explicit signal weights; no opaque or AI-generated score is used.
+2. High-value, payment-status mismatch, rapid-order, cancellation and refund signals create a tenant-scoped review case.
+3. Administrators require `risk.read` for the privacy-minimized queue and `risk.write` for decisions.
+4. Review states cover open, in-review, cleared, restricted and escalated cases with validated transitions.
+5. Clearing, restricting, escalating and reopening require a reason; restriction state and the case decision are committed atomically.
+6. Personal data and private decision reasons never appear in queue summaries or audit payloads.
+7. Browser access to `riskCases` and `riskRestrictions` remains denied; only trusted functions can evaluate or mutate risk state.
