@@ -70,10 +70,21 @@ async function requireCustomer(request) {
   if (!uid) throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
   const snapshot = await db.ref(`profiles/${uid}`).get();
   const profile = snapshot.val();
-  if (!profile || !['customer', 'admin'].includes(profile.role) || profile.status === 'disabled') {
+  if (!profile || !['customer', 'seller', 'courier', 'admin'].includes(profile.role) || profile.status === 'disabled') {
     throw new HttpsError('permission-denied', 'Compte client non autorisé.');
   }
   return { uid, profile };
+}
+
+async function accountCartForCheckout(uid, tenantId, expectedRevision) {
+  const ref = db.ref(`accountCarts/${tenantId}/${uid}`);
+  const cart = (await ref.get()).val();
+  const revision = Number(cart?.revision || 0);
+  if (!cart || !Object.keys(cart.lines || {}).length) throw new HttpsError('failed-precondition', 'Votre panier de compte est vide. Rechargez la boutique puis réessayez.');
+  if (!Number.isInteger(Number(expectedRevision)) || Number(expectedRevision) !== revision) throw new HttpsError('aborted', 'Votre panier a changé. Rechargez le récapitulatif avant de commander.');
+  const requestedItems = normalizeRequests(Object.entries(cart.lines).map(([productId, cartQuantity]) => ({ productId, quantity: cartQuantity })));
+  if (!requestedItems.length || requestedItems.length > MAX_ORDER_LINES) throw new HttpsError('invalid-argument', 'Le panier doit contenir entre 1 et 50 lignes.');
+  return { ref, revision, requestedItems };
 }
 
 function tenantFor(profile, requestedTenant) {
@@ -264,11 +275,6 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, a
   const data = request.data || {};
   const tenantId = tenantFor(profile, data.tenantId);
   const keyHash = idempotencyHash(data.idempotencyKey);
-  const rawItems = Array.isArray(data.items) ? data.items : [];
-  if (!rawItems.length || rawItems.length > MAX_ORDER_LINES) {
-    throw new HttpsError('invalid-argument', 'Le panier doit contenir entre 1 et 50 lignes.');
-  }
-  const requestedItems = normalizeRequests(rawItems);
 
   const emirate = clean(data.emirate, 80);
   if (!Object.prototype.hasOwnProperty.call(SHIPPING_AED, emirate)) {
@@ -277,6 +283,11 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, a
   if (clean(data.paymentMethod || 'cod', 40).toLowerCase() !== 'cod') {
     throw new HttpsError('failed-precondition', 'Le pilote accepte uniquement le paiement à la livraison.');
   }
+
+  const previousAttempt = (await db.ref(`checkoutIdempotency/${uid}/${keyHash}`).get()).val();
+  if (previousAttempt?.status === 'committed' && previousAttempt.result) return previousAttempt.result;
+  const accountCart = await accountCartForCheckout(uid, tenantId, data.cartRevision);
+  const requestedItems = accountCart.requestedItems;
 
   const idempotency = await acquireIdempotency(uid, keyHash, tenantId);
   if (!idempotency.owner) return idempotency.state.result;
@@ -380,6 +391,7 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, a
       status: parentStatus,
       currency: 'AED',
       idempotencyKeyHash: keyHash,
+      cartRevision: accountCart.revision,
       sellerUids,
       sellerStatuses,
       deliveryCodeHash: hashDeliveryCode(deliveryCode),
@@ -466,6 +478,10 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, a
     }
 
     await db.ref().update(updates);
+    await accountCart.ref.transaction(current => {
+      if (!current || Number(current.revision || 0) !== accountCart.revision) return current;
+      return { ...current, lines: {}, itemCount: 0, revision: accountCart.revision + 1, checkedOutOrderId: orderId, checkedOutAt: Date.now(), updatedAt: Date.now() };
+    }, undefined, false).catch(error => console.error('Order committed but account cart cleanup must retry.', orderId, error));
     return result;
   } catch (error) {
     await rollbackReservations(reservedProducts, orderId);

@@ -42,3 +42,9 @@ test('checkout idempotency locks and committed results are server-only', async (
     orderId: 'fake-order'
   }));
 });
+
+test('account carts are private trusted-backend records', async () => {
+  const db = testEnv.authenticatedContext('customer-1').database();
+  await assertFails(get(ref(db, 'accountCarts/lamylenoise/customer-1')));
+  await assertFails(set(ref(db, 'accountCarts/lamylenoise/customer-1'), { lines: { product: 99 }, revision: 1 }));
+});

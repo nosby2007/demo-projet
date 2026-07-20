@@ -164,3 +164,18 @@ Phase 10 completes owner-controlled account and operational governance:
 7. Indicators expose role totals, blocked accounts, pending verification and claims synchronization failures with actionable alerts.
 8. Seller, courier and order workflows remain connected to Access, Marketplace, Orders, Finance, Audit, Risk and System Health.
 9. The safe deployment launcher executes Firebase CLI through Node for Windows, Git Bash and Linux portability.
+
+## Phase 11
+
+Phase 11 makes the shopping cart account-bound and checkout-safe:
+
+1. Guest items persist locally across navigation and merge once into the authenticated account cart after sign-in.
+2. Authenticated cart mutations use tenant-scoped callable functions and atomic server transactions.
+3. `accountCarts` rejects all direct browser reads and writes; only trusted functions return catalogue-safe product summaries.
+4. Product availability, current price and physical stock are reconciled when the cart loads.
+5. Every cart has a monotonically increasing revision, and checkout rejects a stale browser summary.
+6. Order creation reads product IDs and quantities only from the account cart instead of trusting submitted browser lines.
+7. The committed order stores the cart revision and clears only that exact revision, preserving concurrent edits from another tab.
+8. Guest and account quantities are deduplicated and bounded to 50 product lines and 99 units per line.
+9. The home-page cart, shared drawer and checkout page now use the same persistent source and navigation flow.
+10. Active seller and courier accounts retain customer purchasing capability, so accepting a professional role never removes checkout access.

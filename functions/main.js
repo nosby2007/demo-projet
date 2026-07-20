@@ -15,6 +15,7 @@ const systemHealth = require('./system-health');
 const campaignOperations = require('./campaign-operations');
 const adminGovernance = require('./admin-governance');
 const operationalIntelligence = require('./operational-intelligence');
+const accountCart = require('./account-cart');
 
 module.exports = {
   ...marketplace,
@@ -28,6 +29,7 @@ module.exports = {
   ...campaignOperations,
   ...adminGovernance,
   ...operationalIntelligence,
+  ...accountCart,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,
