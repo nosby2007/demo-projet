@@ -2424,6 +2424,19 @@ input, select {
   color: var(--color-text);
 }
 .pd-delivery i, .pd-delivery svg { color: var(--color-accent); width: 18px; height: 18px; }
+.pd-colors h3, .pd-desc h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
+.pd-color-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-color-chip {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-soft);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.pd-color-chip:hover, .pd-color-chip.active { border-color: var(--color-accent); color: var(--color-accent); font-weight: 700; }
 .pd-desc { color: var(--color-text-muted); line-height: 1.7; }
 .pd-checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .pd-checklist li { display: flex; gap: 8px; font-size: var(--text-sm); color: var(--color-text); }

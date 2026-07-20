@@ -360,7 +360,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
           <div class="enterprise-admin-form-grid"><label><span>SKU</span><input name="sku" maxlength="100" /></label><label><span>Marque</span><input name="brand" maxlength="160" value="SOKIVA" required /></label></div>
           <div class="enterprise-admin-form-grid"><label><span>Catégorie</span><select name="category" required><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="beaute">Beauté</option><option value="maison">Maison</option><option value="services">Services</option></select></label><label><span>Prix (AED)</span><input name="price" type="number" min="0.01" max="1000000" step="0.01" required /></label></div>
           <label data-product-stock><span>Stock physique initial</span><input name="stockOnHand" type="number" min="0" max="100000" step="1" value="0" required /></label>
-          <label><span>URL HTTPS de l’image</span><input name="image" type="url" maxlength="1000" placeholder="https://..." /></label>
+          <label><span>Description</span><textarea name="description" maxlength="2000" rows="3" placeholder="Présentation courte du produit affichée sur sa fiche."></textarea></label>
+          <label><span>Détails</span><textarea name="details" maxlength="4000" rows="4" placeholder="Un point par ligne : composition, origine, entretien..."></textarea></label>
+          <label><span>Images (une URL HTTPS par ligne, la première est la photo principale)</span><textarea name="images" maxlength="4000" rows="3" placeholder="https://..."></textarea></label>
+          <label><span>Couleurs disponibles (séparées par des virgules)</span><input name="colors" maxlength="400" placeholder="Rouge, Bleu, Noir" /></label>
           <label><span>Livraison</span><input name="delivery" maxlength="240" value="Livraison UAE avec suivi" /></label>
         </div>
         <footer><button type="button" class="btn-link" data-product-close>Annuler</button><button type="submit" class="btn-primary">Publier le produit</button></footer>
@@ -560,6 +563,14 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     }
   }
 
+  function linesToList(value, max) {
+    return String(value || '').split('\n').map(line => line.trim()).filter(Boolean).slice(0, max);
+  }
+
+  function csvToList(value, max) {
+    return String(value || '').split(',').map(item => item.trim()).filter(Boolean).slice(0, max);
+  }
+
   async function submitProduct(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -575,7 +586,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
         category: values.category,
         price: Number(values.price),
         stockOnHand: values.category === 'services' ? 0 : Number(values.stockOnHand),
-        image: values.image,
+        images: linesToList(values.images, 8),
+        description: values.description,
+        details: values.details,
+        colors: csvToList(values.colors, 12),
         delivery: values.delivery
       });
       form.reset();

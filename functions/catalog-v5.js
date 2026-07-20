@@ -21,6 +21,18 @@ function imageUrl(value) {
   catch { throw new HttpsError('invalid-argument', 'L’image doit utiliser une URL HTTPS valide.'); }
 }
 
+function imageUrls(value) {
+  const rows = Array.isArray(value) ? value : [];
+  const urls = rows.map(imageUrl).filter(Boolean).slice(0, 8);
+  return [...new Set(urls)];
+}
+
+function colorList(value) {
+  const rows = Array.isArray(value) ? value : [];
+  const colors = rows.map(row => clean(row, 40)).filter(Boolean).slice(0, 12);
+  return [...new Set(colors)];
+}
+
 function ensure(root, key) {
   if (!root[key] || typeof root[key] !== 'object') root[key] = {};
   return root[key];
@@ -61,6 +73,10 @@ function publicProduct(product, productId) {
     category: clean(product.category, 80),
     price: Number(product.price || 0),
     image: clean(product.image, 1000),
+    images: Array.isArray(product.images) ? product.images.slice(0, 8) : [],
+    description: clean(product.description, 2000),
+    details: clean(product.details, 4000),
+    colors: Array.isArray(product.colors) ? product.colors.slice(0, 12) : [],
     delivery: clean(product.delivery, 240),
     sellerName: clean(product.sellerName || product.brand, 160),
     source: clean(product.source || 'seller', 40),
@@ -93,6 +109,9 @@ exports.submitProduct = onCall(async request => {
     throw new HttpsError('invalid-argument', 'Stock physique initial invalide.');
   }
 
+  const rawImages = Array.isArray(data.images) && data.images.length ? data.images : (data.image ? [data.image] : []);
+  const images = imageUrls(rawImages);
+
   const productId = db.ref('products').push().key;
   const now = Date.now();
   const catalogProduct = profile.role === 'admin';
@@ -104,7 +123,11 @@ exports.submitProduct = onCall(async request => {
     brand: clean(data.brand || profile.businessName || profile.name || 'LAMYLENOISE', 160),
     category,
     price,
-    image: imageUrl(data.image),
+    image: images[0] || '',
+    images,
+    description: clean(data.description, 2000),
+    details: clean(data.details, 4000),
+    colors: colorList(data.colors),
     delivery: clean(data.delivery || 'Livraison UAE avec suivi', 240),
     sellerUid: catalogProduct ? 'catalog' : uid,
     sellerName: catalogProduct

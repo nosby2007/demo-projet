@@ -48,6 +48,9 @@
   function sanitizeProduct(id, product, status) {
     const safeProductId = safeId(id || product?.id);
     if (!safeProductId) return null;
+    const safeImages = Array.isArray(product?.images)
+      ? [...new Set(product.images.map(safeImageUrl).filter(Boolean))].slice(0, 8)
+      : [];
     const normalized = window.MarketplaceData.normalizeProduct({
       ...product,
       id: safeProductId,
@@ -57,7 +60,13 @@
       category: escapeHtml(product?.category, 80),
       delivery: escapeHtml(product?.delivery, 240),
       badge: escapeHtml(product?.badge, 40),
-      image: safeImageUrl(product?.image)
+      image: safeImageUrl(product?.image),
+      images: safeImages,
+      description: escapeHtml(product?.description, 2000),
+      details: escapeHtml(product?.details, 4000),
+      colors: Array.isArray(product?.colors)
+        ? [...new Set(product.colors.map(color => escapeHtml(color, 40)).filter(Boolean))].slice(0, 12)
+        : []
     }, safeProductId);
     normalized.status = status;
     normalized.tenantId = String(product?.tenantId || TENANT_ID).trim();
