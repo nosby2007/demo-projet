@@ -4,6 +4,17 @@
 (function sokivaBrandRuntime() {
   if (window.SokivaBrandRuntime) return;
 
+  function loadToastRuntime() {
+    if (document.querySelector('script[data-sokiva-toast-runtime]')) return;
+    const script = document.createElement('script');
+    script.src = 'toast-runtime.js';
+    script.defer = true;
+    script.dataset.sokivaToastRuntime = 'true';
+    document.head.appendChild(script);
+  }
+
+  loadToastRuntime();
+
   const replacements = [
     [/LAMYLENOISE/gi, 'SOKIVA'],
     [/AFROMARKET/gi, 'SOKIVA'],
