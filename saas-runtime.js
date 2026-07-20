@@ -139,6 +139,14 @@
     }
   };
 
+  function linesToList(value, max) {
+    return String(value || '').split('\n').map(line => line.trim()).filter(Boolean).slice(0, max);
+  }
+
+  function csvToList(value, max) {
+    return String(value || '').split(',').map(item => item.trim()).filter(Boolean).slice(0, max);
+  }
+
   MarketplaceData.saveProduct = async function submitProductForReview(product) {
     try {
       const response = await callable('submitProduct')({
@@ -149,7 +157,10 @@
         price: Number(product.price),
         category: product.category,
         stockAvailable: Number(product.stockAvailable || 0),
-        image: product.image,
+        images: linesToList(product.images, 8),
+        description: product.description,
+        details: product.details,
+        colors: csvToList(product.colors, 12),
         delivery: product.delivery
       });
       return response.data;
@@ -312,7 +323,10 @@
               <label class="form-field"><span>SKU</span><input name="sku" placeholder="BIS-001" /></label>
               <label class="form-field"><span>Catégorie</span><select name="category"><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="beaute">Beauté</option><option value="maison">Maison</option><option value="services">Services</option></select></label>
             </div>
-            <label class="form-field full"><span>Image URL</span><input name="image" placeholder="https://..." /></label>
+            <label class="form-field full"><span>Description</span><textarea name="description" rows="3" placeholder="Présentation courte du produit affichée sur sa fiche."></textarea></label>
+            <label class="form-field full"><span>Détails</span><textarea name="details" rows="4" placeholder="Un point par ligne : composition, origine, entretien..."></textarea></label>
+            <label class="form-field full"><span>Images (une URL HTTPS par ligne, la première est la photo principale)</span><textarea name="images" rows="3" placeholder="https://..."></textarea></label>
+            <label class="form-field full"><span>Couleurs disponibles (séparées par des virgules)</span><input name="colors" placeholder="Rouge, Bleu, Noir" /></label>
             <label class="form-field full"><span>Promesse livraison</span><input name="delivery" value="Livraison UAE avec suivi" /></label>
             <button class="btn-primary" type="submit"><i data-lucide="send"></i> Soumettre pour validation</button>
           </form>
