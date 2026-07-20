@@ -95,6 +95,25 @@ exports.approveRoleRequest = onCall(async request => {
     throw new HttpsError('invalid-argument', 'Demande ou rôle invalide.');
   }
 
+  const [adminGuardSnapshot, requestGuardSnapshot] = await Promise.all([
+    db.ref(`profiles/${adminUid}`).get(),
+    db.ref(`roleRequests/${requestId}`).get()
+  ]);
+  const adminGuard = adminGuardSnapshot.val();
+  const token = request.auth?.token || {};
+  const canApprove = adminGuard?.isSuperAdmin === true && token.isSuperAdmin === true
+    || adminGuard?.adminPermissions?.['*'] === true
+    || adminGuard?.adminPermissions?.['access.write'] === true;
+  if (!adminGuard || adminGuard.role !== 'admin' || adminGuard.status === 'disabled' || token.role !== 'admin' || !canApprove) {
+    throw new HttpsError('permission-denied', 'Permission de validation insuffisante.');
+  }
+  const guardedUid = clean(requestGuardSnapshot.val()?.requesterUid, 160);
+  if (!guardedUid) throw new HttpsError('failed-precondition', 'Le candidat ne possède pas de compte associé.');
+  const guardedUser = await getAuth().getUser(guardedUid);
+  if (guardedUser.disabled === true || guardedUser.emailVerified !== true) {
+    throw new HttpsError('failed-precondition', 'Le compte candidat doit être actif et son adresse email vérifiée.');
+  }
+
   let problem = null;
   let approved = null;
   const now = Date.now();

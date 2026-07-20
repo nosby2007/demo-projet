@@ -1,11 +1,13 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { PERMISSIONS, adminSummary, candidateSummary, maskEmail, normalizePermissions, permissionMap } = require('../admin-governance-core');
+const { PERMISSIONS, adminSummary, candidateSummary, governanceOverview, maskEmail, normalizePermissions, permissionMap } = require('../admin-governance-core');
 test('permission catalog includes every enterprise module', () => { for (const permission of ['dashboard.read','support.write','risk.write','system.write','campaign.write','delegatedAdmin.read','insights.generate']) assert.ok(PERMISSIONS.includes(permission)); });
 test('unknown and duplicate permissions are rejected deterministically', () => assert.deepEqual(normalizePermissions(['risk.read','bad','risk.read']), ['risk.read']));
 test('permission maps never grant wildcard or write unknown keys', () => assert.deepEqual(permissionMap(['*','support.read']), { 'support.read': true }));
 test('admin summaries mask identity and private governance reasons', () => { const row = adminSummary({ uid: 'u', email: 'person@example.com', role: 'admin', adminPermissions: { 'risk.read': true }, lastGovernanceReason: 'private' }); assert.equal(row.emailMasked, 'pe***@example.com'); assert.equal('lastGovernanceReason' in row, false); });
 test('candidate summaries expose eligibility without raw email', () => { const row = candidateSummary({ uid: 'u', email: 'person@example.com', role: 'customer', status: 'active' }, { emailVerified: true }); assert.equal(row.eligible, true); assert.equal(row.emailMasked, 'pe***@example.com'); assert.equal('email' in row, false); });
 test('unverified and disabled candidates cannot be promoted', () => { assert.equal(candidateSummary({ status: 'active' }, { emailVerified: false }).eligible, false); assert.equal(candidateSummary({ status: 'disabled' }, { emailVerified: true }).eligible, false); });
+test('disabled Auth users cannot be promoted even with an active profile', () => { const row = candidateSummary({ status: 'active' }, { emailVerified: true, disabled: true }); assert.equal(row.authDisabled, true); assert.equal(row.eligible, false); });
+test('governance overview exposes operational counts and actionable alerts', () => { const value = governanceOverview([{ status: 'active', claimsSyncStatus: 'failed' }], [{ role: 'seller', status: 'disabled', emailVerified: true }, { role: 'courier', status: 'pending_verification', emailVerified: false }]); assert.equal(value.totalProfiles, 3); assert.equal(value.sellerCount, 1); assert.equal(value.disabledCount, 1); assert.equal(value.pendingVerificationCount, 1); assert.deepEqual(value.alerts.map(row => row.code), ['claims_sync_failed','accounts_disabled','email_verification_pending']); });
 test('email masking tolerates absent values', () => assert.equal(maskEmail(''), ''));
