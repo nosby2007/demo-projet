@@ -11,10 +11,11 @@
       }
     },
     "roleRequests": {
-      ".read": "auth != null && root.child('profiles').child(auth.uid).child('role').val() == 'admin'",
-      ".indexOn": ["createdAt", "updatedAt", "status", "tenantId"],
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["createdAt", "updatedAt", "status", "tenantId", "requesterUid"],
       "$requestId": {
-        ".write": "auth != null && ((!data.exists() && auth.token.email_verified == true && newData.child('requesterUid').val() == auth.uid && newData.child('status').val() == 'pending') || root.child('profiles').child(auth.uid).child('role').val() == 'admin')",
+        ".write": false,
         ".validate": "newData.hasChildren(['type', 'name', 'email', 'phone', 'requesterUid', 'status']) && (newData.child('type').val() == 'seller' || newData.child('type').val() == 'courier')"
       }
     },

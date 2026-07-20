@@ -153,20 +153,25 @@ test('signed superadministrator can manage ordinary profiles but not mutate the 
   await assertFails(update(ref(ownerDb, 'profiles/owner-1'), { isSuperAdmin: false }));
 });
 
-test('verified user can submit a professional application linked to their account', async () => {
+test('verified user cannot write a professional application directly from the browser', async () => {
   const db = testEnv.authenticatedContext('customer-1', { email_verified: true }).database();
-  await assertSucceeds(set(ref(db, 'roleRequests/request-1'), {
+  await assertFails(set(ref(db, 'roleRequests/request-1'), {
     type: 'seller', name: 'Client Test', email: 'client@example.com',
     phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
   }));
 });
 
-test('unverified user cannot submit a professional application', async () => {
-  const db = testEnv.authenticatedContext('customer-1', { email_verified: false }).database();
-  await assertFails(set(ref(db, 'roleRequests/request-unverified'), {
+test('admin cannot write a professional application directly from the browser either', async () => {
+  const db = testEnv.authenticatedContext('admin-1').database();
+  await assertFails(set(ref(db, 'roleRequests/request-admin'), {
     type: 'courier', name: 'Client Test', email: 'client@example.com',
     phone: '+971500000000', requesterUid: 'customer-1', status: 'pending'
   }));
+});
+
+test('no browser client can read professional applications directly', async () => {
+  const db = testEnv.authenticatedContext('admin-1').database();
+  await assertFails(get(ref(db, 'roleRequests/request-1')));
 });
 
 test('customer cannot promote their own profile to seller', async () => {

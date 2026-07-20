@@ -30,6 +30,7 @@ const requiredFiles = [
   'tracking-runtime.js',
   'tracking.css',
   'role-sync-runtime.js',
+  'role-request-runtime.js',
   'firebase-functions-config.js',
   'style.css',
   'firebase.json',
@@ -86,6 +87,7 @@ const jsFiles = [
   'checkout-location-runtime.js',
   'tracking-runtime.js',
   'role-sync-runtime.js',
+  'role-request-runtime.js',
   'firebase-config.js',
   'firebase-functions-config.js',
   'service-worker.js',
@@ -112,7 +114,7 @@ const jsFiles = [
   'functions/test/tracking.rules.test.js'
 ];
 const esModuleFiles = ['scripts/deploy-safe.mjs'];
-const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html'];
+const securePages = ['checkout.html', 'customer.html', 'seller.html', 'courier.html', 'admin.html', 'request.html'];
 const identityPages = ['account.html', 'login.html', 'register.html'];
 const errors = [];
 
@@ -191,6 +193,8 @@ async function validateHtmlPages() {
   if (!account.includes('<script src="account-runtime.js"')) errors.push('account.html is missing Firebase-backed account runtime');
   const admin = await readFile('admin.html', 'utf8');
   if (!admin.includes('<script src="role-sync-runtime.js"')) errors.push('admin.html is missing Auth claims recovery runtime');
+  const requestPage = await readFile('request.html', 'utf8');
+  if (!requestPage.includes('<script src="role-request-runtime.js"')) errors.push('request.html is missing the trusted role request runtime');
 }
 
 async function validateFirebaseConfig() {
@@ -205,9 +209,10 @@ async function validateFirebaseConfig() {
 
 async function validateDatabaseRules() {
   const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
-  for (const path of ['products', 'accountCarts', 'checkoutReservations', 'checkoutIdempotency', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
+  for (const path of ['products', 'accountCarts', 'checkoutReservations', 'checkoutIdempotency', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings', 'roleRequests']) {
     if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
   }
+  if (rules.roleRequests?.['.read'] !== false) errors.push('roleRequests must reject direct browser reads');
   if (rules.products?.['.read'] !== false) errors.push('internal products must reject browser reads');
   if (rules.publicCatalog?.['$tenantId']?.['.read'] !== true) errors.push('tenant public catalogue path must be browser-readable');
   if (rules.publicCatalog?.['$tenantId']?.['.write'] !== false) errors.push('tenant public catalogue path must reject browser writes');
@@ -279,7 +284,15 @@ async function validateEmploymentBackend() {
 
   if (!approval.includes("roleRequest.status !== 'pending'")) errors.push('Role approval must require a pending application');
   if (!approval.includes('exports.resyncRoleClaims')) errors.push('Role claims synchronization must have a recovery callable');
+  if (!approval.includes('exports.submitRoleRequestEnterprise')) errors.push('Role applications must be submitted through a trusted callable');
+  if (!approval.includes('exports.getMyRoleRequestsEnterprise')) errors.push('Candidates must have a trusted callable to track their own application');
   if (!roleRuntime.includes('data-resync-claims')) errors.push('Admin UI must expose claims resynchronization');
+  const roleRequestRuntime = await readFile('role-request-runtime.js', 'utf8');
+  if (!roleRequestRuntime.includes("callable('submitRoleRequestEnterprise')")) errors.push('Role request runtime must submit through the trusted callable');
+  if (!roleRequestRuntime.includes("callable('getMyRoleRequestsEnterprise')")) errors.push('Role request runtime must track applications through the trusted callable');
+  if (/\.ref\s*\(/.test(roleRequestRuntime) || roleRequestRuntime.includes('firebase.database')) {
+    errors.push('role-request-runtime.js must not read or write Realtime Database paths directly.');
+  }
 
   if (!main.includes('...marketplace') || !main.includes('...checkout') || !main.includes('...catalog') || !main.includes('...roleApproval')) {
     errors.push('Deployed Functions must compose marketplace, checkout, catalogue and role approval modules');

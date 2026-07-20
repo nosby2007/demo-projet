@@ -231,7 +231,7 @@ exports.rejectRoleRequest = onCall({
       problem = new HttpsError('permission-denied', 'Candidature rattachee a une autre organisation.');
       return;
     }
-    if ((current.status || 'pending') !== 'pending') {
+    if (!roleApproval.roleRequestConstants.AWAITING_DECISION_STATUSES.includes(current.status || 'pending')) {
       problem = new HttpsError('failed-precondition', 'Seule une candidature en attente peut etre refusee.');
       return;
     }
@@ -243,7 +243,8 @@ exports.rejectRoleRequest = onCall({
       rejectedAt: now,
       updatedAt: now,
       claimsSyncStatus: null,
-      claimsSyncError: null
+      claimsSyncError: null,
+      history: roleApproval.appendRoleRequestHistory(current.history, { status: 'rejected', at: now, by: admin.uid, note: reason })
     };
   }, undefined, false);
 
@@ -251,6 +252,97 @@ exports.rejectRoleRequest = onCall({
     throw problem || new HttpsError('aborted', 'La candidature n a pas pu etre refusee.');
   }
   return { requestId, status: 'rejected', rejectedAt: now };
+});
+
+exports.markRoleRequestUnderReviewEnterprise = onCall({
+  region: REGION,
+  maxInstances: 10,
+  timeoutSeconds: 30,
+  memory: '256MiB'
+}, async request => {
+  const admin = await requireAdmin(request, 'access.write');
+  const tenantId = assertTenant(request.data?.tenantId, admin.tenantId);
+  const requestId = clean(request.data?.requestId, 160);
+  if (!requestId) throw new HttpsError('invalid-argument', 'Candidature manquante.');
+
+  let problem = null;
+  const now = Date.now();
+  const transaction = await db.ref(`roleRequests/${requestId}`).transaction(current => {
+    problem = null;
+    if (!current) {
+      problem = new HttpsError('not-found', 'Candidature introuvable.');
+      return;
+    }
+    const currentTenant = clean(current.tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
+    if (currentTenant !== tenantId) {
+      problem = new HttpsError('permission-denied', 'Candidature rattachee a une autre organisation.');
+      return;
+    }
+    if (!['pending', 'submitted'].includes(current.status || 'pending')) {
+      problem = new HttpsError('failed-precondition', 'Seule une candidature soumise peut passer en revue.');
+      return;
+    }
+    return {
+      ...current,
+      status: 'under_review',
+      reviewStartedBy: admin.uid,
+      reviewStartedAt: now,
+      updatedAt: now,
+      history: roleApproval.appendRoleRequestHistory(current.history, { status: 'under_review', at: now, by: admin.uid })
+    };
+  }, undefined, false);
+
+  if (!transaction.committed) {
+    throw problem || new HttpsError('aborted', 'Le statut n a pas pu etre mis a jour.');
+  }
+  return { requestId, status: 'under_review' };
+});
+
+exports.requestRoleRequestChangesEnterprise = onCall({
+  region: REGION,
+  maxInstances: 10,
+  timeoutSeconds: 30,
+  memory: '256MiB'
+}, async request => {
+  const admin = await requireAdmin(request, 'access.write');
+  const tenantId = assertTenant(request.data?.tenantId, admin.tenantId);
+  const requestId = clean(request.data?.requestId, 160);
+  const reason = clean(request.data?.reason, 300);
+  if (!requestId) throw new HttpsError('invalid-argument', 'Candidature manquante.');
+  if (reason.length < 3) throw new HttpsError('invalid-argument', 'Indiquez les corrections attendues.');
+
+  let problem = null;
+  const now = Date.now();
+  const transaction = await db.ref(`roleRequests/${requestId}`).transaction(current => {
+    problem = null;
+    if (!current) {
+      problem = new HttpsError('not-found', 'Candidature introuvable.');
+      return;
+    }
+    const currentTenant = clean(current.tenantId || DEFAULT_TENANT, 80) || DEFAULT_TENANT;
+    if (currentTenant !== tenantId) {
+      problem = new HttpsError('permission-denied', 'Candidature rattachee a une autre organisation.');
+      return;
+    }
+    if (!roleApproval.roleRequestConstants.AWAITING_DECISION_STATUSES.includes(current.status || 'pending')) {
+      problem = new HttpsError('failed-precondition', 'Seule une candidature en cours peut necessiter des corrections.');
+      return;
+    }
+    return {
+      ...current,
+      status: 'needs_changes',
+      changesRequestedReason: reason,
+      changesRequestedBy: admin.uid,
+      changesRequestedAt: now,
+      updatedAt: now,
+      history: roleApproval.appendRoleRequestHistory(current.history, { status: 'needs_changes', at: now, by: admin.uid, note: reason })
+    };
+  }, undefined, false);
+
+  if (!transaction.committed) {
+    throw problem || new HttpsError('aborted', 'La demande de correction n a pas pu etre enregistree.');
+  }
+  return { requestId, status: 'needs_changes' };
 });
 
 exports.getAdminReconciliation = onCall({ region: REGION, maxInstances: 10, timeoutSeconds: 30 }, async request => {
