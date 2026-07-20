@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { PERMISSIONS, adminSummary, candidateSummary, governanceOverview, maskEmail, normalizePermissions, permissionMap } = require('../admin-governance-core');
-test('permission catalog includes every enterprise module', () => { for (const permission of ['dashboard.read','support.write','risk.write','system.write','campaign.write','delegatedAdmin.read','insights.generate']) assert.ok(PERMISSIONS.includes(permission)); });
+test('permission catalog includes every enterprise module', () => { for (const permission of ['dashboard.read','catalog.write','support.write','risk.write','system.write','campaign.write','delegatedAdmin.read','insights.generate']) assert.ok(PERMISSIONS.includes(permission)); });
 test('unknown and duplicate permissions are rejected deterministically', () => assert.deepEqual(normalizePermissions(['risk.read','bad','risk.read']), ['risk.read']));
 test('permission maps never grant wildcard or write unknown keys', () => assert.deepEqual(permissionMap(['*','support.read']), { 'support.read': true }));
 test('admin summaries mask identity and private governance reasons', () => { const row = adminSummary({ uid: 'u', email: 'person@example.com', role: 'admin', adminPermissions: { 'risk.read': true }, lastGovernanceReason: 'private' }); assert.equal(row.emailMasked, 'pe***@example.com'); assert.equal('lastGovernanceReason' in row, false); });
