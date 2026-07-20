@@ -1,6 +1,6 @@
 'use strict';
 
-const PERMISSIONS = Object.freeze(['dashboard.read','access.read','access.write','orders.write','finance.read','finance.write','analytics.write','audit.read','support.read','support.write','risk.read','risk.write','system.read','system.write','campaign.read','campaign.write','delegatedAdmin.read','insights.generate']);
+const PERMISSIONS = Object.freeze(['dashboard.read','access.read','access.write','orders.write','catalog.write','finance.read','finance.write','analytics.write','audit.read','support.read','support.write','risk.read','risk.write','system.read','system.write','campaign.read','campaign.write','delegatedAdmin.read','insights.generate']);
 const SET = new Set(PERMISSIONS);
 function clean(value, max = 160) { return String(value ?? '').trim().slice(0, max); }
 function normalizePermissions(values = []) { return [...new Set(Array.isArray(values) ? values : [])].map(v => clean(v, 80)).filter(v => SET.has(v)).sort(); }
