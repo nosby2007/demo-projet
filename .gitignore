@@ -2,3 +2,4 @@
 .gcloud/
 *service-account*.json
 firebase-adminsdk-*.json
+.env.local
