@@ -8,7 +8,7 @@ const { toCents, fromCents } = require('./commerce');
 if (!getApps().length) initializeApp();
 const db = getDatabase();
 const DEFAULT_TENANT = 'lamylenoise';
-const ALLOWED_CATEGORIES = new Set(['epicerie', 'boissons', 'beaute', 'maison', 'services']);
+const ALLOWED_CATEGORIES = new Set(['epicerie', 'boissons', 'epices', 'mode', 'beaute', 'cuisine', 'snacks', 'maison', 'services']);
 
 function clean(value, max = 200) {
   return String(value || '').trim().slice(0, max);
