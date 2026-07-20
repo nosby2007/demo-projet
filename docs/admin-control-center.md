@@ -150,3 +150,17 @@ Phase 9 adds privacy-safe Operational Intelligence:
 5. Human approval is forced on every recommendation, regardless of model output.
 6. A deterministic fallback remains available when the model service is unavailable.
 7. Generation is audited without storing prompts, model prose or personal data.
+
+## Phase 10
+
+Phase 10 completes owner-controlled account and operational governance:
+
+1. Governance inventories customers, sellers, couriers and administrators with masked identities and bounded tenant-scoped results.
+2. The owner can block or restore a non-admin account; the backend synchronizes both the profile status and Firebase Authentication disabled state.
+3. Seller and courier roles can be revoked to customer without deleting the account or historical records.
+4. Professional approvals require an active Firebase Authentication user, a verified email, an admin token and explicit `access.write` permission.
+5. Admin promotion requires a verified, active Auth user and profile; disabled Auth users never become eligible.
+6. Every sensitive decision requires a reason, records actor and timestamp, synchronizes claims and produces a privacy-safe audit event.
+7. Indicators expose role totals, blocked accounts, pending verification and claims synchronization failures with actionable alerts.
+8. Seller, courier and order workflows remain connected to Access, Marketplace, Orders, Finance, Audit, Risk and System Health.
+9. The safe deployment launcher executes Firebase CLI through Node for Windows, Git Bash and Linux portability.
