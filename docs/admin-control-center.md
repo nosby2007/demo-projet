@@ -136,6 +136,8 @@ Phase 8 adds owner-controlled Delegated Admin Governance:
 5. Profile state changes precede Auth claim synchronization so partially synchronized promotions never gain access.
 6. Every governance action requires a reason and creates an administrator-attributed, privacy-safe audit event.
 7. `delegatedAdmin.read` is available for delegated permission catalogs, while all governance mutations remain owner-only.
+8. The governance workspace lists same-tenant non-admin profiles, reconciles verified pending profiles, supports masked search and promotes directly without manual UID entry.
+9. Promotion is rejected server-side unless Firebase Authentication confirms the target email is verified.
 
 ## Phase 9
 
