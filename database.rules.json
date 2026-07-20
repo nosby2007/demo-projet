@@ -49,6 +49,15 @@
       ".write": false,
       ".indexOn": ["expiresAt", "tenantId", "customerUid"]
     },
+    "accountCarts": {
+      ".read": false,
+      ".write": false,
+      "$tenantId": {
+        "$uid": {
+          ".indexOn": ["updatedAt", "revision"]
+        }
+      }
+    },
     "checkoutIdempotency": {
       ".read": false,
       ".write": false
