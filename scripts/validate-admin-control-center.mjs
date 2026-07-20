@@ -50,6 +50,9 @@ for (const [name, source] of [
   try { new vm.Script(source, { filename: name }); }
   catch (error) { errors.push(`Invalid JavaScript in ${name}: ${error.message}`); }
 }
+for (const invariant of ['data-product-create', 'enterprise-admin-product-form', "callable('submitProduct')", 'catalog.write']) {
+  requireText(adminRuntime, invariant, `Admin catalogue creation invariant missing: ${invariant}`);
+}
 
 for (const invariant of [
   'getAdminCommandCenter',
@@ -151,6 +154,7 @@ for (const invariant of [
   '.enterprise-admin-kpi-grid',
   '.enterprise-admin-layout',
   '.enterprise-admin-dialog',
+  '.enterprise-admin-product-form',
   '@media (max-width: 760px)'
 ]) {
   requireText(adminCss, invariant, `Admin responsive design invariant missing: ${invariant}`);

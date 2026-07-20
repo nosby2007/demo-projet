@@ -253,6 +253,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
 
   function panelMarketplace(data) {
     const roles = data.marketplace.profileRoleCounts || {};
+    const canWriteCatalog = data.viewer.permissions.includes('*') || data.viewer.permissions.includes('catalog.write');
     return `
       <section class="enterprise-admin-panel" data-enterprise-panel="marketplace">
         <div class="enterprise-admin-grid four enterprise-admin-role-grid">
@@ -260,7 +261,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
         </div>
         <div class="enterprise-admin-grid two">
           <article class="enterprise-admin-card">
-            <header><div><span>Moderation</span><h3>Produits a verifier</h3></div><small>${data.marketplace.pendingProductCount}</small></header>
+            <header><div><span>Catalogue</span><h3>Produits et modération</h3></div>${canWriteCatalog ? `<button class="btn-primary" type="button" data-product-create>${icon('plus')} Ajouter un produit</button>` : `<small>${data.marketplace.pendingProductCount}</small>`}</header>
             <div class="enterprise-admin-list">${data.marketplace.pendingProducts.map(product => productRow(product, 'Validation requise')).join('') || emptyState('badge-check', 'Aucun produit en attente', 'La file de moderation est a jour.')}</div>
           </article>
           <article class="enterprise-admin-card">
@@ -343,6 +344,23 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
       </dialog>`;
   }
 
+  function productDialog() {
+    return `<dialog class="enterprise-admin-dialog" id="enterprise-admin-product-dialog">
+      <form id="enterprise-admin-product-form">
+        <header><div><span>Catalogue SOKIVA</span><h3>Ajouter un produit</h3></div><button type="button" class="enterprise-admin-dialog-close" data-product-close aria-label="Fermer">${icon('x')}</button></header>
+        <div class="enterprise-admin-product-form">
+          <label><span>Nom du produit</span><input name="name" maxlength="240" required /></label>
+          <div class="enterprise-admin-form-grid"><label><span>SKU</span><input name="sku" maxlength="100" /></label><label><span>Marque</span><input name="brand" maxlength="160" value="SOKIVA" required /></label></div>
+          <div class="enterprise-admin-form-grid"><label><span>Catégorie</span><select name="category" required><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="beaute">Beauté</option><option value="maison">Maison</option><option value="services">Services</option></select></label><label><span>Prix (AED)</span><input name="price" type="number" min="0.01" max="1000000" step="0.01" required /></label></div>
+          <label data-product-stock><span>Stock physique initial</span><input name="stockOnHand" type="number" min="0" max="100000" step="1" value="0" required /></label>
+          <label><span>URL HTTPS de l’image</span><input name="image" type="url" maxlength="1000" placeholder="https://..." /></label>
+          <label><span>Livraison</span><input name="delivery" maxlength="240" value="Livraison UAE avec suivi" /></label>
+        </div>
+        <footer><button type="button" class="btn-link" data-product-close>Annuler</button><button type="submit" class="btn-primary">Publier le produit</button></footer>
+      </form>
+    </dialog>`;
+  }
+
   function renderDashboard(data) {
     state.data = data;
     const target = root();
@@ -395,6 +413,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
           </main>
         </div>
         ${decisionDialog()}
+        ${productDialog()}
       </div>`;
     bindEvents(target);
     setActiveTab(state.activeTab);
@@ -487,6 +506,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     target.querySelectorAll('[data-role-approve]').forEach(button => button.addEventListener('click', () => openDecision('approve', button.dataset.roleApprove, button.dataset.roleType)));
     target.querySelectorAll('[data-role-reject]').forEach(button => button.addEventListener('click', () => openDecision('reject', button.dataset.roleReject)));
     target.querySelectorAll('[data-order-action]').forEach(button => button.addEventListener('click', () => openOrderDecision(button.dataset.orderAction, button.dataset.orderId)));
+    target.querySelector('[data-product-create]')?.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.showModal());
+    target.querySelectorAll('[data-product-close]').forEach(button => button.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.close()));
+    target.querySelector('#enterprise-admin-product-form')?.addEventListener('submit', submitProduct);
+    target.querySelector('#enterprise-admin-product-form select[name="category"]')?.addEventListener('change', event => { const stock = target.querySelector('[data-product-stock]'); if (stock) stock.hidden = event.currentTarget.value === 'services'; });
     target.querySelectorAll('[data-dialog-close]').forEach(button => button.addEventListener('click', closeDecision));
     target.querySelector('#enterprise-admin-decision-form')?.addEventListener('submit', submitDecision);
     target.querySelector('#enterprise-admin-settlement-form')?.addEventListener('submit', submitSettlement);
@@ -502,6 +525,34 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     } catch (error) {
       event.currentTarget.disabled = false;
       notify(messageFrom(error, 'Initialisation des tendances impossible.'), 'error', 'alert-circle');
+    }
+  }
+
+  async function submitProduct(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submit = form.querySelector('button[type="submit"]');
+    const values = Object.fromEntries(new FormData(form).entries());
+    submit.disabled = true;
+    try {
+      const response = await callable('submitProduct')({
+        tenantId: TENANT_ID,
+        name: values.name,
+        sku: values.sku,
+        brand: values.brand,
+        category: values.category,
+        price: Number(values.price),
+        stockOnHand: values.category === 'services' ? 0 : Number(values.stockOnHand),
+        image: values.image,
+        delivery: values.delivery
+      });
+      form.reset();
+      document.getElementById('enterprise-admin-product-dialog')?.close();
+      notify(`Produit ${response.data.productId} publié dans la boutique.`, 'success', 'package-plus');
+      await loadDashboard();
+    } catch (error) {
+      submit.disabled = false;
+      notify(messageFrom(error, 'Le produit n a pas pu être créé.'), 'error', 'alert-circle');
     }
   }
 

@@ -164,6 +164,7 @@ Phase 10 completes owner-controlled account and operational governance:
 7. Indicators expose role totals, blocked accounts, pending verification and claims synchronization failures with actionable alerts.
 8. Seller, courier and order workflows remain connected to Access, Marketplace, Orders, Finance, Audit, Risk and System Health.
 9. The safe deployment launcher executes Firebase CLI through Node for Windows, Git Bash and Linux portability.
+10. Marketplace exposes an owner/delegated `catalog.write` product form; admin catalogue products are validated server-side and published immediately to the public tenant catalogue.
 
 ## Phase 11
 

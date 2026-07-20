@@ -8,9 +8,17 @@ const { toCents, fromCents } = require('./commerce');
 if (!getApps().length) initializeApp();
 const db = getDatabase();
 const DEFAULT_TENANT = 'lamylenoise';
+const ALLOWED_CATEGORIES = new Set(['epicerie', 'boissons', 'beaute', 'maison', 'services']);
 
 function clean(value, max = 200) {
   return String(value || '').trim().slice(0, max);
+}
+
+function imageUrl(value) {
+  const raw = clean(value, 1000);
+  if (!raw) return '';
+  try { const parsed = new URL(raw); if (parsed.protocol !== 'https:') throw new Error('protocol'); return parsed.href.slice(0, 1000); }
+  catch { throw new HttpsError('invalid-argument', 'L’image doit utiliser une URL HTTPS valide.'); }
 }
 
 function ensure(root, key) {
@@ -26,7 +34,14 @@ async function requireRole(request, roles) {
   if (!profile || !roles.includes(profile.role) || profile.status === 'disabled') {
     throw new HttpsError('permission-denied', 'Rôle ou compte non autorisé.');
   }
-  return { uid, profile };
+  return { uid, profile, token: request.auth?.token || {} };
+}
+
+function requireCatalogAdmin(profile, token) {
+  if (profile.role !== 'admin') return;
+  const owner = profile.isSuperAdmin === true && token.isSuperAdmin === true;
+  const allowed = profile.adminPermissions?.['catalog.write'] === true || profile.adminPermissions?.['*'] === true;
+  if (!owner && !allowed) throw new HttpsError('permission-denied', 'Permission catalogue insuffisante.');
 }
 
 function tenantFor(profile, requestedTenant) {
@@ -57,7 +72,8 @@ function publicProduct(product, productId) {
 }
 
 exports.submitProduct = onCall(async request => {
-  const { uid, profile } = await requireRole(request, ['seller', 'admin']);
+  const { uid, profile, token } = await requireRole(request, ['seller', 'admin']);
+  requireCatalogAdmin(profile, token);
   const data = request.data || {};
   const tenantId = tenantFor(profile, data.tenantId);
   const name = clean(data.name, 240);
@@ -72,7 +88,7 @@ exports.submitProduct = onCall(async request => {
   const stockOnHand = inventoryTracked
     ? Number.parseInt(data.stockOnHand ?? data.stockAvailable, 10)
     : 0;
-  if (!name || !category || price <= 0) throw new HttpsError('invalid-argument', 'Produit incomplet.');
+  if (!name || !ALLOWED_CATEGORIES.has(category) || price <= 0) throw new HttpsError('invalid-argument', 'Produit ou catégorie invalide.');
   if (inventoryTracked && (!Number.isInteger(stockOnHand) || stockOnHand < 0 || stockOnHand > 100000)) {
     throw new HttpsError('invalid-argument', 'Stock physique initial invalide.');
   }
@@ -88,13 +104,14 @@ exports.submitProduct = onCall(async request => {
     brand: clean(data.brand || profile.businessName || profile.name || 'LAMYLENOISE', 160),
     category,
     price,
-    image: clean(data.image, 1000),
+    image: imageUrl(data.image),
     delivery: clean(data.delivery || 'Livraison UAE avec suivi', 240),
     sellerUid: catalogProduct ? 'catalog' : uid,
     sellerName: catalogProduct
       ? clean(data.brand || 'LAMYLENOISE', 160)
       : clean(profile.businessName || profile.name || data.brand, 160),
     source: catalogProduct ? 'catalog' : 'seller',
+    createdBy: uid,
     inventoryTracked,
     stockAvailable: stockOnHand,
     stockReserved: 0,
@@ -113,7 +130,8 @@ exports.submitProduct = onCall(async request => {
 });
 
 exports.reviewProduct = onCall(async request => {
-  const { uid, profile } = await requireRole(request, ['admin']);
+  const { uid, profile, token } = await requireRole(request, ['admin']);
+  requireCatalogAdmin(profile, token);
   const tenantId = tenantFor(profile, request.data?.tenantId);
   const productId = clean(request.data?.productId, 160);
   const decision = clean(request.data?.decision, 20);
@@ -162,7 +180,8 @@ exports.reviewProduct = onCall(async request => {
 });
 
 exports.updateInventory = onCall(async request => {
-  const { uid, profile } = await requireRole(request, ['seller', 'admin']);
+  const { uid, profile, token } = await requireRole(request, ['seller', 'admin']);
+  requireCatalogAdmin(profile, token);
   const tenantId = tenantFor(profile, request.data?.tenantId);
   const productId = clean(request.data?.productId, 160);
   const stockOnHand = Number.parseInt(request.data?.stockOnHand ?? request.data?.stockAvailable, 10);
@@ -215,7 +234,8 @@ exports.updateInventory = onCall(async request => {
 });
 
 exports.seedCatalogProducts = onCall(async request => {
-  const { profile } = await requireRole(request, ['admin']);
+  const { profile, token } = await requireRole(request, ['admin']);
+  requireCatalogAdmin(profile, token);
   const tenantId = tenantFor(profile, request.data?.tenantId);
   const products = Array.isArray(request.data?.products) ? request.data.products.slice(0, 1000) : [];
   if (!products.length) throw new HttpsError('invalid-argument', 'Catalogue vide.');
@@ -245,7 +265,8 @@ exports.seedCatalogProducts = onCall(async request => {
 });
 
 exports.rebuildPublicCatalog = onCall(async request => {
-  const { profile } = await requireRole(request, ['admin']);
+  const { profile, token } = await requireRole(request, ['admin']);
+  requireCatalogAdmin(profile, token);
   const tenantId = tenantFor(profile, request.data?.tenantId);
   const snapshot = await db.ref('products').orderByChild('tenantId').equalTo(tenantId).get();
   const products = snapshot.val() || {};

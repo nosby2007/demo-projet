@@ -106,6 +106,10 @@
 .enterprise-admin-reason { display: grid; gap: 7px; }
 .enterprise-admin-reason span { color: #334155; font-weight: 700; font-size: .86rem; }
 .enterprise-admin-reason textarea { width: 100%; resize: vertical; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font: inherit; }
+.enterprise-admin-product-form { display: grid; gap: 14px; margin-top: 18px; }
+.enterprise-admin-product-form label { display: grid; gap: 7px; color: #334155; font-size: .86rem; font-weight: 700; }
+.enterprise-admin-product-form input, .enterprise-admin-product-form select { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 11px; background: #fff; color: #0f172a; font: inherit; }
+.enterprise-admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .enterprise-admin-payment-row { cursor: pointer; }
 .enterprise-admin-payment-row input { width: 18px; height: 18px; accent-color: var(--enterprise-accent); }
 .enterprise-admin-payment-row .enterprise-admin-record-main { display: grid; gap: 5px; }
@@ -139,4 +143,5 @@
   .enterprise-admin-record-money { min-width: 0; text-align: left; }
   .enterprise-admin-finance-split { grid-template-columns: 1fr; }
   .enterprise-admin-definition-list div { grid-template-columns: 1fr; gap: 4px; }
+  .enterprise-admin-form-grid { grid-template-columns: 1fr; }
 }
