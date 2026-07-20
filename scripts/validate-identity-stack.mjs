@@ -280,7 +280,7 @@ for (const asset of ['/app-core.js', '/brand-runtime.js', '/identity-runtime.js'
   requireText(serviceWorker, `'${asset}'`, `PWA shell must cache ${asset}.`);
 }
 
-if (!/CACHE_VERSION = 'sokiva-v2\.[2-9]\.[0-9]+'/.test(serviceWorker)) {
+if (!/CACHE_VERSION = 'sokiva-v2\.(?:[2-9]|[1-9][0-9]+)\.[0-9]+'/.test(serviceWorker)) {
   errors.push('Enterprise phase 2 must preserve or advance the restored storefront PWA cache.');
 }
 
