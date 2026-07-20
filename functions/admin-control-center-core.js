@@ -76,11 +76,15 @@ function roleRequestSummary(row) {
     phone: clean(row.phone, 40),
     city: clean(row.city, 100),
     vehicle: clean(row.vehicle, 100),
+    message: clean(row.message, 1000),
     requesterUid: clean(row.requesterUid, 160),
     createdAt: finite(row.createdAt),
     updatedAt: finite(row.updatedAt || row.createdAt),
     claimsSyncStatus: clean(row.claimsSyncStatus, 40),
-    claimsSyncError: clean(row.claimsSyncError, 240)
+    claimsSyncError: clean(row.claimsSyncError, 240),
+    rejectionReason: row.rejectionReason ? clean(row.rejectionReason, 300) : '',
+    changesRequestedReason: row.changesRequestedReason ? clean(row.changesRequestedReason, 300) : '',
+    history: Array.isArray(row.history) ? row.history.slice(-8) : []
   };
 }
 

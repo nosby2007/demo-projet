@@ -57,7 +57,8 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
 
   function statusLabel(value) {
     return {
-      pending: 'En attente', approved: 'Approuvee', rejected: 'Rejetee',
+      pending: 'En attente', submitted: 'Soumise', under_review: 'En revue', needs_changes: 'Corrections demandees',
+      approved: 'Approuvee', rejected: 'Rejetee',
       pending_review: 'A verifier', active: 'Actif', disabled: 'Desactive',
       confirmed: 'Confirmee', preparing: 'En preparation', ready_for_pickup: 'Prete au retrait',
       in_transit: 'En livraison', delivered: 'Livree', cancelled: 'Annulee', refunded: 'Remboursee',
@@ -136,7 +137,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
   }
 
   function roleRequestRow(request) {
-    const canDecide = request.status === 'pending';
+    const awaitingDecision = ['pending', 'submitted', 'under_review', 'needs_changes'].includes(request.status);
+    const canStartReview = ['pending', 'submitted'].includes(request.status);
+    const canRequestChanges = ['pending', 'submitted', 'under_review'].includes(request.status);
+    const reason = request.status === 'needs_changes' ? request.changesRequestedReason : (request.status === 'rejected' ? request.rejectionReason : '');
     return `
       <article class="enterprise-admin-record">
         <div class="enterprise-admin-record-main">
@@ -146,10 +150,13 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
           </div>
           <p>${escape(request.type)} · ${escape(request.city || 'Ville non renseignee')}</p>
           <small>${escape(request.email || '')}${request.phone ? ` · ${escape(request.phone)}` : ''} · ${escape(dateTime(request.createdAt))}</small>
+          ${reason ? `<em class="enterprise-admin-inline-error">${escape(reason)}</em>` : ''}
           ${request.claimsSyncStatus === 'failed' ? `<em class="enterprise-admin-inline-error">Synchronisation des droits en echec: ${escape(request.claimsSyncError)}</em>` : ''}
         </div>
-        ${canDecide ? `<div class="enterprise-admin-record-actions">
+        ${awaitingDecision ? `<div class="enterprise-admin-record-actions">
           <button class="btn-link" type="button" data-role-approve="${escape(request.id)}" data-role-type="${escape(request.type)}">Approuver</button>
+          ${canStartReview ? `<button class="btn-link" type="button" data-role-review="${escape(request.id)}">Mettre en revue</button>` : ''}
+          ${canRequestChanges ? `<button class="btn-link" type="button" data-role-changes="${escape(request.id)}">Demander une correction</button>` : ''}
           <button class="btn-link danger" type="button" data-role-reject="${escape(request.id)}">Rejeter</button>
         </div>` : ''}
       </article>`;
@@ -438,15 +445,32 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     const record = state.data?.access?.recentRequests?.find(item => item.id === requestId);
     if (!dialog || !record) return;
     state.decision = { type, requestId, roleType };
-    const isReject = type === 'reject';
-    title.textContent = isReject ? 'Rejeter la candidature' : 'Approuver la candidature';
-    copy.textContent = isReject
-      ? `Le refus de ${record.businessName || record.name || 'cette candidature'} sera journalise.`
-      : `Le compte existant recevra le role ${roleType}. Les claims Firebase seront synchronises par le backend.`;
-    reasonField.hidden = !isReject;
-    reason.required = isReject;
+    const name = record.businessName || record.name || 'cette candidature';
+    const needsReason = type === 'reject' || type === 'changes';
+    const copyByType = {
+      reject: `Le refus de ${name} sera journalise.`,
+      changes: `Les corrections demandees pour ${name} seront envoyees au candidat.`,
+      review: `${name} passera en revue active.`,
+      approve: `Le compte existant recevra le role ${roleType}. Les claims Firebase seront synchronises par le backend.`
+    };
+    const titleByType = {
+      reject: 'Rejeter la candidature',
+      changes: 'Demander une correction',
+      review: 'Mettre en revue',
+      approve: 'Approuver la candidature'
+    };
+    const submitByType = {
+      reject: 'Confirmer le refus',
+      changes: 'Envoyer la demande de correction',
+      review: 'Confirmer la mise en revue',
+      approve: 'Confirmer l approbation'
+    };
+    title.textContent = titleByType[type] || titleByType.approve;
+    copy.textContent = copyByType[type] || copyByType.approve;
+    reasonField.hidden = !needsReason;
+    reason.required = needsReason;
     reason.value = '';
-    submit.textContent = isReject ? 'Confirmer le refus' : 'Confirmer l approbation';
+    submit.textContent = submitByType[type] || submitByType.approve;
     dialog.showModal();
   }
 
@@ -487,6 +511,12 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
       } else if (decision.type === 'approve') {
         await callable('approveRoleRequestEnterprise')({ tenantId: TENANT_ID, requestId: decision.requestId, role: decision.roleType });
         notify('Candidature approuvee et droits synchronises.', 'success', 'badge-check');
+      } else if (decision.type === 'review') {
+        await callable('markRoleRequestUnderReviewEnterprise')({ tenantId: TENANT_ID, requestId: decision.requestId });
+        notify('Candidature mise en revue.', 'success', 'search-check');
+      } else if (decision.type === 'changes') {
+        await callable('requestRoleRequestChangesEnterprise')({ tenantId: TENANT_ID, requestId: decision.requestId, reason });
+        notify('Demande de correction envoyee au candidat.', 'success', 'edit-3');
       } else {
         await callable('rejectRoleRequest')({ tenantId: TENANT_ID, requestId: decision.requestId, reason });
         notify('Candidature refusee et decision auditee.', 'success', 'shield-x');
@@ -505,6 +535,8 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     target.querySelectorAll('[data-enterprise-tab-target]').forEach(button => button.addEventListener('click', () => setActiveTab(button.dataset.enterpriseTabTarget)));
     target.querySelectorAll('[data-role-approve]').forEach(button => button.addEventListener('click', () => openDecision('approve', button.dataset.roleApprove, button.dataset.roleType)));
     target.querySelectorAll('[data-role-reject]').forEach(button => button.addEventListener('click', () => openDecision('reject', button.dataset.roleReject)));
+    target.querySelectorAll('[data-role-review]').forEach(button => button.addEventListener('click', () => openDecision('review', button.dataset.roleReview)));
+    target.querySelectorAll('[data-role-changes]').forEach(button => button.addEventListener('click', () => openDecision('changes', button.dataset.roleChanges)));
     target.querySelectorAll('[data-order-action]').forEach(button => button.addEventListener('click', () => openOrderDecision(button.dataset.orderAction, button.dataset.orderId)));
     target.querySelector('[data-product-create]')?.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.showModal());
     target.querySelectorAll('[data-product-close]').forEach(button => button.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.close()));

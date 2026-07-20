@@ -10,6 +10,7 @@ const requireText = (source, value, message) => {
 const [
   identityBackend,
   checkoutWrapper,
+  roleApprovalBackend,
   main,
   rulesSource,
   identityRuntime,
@@ -37,6 +38,7 @@ const [
 ] = await Promise.all([
   read('functions/identity.js'),
   read('functions/checkout-v4.js'),
+  read('functions/role-approval.js'),
   read('functions/main.js'),
   read('database.rules.json'),
   read('identity-runtime.js'),
@@ -66,6 +68,7 @@ const [
 for (const [name, source] of [
   ['functions/identity.js', identityBackend],
   ['functions/checkout-v4.js', checkoutWrapper],
+  ['functions/role-approval.js', roleApprovalBackend],
   ['identity-runtime.js', identityRuntime],
   ['account-runtime.js', accountRuntime],
   ['brand-runtime.js', brandRuntime],
@@ -82,7 +85,7 @@ for (const [name, source] of [
 const rules = JSON.parse(rulesSource).rules || {};
 const profileWriteRule = String(rules.profiles?.['$uid']?.['.write'] || '');
 const superAdminValidation = String(rules.profiles?.['$uid']?.isSuperAdmin?.['.validate'] || '');
-const roleRequestWrite = String(rules.roleRequests?.['$requestId']?.['.write'] || '');
+const roleRequestWriteIsLocked = rules.roleRequests?.['$requestId']?.['.write'] === false && rules.roleRequests?.['.write'] === false;
 
 for (const functionName of ['registerCustomerProfile', 'getMyIdentity', 'updateMyProfile']) {
   requireText(identityBackend, `exports.${functionName}`, `Identity backend is missing ${functionName}.`);
@@ -129,7 +132,13 @@ if (!profileWriteRule.includes("data.child('isSuperAdmin').val() != true")) {
 if (!superAdminValidation.includes('newData.val() == data.val()')) {
   errors.push('Realtime Database rules must make isSuperAdmin immutable for every browser client.');
 }
-if (!roleRequestWrite.includes('auth.token.email_verified == true')) {
+if (!roleRequestWriteIsLocked) {
+  errors.push('Professional applications must reject direct browser writes and go through the trusted callable.');
+}
+if (!roleApprovalBackend.includes('exports.submitRoleRequestEnterprise')) {
+  errors.push('Role approval backend is missing the trusted submitRoleRequestEnterprise callable.');
+}
+if (!roleApprovalBackend.includes('authUser.emailVerified === true') || !roleApprovalBackend.includes('request.auth?.token?.email_verified === true')) {
   errors.push('Professional applications must require a verified Firebase email token.');
 }
 requireText(checkoutWrapper, "request.auth.token?.email_verified !== true", 'Secure checkout must reject unverified email accounts.');

@@ -29,7 +29,7 @@
       <div class="container role-form-layout">
         <form class="ops-panel form-block" id="role-request-form" novalidate>
           <h2>Formulaire de candidature</h2>
-          <p class="muted">Votre candidature est rattachée à votre compte connecté. Aucun mot de passe ne sera créé ou envoyé par un administrateur.</p>
+          <p class="muted">Votre candidature est rattachée à votre compte connecté et à son adresse email vérifiée. Aucun mot de passe ne sera créé ou envoyé par un administrateur.</p>
           <div class="form-row">
             <label class="form-field">
               <span>Type d’activité</span>
@@ -44,7 +44,6 @@
             <label class="form-field"><span>Nom complet</span><input name="name" required placeholder="Aminata Diop" /></label>
             <label class="form-field"><span>Téléphone</span><input name="phone" required placeholder="+971 50 123 4567" /></label>
           </div>
-          <label class="form-field full"><span>Email du compte</span><input name="email" type="email" required placeholder="vous@exemple.com" /></label>
           <label class="form-field full"><span>Nom boutique / zone livreur</span><input name="businessName" required placeholder="Afro Saveurs / Zone Mussafah" /></label>
           <label class="form-field full"><span>Véhicule ou catégorie de produits</span><input name="vehicle" placeholder="Moto, voiture, épicerie, beauté, mode..." /></label>
           <label class="form-field full"><span>Message pour l’équipe</span><textarea name="message" rows="4" placeholder="Expérience, disponibilités, documents disponibles..."></textarea></label>
@@ -67,14 +66,27 @@
         </aside>
       </div>
     </section>
+
+    <section class="role-section">
+      <div class="container">
+        <div class="ops-panel">
+          <h2>Suivi de ma candidature</h2>
+          <p class="muted">Retrouvez ici le statut de vos candidatures liées à votre compte connecté.</p>
+          <div id="role-request-tracking"><p class="muted">Connectez-vous pour suivre votre candidature.</p></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
   <script src="firebase-config.js"></script>
+  <script src="firebase-functions-config.js"></script>
   <script src="marketplace.js"></script>
   <script src="saas-runtime.js"></script>
+  <script src="role-request-runtime.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

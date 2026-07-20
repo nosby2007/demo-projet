@@ -1,5 +1,5 @@
 /* SOKIVA resilient offline shell and notification navigation */
-const CACHE_VERSION = 'sokiva-v2.11.1';
+const CACHE_VERSION = 'sokiva-v2.12.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -38,6 +38,7 @@ const APP_SHELL = [
   '/tracking-runtime.js',
   '/notifications-runtime.js',
   '/role-sync-runtime.js',
+  '/role-request-runtime.js',
   '/audit-runtime.js',
   '/admin-runtime.js',
   '/admin-access-runtime.js',
