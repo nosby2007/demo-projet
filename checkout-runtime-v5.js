@@ -98,10 +98,7 @@
         deliveryDate: order.deliveryDate,
         deliverySlot: order.deliverySlot,
         paymentMethod: order.paymentMethod || 'cod',
-        items: (order.items || []).map(item => ({
-          productId: productId(item),
-          quantity: Number(item.qty || item.quantity || 1)
-        }))
+        cartRevision: Number(order.cartRevision)
       });
       const result = response.data || {};
       if (result.deliveryCode) {
