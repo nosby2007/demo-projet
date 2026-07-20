@@ -136,3 +136,15 @@ Phase 8 adds owner-controlled Delegated Admin Governance:
 5. Profile state changes precede Auth claim synchronization so partially synchronized promotions never gain access.
 6. Every governance action requires a reason and creates an administrator-attributed, privacy-safe audit event.
 7. `delegatedAdmin.read` is available for delegated permission catalogs, while all governance mutations remain owner-only.
+
+## Phase 9
+
+Phase 9 adds privacy-safe Operational Intelligence:
+
+1. Administrators require `insights.generate`; the OpenAI key is a server secret and never reaches the browser or repository.
+2. Only tenant-scoped aggregate counts are sent to the model; no profile, contact, address, note or raw record is included.
+3. The Responses API uses a strict JSON schema and disables response storage.
+4. Recommendations cite aggregate evidence and can never execute operational actions.
+5. Human approval is forced on every recommendation, regardless of model output.
+6. A deterministic fallback remains available when the model service is unavailable.
+7. Generation is audited without storing prompts, model prose or personal data.
