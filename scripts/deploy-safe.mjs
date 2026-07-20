@@ -1,4 +1,7 @@
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
 const deployOnly = String(process.env.FIREBASE_DEPLOY_ONLY || 'hosting').trim();
@@ -40,9 +43,10 @@ if (deployOnly === 'hosting,database,functions' && process.env.FIREBASE_CONFIRM_
 
 console.log(`Deploying ${deployOnly} to ${projectId}.`);
 
+const firebaseEntry = require.resolve('firebase-tools/lib/bin/firebase');
 const result = spawnSync(
-  process.platform === 'win32' ? 'firebase.cmd' : 'firebase',
-  ['deploy', '--project', projectId, '--only', deployOnly, '--non-interactive'],
+  process.execPath,
+  [firebaseEntry, 'deploy', '--project', projectId, '--only', deployOnly, '--non-interactive'],
   { stdio: 'inherit' }
 );
 
