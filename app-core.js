@@ -215,6 +215,11 @@ const Toast = {
 /* ─── 4. CART MODULE ─────────────────────────────────────────── */
 const CartModule = {
   items: [],
+  user: null,
+  revision: 0,
+  mutationQueue: Promise.resolve(),
+  readyPromise: Promise.resolve(),
+  guestKey: 'sokiva-guest-cart:v1',
   overlay: null,
   itemsContainer: null,
   footer: null,
@@ -237,6 +242,49 @@ const CartModule = {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && this.overlay.classList.contains('open')) this.close();
     });
+    this.restoreGuest();
+    this.render();
+    this.readyPromise = this.bindAccount();
+  },
+
+  async whenReady() { await this.readyPromise; await this.mutationQueue; },
+  restoreGuest() {
+    try { const value = JSON.parse(localStorage.getItem(this.guestKey) || '[]'); this.items = Array.isArray(value) ? value.filter(item => item?.id && Number(item.qty) > 0).slice(0, 50).map(item => ({ ...item, qty: Utils.clamp(Number(item.qty), 1, 99) })) : []; } catch { this.items = []; }
+  },
+  persistGuest() { localStorage.setItem(this.guestKey, JSON.stringify(this.items.slice(0, 50))); },
+  async bindAccount() {
+    const auth = (window.SokivaFirebase || window.AfroMarketFirebase)?.auth;
+    if (!auth) return;
+    return new Promise(resolve => {
+      let first = true;
+      auth.onAuthStateChanged(async user => {
+        this.user = user || null;
+        if (!user) { this.restoreGuest(); this.revision = 0; this.render(); if (first) resolve(); first = false; return; }
+        try {
+          const functions = (window.SokivaFirebase || window.AfroMarketFirebase)?.functions;
+          const response = await functions.httpsCallable('getAccountCart')({ tenantId: 'lamylenoise', guestItems: this.items.map(item => ({ productId: item.id, quantity: item.qty })) });
+          localStorage.removeItem(this.guestKey);
+          this.applyServerCart(response.data);
+        } catch (error) { Toast.show(error.message || 'Synchronisation du panier impossible', 'error', 'cloud-off'); }
+        if (first) resolve(); first = false;
+      });
+    });
+  },
+  applyServerCart(cart) { this.items = Array.isArray(cart?.items) ? cart.items : []; this.revision = Number(cart?.revision || 0); this.render(); },
+  mutateAccount(action, id, qty) {
+    this.mutationQueue = this.mutationQueue.then(() => this.performAccountMutation(action, id, qty));
+    return this.mutationQueue;
+  },
+  async performAccountMutation(action, id, qty) {
+    if (!this.user) { this.persistGuest(); return; }
+    try {
+      const functions = (window.SokivaFirebase || window.AfroMarketFirebase)?.functions;
+      const response = await functions.httpsCallable('updateAccountCart')({ tenantId: 'lamylenoise', action, productId: id, quantity: qty });
+      this.applyServerCart(response.data);
+    } catch (error) {
+      Toast.show(String(error?.message || 'Panier non synchronisé').replace(/^FirebaseError:\s*/i, ''), 'error', 'alert-circle');
+      try { const functions = (window.SokivaFirebase || window.AfroMarketFirebase)?.functions; const response = await functions.httpsCallable('getAccountCart')({ tenantId: 'lamylenoise' }); this.applyServerCart(response.data); } catch {}
+    }
   },
 
   open()  {
@@ -257,6 +305,7 @@ const CartModule = {
       this.items.push({ ...product, qty: 1 });
     }
     this.render();
+    this.mutateAccount('set', product.id, existing ? existing.qty : 1);
     this.animateCount();
     Toast.show(`"${product.name.slice(0, 40)}…" ajouté au panier`, 'success', 'shopping-cart');
   },
@@ -264,6 +313,7 @@ const CartModule = {
   removeItem(id) {
     this.items = this.items.filter(i => String(i.id) !== String(id));
     this.render();
+    this.mutateAccount('remove', id, 0);
   },
 
   changeQty(id, delta) {
@@ -271,7 +321,7 @@ const CartModule = {
     if (!item) return;
     item.qty = Utils.clamp(item.qty + delta, 1, 99);
     if (item.qty === 0) this.removeItem(id);
-    else this.render();
+    else { this.render(); this.mutateAccount('set', id, item.qty); }
   },
 
   getTotal() { return this.items.reduce((s, i) => s + i.price * i.qty, 0); },
@@ -293,6 +343,7 @@ const CartModule = {
     this.badgeEl.textContent   = count;
     this.totalEl.textContent   = Utils.formatPrice(total);
     this.footer.style.display  = this.items.length ? 'block' : 'none';
+    document.dispatchEvent(new CustomEvent('sokiva:cart-updated', { detail: { count, total, revision: this.revision } }));
 
     if (this.items.length === 0) {
       this.itemsContainer.innerHTML = `
@@ -1487,10 +1538,12 @@ const CheckoutModule = {
     };
 
     render();
+    document.addEventListener('sokiva:cart-updated', render);
     document.getElementById('co-emirate')?.addEventListener('change', render);
 
     form?.addEventListener('submit', async e => {
       e.preventDefault();
+      await CartModule.whenReady();
       if (CartModule.items.length === 0) {
         Toast.show('Votre panier est vide', 'error', 'alert-circle');
         return;
@@ -1530,6 +1583,7 @@ const CheckoutModule = {
               emirate,
               address,
               items: CartModule.items,
+              cartRevision: CartModule.revision,
               subtotal,
               shipping,
               total,
