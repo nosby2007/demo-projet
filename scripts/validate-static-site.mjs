@@ -38,6 +38,8 @@ const requiredFiles = [
   'functions/main.js',
   'functions/index.js',
   'functions/identity.js',
+  'functions/cart-core.js',
+  'functions/account-cart.js',
   'functions/marketplace-v3.js',
   'functions/checkout-v5.js',
   'functions/checkout-v4.js',
@@ -46,6 +48,7 @@ const requiredFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
@@ -90,6 +93,8 @@ const jsFiles = [
   'functions/index.js',
   'functions/safe-claims.js',
   'functions/identity.js',
+  'functions/cart-core.js',
+  'functions/account-cart.js',
   'functions/marketplace-v2.js',
   'functions/marketplace-v3.js',
   'functions/checkout-v5.js',
@@ -99,6 +104,7 @@ const jsFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/test/commerce.test.js',
+  'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/database.rules.test.js',
@@ -199,7 +205,7 @@ async function validateFirebaseConfig() {
 
 async function validateDatabaseRules() {
   const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
-  for (const path of ['products', 'checkoutReservations', 'checkoutIdempotency', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
+  for (const path of ['products', 'accountCarts', 'checkoutReservations', 'checkoutIdempotency', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings']) {
     if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
   }
   if (rules.products?.['.read'] !== false) errors.push('internal products must reject browser reads');
@@ -229,6 +235,7 @@ async function validateDatabaseRules() {
 async function validateEmploymentBackend() {
   const marketplace = await readFile('functions/marketplace-v3.js', 'utf8');
   const checkout = await readFile('functions/checkout-v5.js', 'utf8');
+  const accountCart = await readFile('functions/account-cart.js', 'utf8');
   const checkoutCompat = await readFile('functions/checkout-v4.js', 'utf8');
   const catalog = await readFile('functions/catalog-v4.js', 'utf8');
   const approval = await readFile('functions/role-approval.js', 'utf8');
@@ -237,6 +244,7 @@ async function validateEmploymentBackend() {
   const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const checkoutRuntime = await readFile('checkout-runtime-v5.js', 'utf8');
+  const appCore = await readFile('app-core.js', 'utf8');
   const catalogRuntime = await readFile('catalog-runtime.js', 'utf8');
   const roleRuntime = await readFile('role-sync-runtime.js', 'utf8');
   const trackingRuntime = await readFile('tracking-runtime.js', 'utf8');
@@ -246,6 +254,8 @@ async function validateEmploymentBackend() {
     if (!marketplace.includes(`exports.${functionName}`)) errors.push(`Marketplace backend is missing ${functionName}`);
   }
   if (!checkout.includes('exports.createOrderDraft')) errors.push('Idempotent checkout backend is missing createOrderDraft');
+  for (const token of ['exports.getAccountCart','exports.updateAccountCart','accountCarts','transaction']) if (!accountCart.includes(token)) errors.push(`Account cart backend is missing ${token}`);
+  if (!checkout.includes('accountCartForCheckout') || !checkout.includes('cartRevision')) errors.push('Checkout must consume a revision-locked account cart');
   if (!checkout.includes('acquireIdempotency')) errors.push('Checkout must acquire a server idempotency lock');
   if (!checkout.includes('checkoutIdempotency')) errors.push('Checkout must persist idempotency state');
   if (!checkout.includes('productRef.transaction')) errors.push('Checkout stock reservations must transact per product');
@@ -255,7 +265,9 @@ async function validateEmploymentBackend() {
   if (!checkoutCompat.includes("require('./checkout-v5')")) errors.push('Checkout compatibility module must route to v5');
   if (!checkoutCompat.includes('email_verified')) errors.push('Checkout must require verified Firebase email');
   if (!checkoutRuntime.includes('idempotencyKey: attempt.key')) errors.push('Checkout client must send an idempotency key');
+  if (!checkoutRuntime.includes('cartRevision: Number(order.cartRevision)')) errors.push('Checkout client must send the synchronized cart revision');
   if (!checkoutRuntime.includes('button.disabled = true')) errors.push('Checkout client must block double submit');
+  for (const token of ['sokiva-guest-cart:v1','getAccountCart','updateAccountCart','whenReady','sokiva:cart-updated']) if (!appCore.includes(token)) errors.push(`Storefront account cart is missing ${token}`);
 
   for (const functionName of ['submitProduct', 'reviewProduct', 'updateInventory', 'seedCatalogProducts', 'rebuildPublicCatalog']) {
     if (!catalog.includes(`exports.${functionName}`)) errors.push(`Tenant catalogue backend is missing ${functionName}`);
