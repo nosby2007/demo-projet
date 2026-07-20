@@ -306,11 +306,11 @@
             </div>
             <div class="form-row">
               <label class="form-field"><span>Prix AED</span><input name="price" type="number" min="1" step="0.01" required /></label>
-              <label class="form-field"><span>Stock initial</span><input name="stockAvailable" type="number" min="0" value="0" required /></label>
+              <label class="form-field" data-product-stock><span>Stock initial</span><input name="stockAvailable" type="number" min="0" value="0" required /></label>
             </div>
             <div class="form-row">
               <label class="form-field"><span>SKU</span><input name="sku" placeholder="BIS-001" /></label>
-              <label class="form-field"><span>Catégorie</span><select name="category"><option value="epicerie">Épicerie</option><option value="services">Services</option><option value="mode">Mode</option><option value="beaute">Beauté</option><option value="boissons">Boissons</option></select></label>
+              <label class="form-field"><span>Catégorie</span><select name="category"><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="beaute">Beauté</option><option value="maison">Maison</option><option value="services">Services</option></select></label>
             </div>
             <label class="form-field full"><span>Image URL</span><input name="image" placeholder="https://..." /></label>
             <label class="form-field full"><span>Promesse livraison</span><input name="delivery" value="Livraison UAE avec suivi" /></label>
@@ -339,6 +339,11 @@
             </article>`).join('') || '<p class="muted">Aucune commande à préparer.</p>'}</div>
         </section>`;
       if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
+
+      root.querySelector('#seller-product-form select[name="category"]')?.addEventListener('change', event => {
+        const stock = root.querySelector('#seller-product-form [data-product-stock]');
+        if (stock) stock.hidden = event.currentTarget.value === 'services';
+      });
 
       root.querySelector('#seller-product-form')?.addEventListener('submit', async event => {
         event.preventDefault();
