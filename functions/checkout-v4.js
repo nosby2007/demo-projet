@@ -2,11 +2,13 @@
 
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 const checkout = require('./checkout-v5');
+const { SENDGRID_API_KEY } = require('./email-notifications');
 
 exports.createOrderDraft = onCall({
   region: 'me-central1',
   maxInstances: 20,
-  timeoutSeconds: 300
+  timeoutSeconds: 300,
+  secrets: [SENDGRID_API_KEY]
 }, request => {
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Connectez-vous pour continuer.');
