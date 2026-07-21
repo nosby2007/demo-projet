@@ -3,6 +3,9 @@
 const DEFAULT_TENANT = 'lamylenoise';
 const ACTIVE_ORDER_STATUSES = new Set(['confirmed', 'preparing', 'ready_for_pickup', 'in_transit']);
 const PAID_PAYMENT_STATUSES = new Set(['paid', 'collected', 'settled']);
+// Mirrors role-approval.js's AWAITING_DECISION_STATUSES: applications live under 'submitted' since the
+// review-workflow rollout; 'pending' stays recognized for applications created before that rollout.
+const AWAITING_DECISION_STATUSES = new Set(['pending', 'submitted', 'under_review', 'needs_changes']);
 
 function clean(value, max = 200) {
   return String(value ?? '').trim().slice(0, max);
@@ -148,7 +151,7 @@ function buildAdminDashboard(input = {}) {
   const deliveredOrders = orders.filter(order => order.status === 'delivered');
   const paidOrders = orders.filter(order => PAID_PAYMENT_STATUSES.has(order.paymentStatus));
   const rolling24h = orders.filter(order => order.createdAt >= now - 24 * 60 * 60 * 1000);
-  const pendingRequests = requests.filter(row => row.status === 'pending');
+  const pendingRequests = requests.filter(row => AWAITING_DECISION_STATUSES.has(row.status || 'pending'));
   const claimsFailures = requests.filter(row => row.claimsSyncStatus === 'failed');
   const pendingProducts = products.filter(row => row.status === 'pending_review');
   const lowStockProducts = products.filter(row => row.inventoryTracked && row.status === 'active' && row.stockAvailable <= 5);

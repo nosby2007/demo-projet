@@ -68,6 +68,22 @@ test('admin dashboard computes enterprise marketplace and finance metrics', () =
   assert.ok(dashboard.security.warnings.includes('low_stock_products'));
 });
 
+test('pending count includes applications awaiting a decision under every workflow status', () => {
+  const dashboard = buildAdminDashboard({
+    tenantId: 'lamylenoise',
+    roleRequests: {
+      legacy: { tenantId: 'lamylenoise', type: 'seller', status: 'pending', createdAt: 1000 },
+      submitted: { tenantId: 'lamylenoise', type: 'seller', status: 'submitted', createdAt: 2000 },
+      underReview: { tenantId: 'lamylenoise', type: 'courier', status: 'under_review', createdAt: 3000 },
+      needsChanges: { tenantId: 'lamylenoise', type: 'seller', status: 'needs_changes', createdAt: 4000 },
+      approved: { tenantId: 'lamylenoise', type: 'seller', status: 'approved', createdAt: 5000 },
+      rejected: { tenantId: 'lamylenoise', type: 'seller', status: 'rejected', createdAt: 6000 }
+    }
+  });
+  assert.equal(dashboard.access.pendingCount, 4);
+  assert.equal(dashboard.access.recentRequests.length, 6);
+});
+
 test('dashboard isolates tenant data', () => {
   const dashboard = buildAdminDashboard({
     tenantId: 'lamylenoise',
