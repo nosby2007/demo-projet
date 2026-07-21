@@ -22,6 +22,7 @@ const MAX_ORDER_LINES = 50;
 const CHECKOUT_RESERVATION_TTL_MS = 15 * 60 * 1000;
 const IDEMPOTENCY_WAIT_ATTEMPTS = 20;
 const DELIVERY_CODE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PENDING_CARD_PAYMENT_TTL_MS = 30 * 60 * 1000;
 const SHIPPING_AED = Object.freeze({
   'Abu Dhabi': 0,
   Dubai: 15,
@@ -281,8 +282,9 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
   if (!Object.prototype.hasOwnProperty.call(SHIPPING_AED, emirate)) {
     throw new HttpsError('invalid-argument', 'Zone de livraison non prise en charge.');
   }
-  if (clean(data.paymentMethod || 'cod', 40).toLowerCase() !== 'cod') {
-    throw new HttpsError('failed-precondition', 'Le pilote accepte uniquement le paiement à la livraison.');
+  const paymentMethod = clean(data.paymentMethod || 'cod', 40).toLowerCase();
+  if (!['cod', 'card'].includes(paymentMethod)) {
+    throw new HttpsError('invalid-argument', 'Mode de paiement non pris en charge.');
   }
 
   const previousAttempt = (await db.ref(`checkoutIdempotency/${uid}/${keyHash}`).get()).val();
@@ -387,8 +389,8 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
       address: clean(data.address, 500),
       deliveryDate: clean(data.deliveryDate, 40),
       deliverySlot: clean(data.deliverySlot, 80),
-      paymentMethod: 'cod',
-      paymentStatus: 'pending_cod',
+      paymentMethod,
+      paymentStatus: paymentMethod === 'card' ? 'pending_card' : 'pending_cod',
       status: parentStatus,
       currency: 'AED',
       idempotencyKeyHash: keyHash,
@@ -413,7 +415,7 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
     const result = {
       orderId,
       status: parentStatus,
-      paymentStatus: 'pending_cod',
+      paymentStatus: order.paymentStatus,
       total: order.total,
       currency: 'AED',
       deliveryCode,
@@ -426,7 +428,7 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
         id: orderId,
         tenantId,
         status: parentStatus,
-        paymentStatus: 'pending_cod',
+        paymentStatus: order.paymentStatus,
         total: order.total,
         deliveryCode,
         deliveryCodeExpiresAt,
@@ -458,7 +460,7 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
         sellerUid: group.sellerUid,
         sellerName: group.sellerName,
         status: sellerStatuses[group.sellerUid],
-        paymentStatus: 'pending_cod',
+        paymentStatus: order.paymentStatus,
         items: group.items.map(item => ({
           productId: item.productId,
           name: item.name,
@@ -476,6 +478,14 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, sec
     }
     if (parentStatus === 'ready_for_pickup') {
       updates[`deliveryJobs/${orderId}`] = deliveryJobFromOrder(order, now);
+    }
+    if (paymentMethod === 'card') {
+      updates[`pendingCardPayments/${orderId}`] = {
+        orderId,
+        tenantId,
+        customerUid: uid,
+        expiresAt: now + PENDING_CARD_PAYMENT_TTL_MS
+      };
     }
 
     await db.ref().update(updates);

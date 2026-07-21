@@ -26,7 +26,9 @@ const requiredFiles = [
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
+  'checkout-card-runtime.js',
   'checkout-location-runtime.js',
+  'stripe-config.js',
   'tracking-runtime.js',
   'tracking.css',
   'role-sync-runtime.js',
@@ -52,11 +54,13 @@ const requiredFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/email-notifications.js',
+  'functions/payments.js',
   'functions/test/commerce.test.js',
   'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/email-notifications.test.js',
+  'functions/test/payments.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
   'functions/test/tracking.rules.test.js',
@@ -89,7 +93,9 @@ const jsFiles = [
   'catalog-runtime.js',
   'product-public-runtime.js',
   'checkout-runtime-v5.js',
+  'checkout-card-runtime.js',
   'checkout-location-runtime.js',
+  'stripe-config.js',
   'tracking-runtime.js',
   'role-sync-runtime.js',
   'role-request-runtime.js',
@@ -113,11 +119,13 @@ const jsFiles = [
   'functions/commerce.js',
   'functions/tracking.js',
   'functions/email-notifications.js',
+  'functions/payments.js',
   'functions/test/commerce.test.js',
   'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
   'functions/test/email-notifications.test.js',
+  'functions/test/payments.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
   'functions/test/tracking.rules.test.js'
@@ -187,6 +195,15 @@ async function validateHtmlPages() {
   if (!checkout.includes('<script src="checkout-runtime-v5.js"')) errors.push('checkout.html is missing idempotent checkout runtime');
   if (!checkout.includes('<script src="checkout-location-runtime.js"')) errors.push('checkout.html is missing delivery location runtime');
   if (!checkout.includes('leaflet@1.9.4')) errors.push('checkout.html must pin the approved map library version');
+  if (!checkout.includes('<script src="https://js.stripe.com/v3/"')) errors.push('checkout.html is missing Stripe.js');
+  if (!checkout.includes('<script src="stripe-config.js"')) errors.push('checkout.html is missing the Stripe publishable key config');
+  if (!checkout.includes('<script src="checkout-card-runtime.js"')) errors.push('checkout.html is missing the Stripe card payment runtime');
+  if (checkout.indexOf('checkout-card-runtime.js') < checkout.indexOf('checkout-runtime-v5.js')) {
+    errors.push('checkout-card-runtime.js must load after checkout-runtime-v5.js so it wraps the idempotent order flow');
+  }
+  if (!checkout.includes('name="pay" value="card"') || checkout.includes('name="pay" value="card" disabled')) {
+    errors.push('checkout.html must offer an enabled card payment option');
+  }
   const customer = await readFile('customer.html', 'utf8');
   if (!customer.includes('<script src="tracking-runtime.js"')) errors.push('customer.html is missing live tracking runtime');
   if (!customer.includes('leaflet@1.9.4')) errors.push('customer.html must pin the approved map library version');
@@ -227,6 +244,9 @@ async function validateFirebaseConfig() {
   if (!csp.includes('https://firebasestorage.googleapis.com')) {
     errors.push('Content-Security-Policy must allow Firebase Storage image URLs (img-src/connect-src)');
   }
+  if (!csp.includes('https://js.stripe.com')) errors.push('Content-Security-Policy must allow Stripe.js (script-src)');
+  if (!csp.includes('https://api.stripe.com')) errors.push('Content-Security-Policy must allow the Stripe API (connect-src)');
+  if (!/frame-src[^;]*https:\/\/js\.stripe\.com/.test(csp)) errors.push('Content-Security-Policy must allow Stripe Elements iframes (frame-src)');
 }
 
 async function validateStorageRules() {
@@ -245,7 +265,7 @@ async function validateStorageRules() {
 
 async function validateDatabaseRules() {
   const rules = JSON.parse(await readFile('database.rules.json', 'utf8')).rules || {};
-  for (const path of ['products', 'accountCarts', 'checkoutReservations', 'checkoutIdempotency', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings', 'roleRequests']) {
+  for (const path of ['products', 'accountCarts', 'checkoutReservations', 'checkoutIdempotency', 'pendingCardPayments', 'orders', 'customerOrders', 'sellerOrders', 'deliveryJobs', 'earnings', 'roleRequests']) {
     if (rules[path]?.['.write'] !== false) errors.push(`${path} must reject direct client writes`);
   }
   if (rules.roleRequests?.['.read'] !== false) errors.push('roleRequests must reject direct browser reads');
@@ -285,6 +305,8 @@ async function validateEmploymentBackend() {
   const main = await readFile('functions/main.js', 'utf8');
   const commerce = await readFile('functions/commerce.js', 'utf8');
   const checkoutRuntime = await readFile('checkout-runtime-v5.js', 'utf8');
+  const cardRuntime = await readFile('checkout-card-runtime.js', 'utf8');
+  const payments = await readFile('functions/payments.js', 'utf8');
   const appCore = await readFile('app-core.js', 'utf8');
   const catalogRuntime = await readFile('catalog-runtime.js', 'utf8');
   const roleRuntime = await readFile('role-sync-runtime.js', 'utf8');
@@ -321,6 +343,30 @@ async function validateEmploymentBackend() {
   if (!checkoutRuntime.includes('idempotencyKey: attempt.key')) errors.push('Checkout client must send an idempotency key');
   if (!checkoutRuntime.includes('cartRevision: Number(order.cartRevision)')) errors.push('Checkout client must send the synchronized cart revision');
   if (!checkoutRuntime.includes('button.disabled = true')) errors.push('Checkout client must block double submit');
+
+  if (!checkout.includes("['cod', 'card'].includes(paymentMethod)")) errors.push('Checkout backend must accept card as a payment method');
+  if (!checkout.includes("pending_card")) errors.push('Card orders must be tracked with a pending_card payment status');
+  if (!checkout.includes('pendingCardPayments')) errors.push('Card orders must register an abandonment cleanup index entry');
+  for (const invariant of [
+    "defineSecret('STRIPE_SECRET_KEY')",
+    "defineSecret('STRIPE_WEBHOOK_SECRET')",
+    'exports.createPaymentIntent',
+    'exports.stripeWebhook',
+    'exports.cleanupAbandonedCardOrders',
+    'webhooks.constructEvent',
+    'toCents(order.total)',
+    'order.customerUid !== uid',
+    "order.paymentMethod !== 'card'"
+  ]) {
+    if (!payments.includes(invariant)) errors.push(`functions/payments.js is missing invariant: ${invariant}`);
+  }
+  if (!marketplace.includes('exports.cancelOrderInternal')) errors.push('Marketplace backend must expose an internal cancellation helper for abandoned card orders');
+  if (!main.includes('createPaymentIntent: payments.createPaymentIntent') || !main.includes('stripeWebhook: payments.stripeWebhook')) {
+    errors.push('Deployed Functions must compose the Stripe payment intent and webhook callables');
+  }
+  for (const token of ['stripe.confirmCardPayment', "httpsCallable('createPaymentIntent')", 'cardElement.mount']) {
+    if (!cardRuntime.includes(token)) errors.push(`checkout-card-runtime.js is missing ${token}`);
+  }
   for (const token of ['sokiva-guest-cart:v1','getAccountCart','updateAccountCart','whenReady','sokiva:cart-updated']) if (!appCore.includes(token)) errors.push(`Storefront account cart is missing ${token}`);
 
   for (const functionName of ['submitProduct', 'reviewProduct', 'updateInventory', 'seedCatalogProducts', 'rebuildPublicCatalog']) {

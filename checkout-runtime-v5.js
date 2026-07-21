@@ -106,6 +106,7 @@
       }
       await attachDestination(result.orderId, location);
       sessionStorage.removeItem(attempt.storageKey);
+      MarketplaceData.lastOrderResult = result;
       return result.orderId;
     } catch (error) {
       if (button) {

@@ -16,6 +16,7 @@ const campaignOperations = require('./campaign-operations');
 const adminGovernance = require('./admin-governance');
 const operationalIntelligence = require('./operational-intelligence');
 const accountCart = require('./account-cart');
+const payments = require('./payments');
 
 module.exports = {
   ...marketplace,
@@ -30,6 +31,9 @@ module.exports = {
   ...adminGovernance,
   ...operationalIntelligence,
   ...accountCart,
+  createPaymentIntent: payments.createPaymentIntent,
+  stripeWebhook: payments.stripeWebhook,
+  cleanupAbandonedCardOrders: payments.cleanupAbandonedCardOrders,
   auditOrderWrites: audit.auditOrderWrites,
   auditProductWrites: audit.auditProductWrites,
   auditRoleRequestWrites: audit.auditRoleRequestWrites,

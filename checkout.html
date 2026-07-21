@@ -23,7 +23,7 @@
       <div class="container">
         <nav class="breadcrumb"><a href="index.html">Accueil</a> › <a href="shop.html">Boutique</a> › <span>Commande</span></nav>
         <h1 class="page-title">Finaliser ma commande</h1>
-        <p class="page-subtitle">Commande recalculée côté serveur, paiement COD et suivi du livreur en temps réel.</p>
+        <p class="page-subtitle">Commande recalculée côté serveur, paiement à la livraison ou par carte (Stripe), suivi du livreur en temps réel.</p>
       </div>
     </section>
 
@@ -82,9 +82,13 @@
             <div class="co-card">
               <h3 class="co-step"><span class="co-step-num">3</span> Mode de paiement</h3>
               <div class="pay-options">
-                <label class="pay-option"><input type="radio" name="pay" value="cod" checked /> <i data-lucide="banknote"></i> Cash à la livraison (pilote actif)</label>
-                <label class="pay-option"><input type="radio" name="pay" value="card" disabled /> <i data-lucide="credit-card"></i> Carte — activation prochaine</label>
+                <label class="pay-option"><input type="radio" name="pay" value="cod" checked /> <i data-lucide="banknote"></i> Cash à la livraison</label>
+                <label class="pay-option"><input type="radio" name="pay" value="card" /> <i data-lucide="credit-card"></i> Carte bancaire (Stripe)</label>
                 <label class="pay-option"><input type="radio" name="pay" value="apple" disabled /> <i data-lucide="apple"></i> Apple Pay — activation prochaine</label>
+              </div>
+              <div id="card-payment-panel" class="card-payment-panel" hidden>
+                <div id="card-element" class="card-element"></div>
+                <p id="card-errors" class="card-errors" role="alert"></p>
               </div>
             </div>
 
@@ -111,12 +115,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="stripe-config.js"></script>
   <script src="firebase-config.js"></script>
   <script src="firebase-functions-config.js"></script>
   <script src="marketplace.js"></script>
   <script src="saas-runtime.js"></script>
   <script src="checkout-location-runtime.js"></script>
   <script src="checkout-runtime-v5.js"></script>
+  <script src="checkout-card-runtime.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

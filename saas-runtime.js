@@ -223,6 +223,9 @@
         preparing: 'En préparation',
         ready_for_pickup: 'Prête au retrait',
         pending_cod: 'Paiement à collecter',
+        pending_card: 'Carte en attente',
+        payment_failed: 'Paiement échoué',
+        paid: 'Payée',
         in_transit: 'En livraison',
         delivered: 'Livrée',
         cancelled: 'Annulée'
