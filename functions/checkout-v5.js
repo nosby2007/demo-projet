@@ -178,8 +178,20 @@ async function reserveProduct(productId, requestedQuantity, tenantId, orderId, e
   const productRef = db.ref(`products/${productId}`);
   const result = await productRef.transaction(product => {
     problem = null;
-    if (!product || product.status !== 'active') {
-      problem = new HttpsError('failed-precondition', `Produit indisponible: ${productId}`);
+    if (!product) {
+      problem = new HttpsError(
+        'failed-precondition',
+        'Un article n’est plus disponible et a été retiré de votre panier.',
+        { productId, reason: 'product_unavailable' }
+      );
+      return;
+    }
+    if (product.status !== 'active') {
+      problem = new HttpsError(
+        'failed-precondition',
+        `${clean(product.name, 200) || 'Un article'} n’est plus disponible et a été retiré de votre panier.`,
+        { productId, reason: 'product_unavailable' }
+      );
       return;
     }
     if (clean(product.tenantId || DEFAULT_TENANT, 80) !== tenantId) {
