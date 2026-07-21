@@ -5,6 +5,7 @@ const { getDatabase } = require('firebase-admin/database');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 const { onValueWritten } = require('firebase-functions/v2/database');
 const marketplace = require('./marketplace-v3');
+const { maskName } = require('./admin-control-center-core');
 
 if (!getApps().length) initializeApp();
 const db = getDatabase();
@@ -157,6 +158,11 @@ exports.listOrdersForRole = onCall({ region: 'me-central1', maxInstances: 20 }, 
   };
 });
 
+function sellerDisplayName(order) {
+  const names = [...new Set((order.items || []).map(item => clean(item.sellerName, 160)).filter(Boolean))];
+  return names.slice(0, 3).join(' · ');
+}
+
 exports.syncOrderTracking = onValueWritten({
   ref: '/orders/{orderId}',
   region: DATABASE_REGION
@@ -174,6 +180,14 @@ exports.syncOrderTracking = onValueWritten({
   const status = clean(after.status || 'confirmed', 60);
   const now = Number(after.updatedAt || Date.now());
   const destination = publicDestination(after);
+  const sellerName = sellerDisplayName(after);
+  const courierUid = clean(after.courierUid, 160);
+  let courierName = '';
+  if (courierUid && (before?.courierUid !== courierUid)) {
+    const courierProfile = (await db.ref(`profiles/${courierUid}`).get()).val();
+    courierName = courierProfile ? maskName(courierProfile.name) : '';
+  }
+
   await trackingRef.transaction(current => {
     const tracking = current || {};
     tracking.orderId = orderId;
@@ -184,6 +198,7 @@ exports.syncOrderTracking = onValueWritten({
     tracking.createdAt = Number(tracking.createdAt || after.createdAt || now);
     tracking.updatedAt = now;
     tracking.statusHistory = tracking.statusHistory || {};
+    if (sellerName) tracking.sellerName = sellerName;
 
     if (!before || before.status !== status || !tracking.statusHistory[status]) {
       tracking.statusHistory[status] = now;
@@ -192,6 +207,12 @@ exports.syncOrderTracking = onValueWritten({
       tracking.statusHistory.received = Number(after.createdAt || now);
     }
     if (destination) tracking.destination = destination;
+
+    if (!courierUid) {
+      delete tracking.courierName;
+    } else if (courierName) {
+      tracking.courierName = courierName;
+    }
 
     if (TERMINAL_STATUSES.has(status)) {
       delete tracking.courierLocation;
@@ -372,3 +393,4 @@ exports.validateUaePoint = validateUaePoint;
 exports.routeEstimate = routeEstimate;
 exports.courierSafeJob = courierSafeJob;
 exports.isStrictlyNewerSample = isStrictlyNewerSample;
+exports.sellerDisplayName = sellerDisplayName;

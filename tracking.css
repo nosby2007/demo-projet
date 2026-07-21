@@ -110,6 +110,13 @@
 
 .tracking-live-chip.offline { background: #e2e8f0; color: #475569; }
 
+.tracking-party {
+  margin: .5rem 0 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
 .courier-share-card {
   display: flex;
   align-items: center;
