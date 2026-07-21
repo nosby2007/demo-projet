@@ -211,9 +211,15 @@ async function validateHtmlPages() {
   if (!courier.includes('<script src="tracking-runtime.js"')) errors.push('courier.html is missing GPS sharing runtime');
   const shop = await readFile('shop.html', 'utf8');
   if (!shop.includes('<script src="catalog-runtime.js"')) errors.push('shop.html is missing tenant catalogue runtime');
+  if (!shop.includes('firebase-functions-compat.js') || !shop.includes('<script src="firebase-functions-config.js"')) {
+    errors.push('shop.html is missing the Firebase Functions SDK needed for account cart sync');
+  }
   const product = await readFile('product.html', 'utf8');
   if (!product.includes('<script src="catalog-runtime.js"') || !product.includes('<script src="product-public-runtime.js"')) {
     errors.push('product.html is missing tenant catalogue product runtime');
+  }
+  if (!product.includes('firebase-functions-compat.js') || !product.includes('<script src="firebase-functions-config.js"')) {
+    errors.push('product.html is missing the Firebase Functions SDK needed for account cart sync');
   }
   const account = await readFile('account.html', 'utf8');
   if (!account.includes('<script src="account-runtime.js"')) errors.push('account.html is missing Firebase-backed account runtime');
