@@ -310,12 +310,40 @@
     root.append(section);
   }
 
+  async function recoverPendingDestinations(orders) {
+    for (const order of orders) {
+      const key = `delivery-location-pending:${order.id}`;
+      const raw = sessionStorage.getItem(key);
+      if (!raw) continue;
+      let location;
+      try { location = JSON.parse(raw); } catch { sessionStorage.removeItem(key); continue; }
+      try {
+        await callable('setDeliveryDestination')({
+          tenantId: TENANT_ID,
+          orderId: order.id,
+          source: location.source || 'customer_map',
+          capturedAt: location.capturedAt || Date.now(),
+          location
+        });
+        sessionStorage.removeItem(key);
+        if (window.Toast?.show) Toast.show('Point de livraison confirmé.', 'success', 'map-pin');
+      } catch (error) {
+        if (['failed-precondition', 'not-found', 'permission-denied'].includes(error?.code)) {
+          // Order moved past the point a destination can still be set (or vanished) — stop retrying.
+          sessionStorage.removeItem(key);
+        }
+        console.warn('Delivery destination still not confirmed for', order.id, error);
+      }
+    }
+  }
+
   const originalCustomer = MarketplacePages.initCustomer.bind(MarketplacePages);
   MarketplacePages.initCustomer = async function trackedCustomerDashboard() {
     await originalCustomer();
     const root = document.getElementById('customer-dashboard-root');
     if (!root) return;
     const orders = await MarketplaceData.list('orders', MarketplaceData.localKeys.orders);
+    await recoverPendingDestinations(orders);
     buildCustomerTracker(root, orders);
   };
 
