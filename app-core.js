@@ -43,6 +43,8 @@ const PRODUCTS = [
     price: 22, oldPrice: 30, discount: 27, rating: 4.8, reviews: 412,
     image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400&q=80",
     badge: "Top", category: "epicerie", delivery: "Livraison 24h Abu Dhabi",
+    description: "Semoule de manioc précuite traditionnelle de Côte d'Ivoire, prête à cuire à la vapeur en quelques minutes.",
+    details: "Origine Côte d'Ivoire\nPrêt en 10 minutes à la vapeur\nSans gluten\nSachet refermable 1kg",
     isNew: false
   },
   {
@@ -50,6 +52,8 @@ const PRODUCTS = [
     price: 45, oldPrice: 65, discount: 31, rating: 4.9, reviews: 837,
     image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80",
     badge: "Flash", category: "beaute", delivery: "Livraison gratuite dès 150 AED",
+    description: "Beurre de karité 100% brut et bio, extrait à froid au Burkina Faso, pour la peau et les cheveux.",
+    details: "Origine Burkina Faso\n100% naturel, non raffiné\nExtraction artisanale à froid\nConvient peau et cheveux",
     isNew: false
   },
   {
@@ -57,6 +61,9 @@ const PRODUCTS = [
     price: 135, oldPrice: 180, discount: 25, rating: 4.7, reviews: 256,
     image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&q=80",
     badge: "Hot", category: "mode", delivery: "Livraison 24h UAE",
+    description: "Tissu wax 100% coton imprimé au Ghana, motifs multicolores authentiques, pièce de 6 yards.",
+    details: "Origine Ghana (GTP)\n100% coton\nPièce de 6 yards (environ 5,5m)\nMotif imprimé recto-verso",
+    colors: ["Multicolore", "Orange", "Vert", "Bleu"],
     isNew: false
   },
   {
@@ -64,6 +71,8 @@ const PRODUCTS = [
     price: 28, oldPrice: 38, discount: 26, rating: 4.6, reviews: 198,
     image: "https://images.unsplash.com/photo-1620577990281-d68a06fc28b6?w=400&q=80",
     badge: null, category: "epicerie", delivery: "Livraison 24h Abu Dhabi/Dubai",
+    description: "Huile de palme rouge pressée à froid au Cameroun, essentielle pour les plats traditionnels africains.",
+    details: "Origine Cameroun\nPression à froid\nRiche en carotène\nBouteille 1L",
     isNew: false
   },
   {
@@ -71,6 +80,8 @@ const PRODUCTS = [
     price: 18, oldPrice: 26, discount: 31, rating: 4.8, reviews: 624,
     image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=400&q=80",
     badge: "Flash", category: "boissons", delivery: "Livraison gratuite dès 150 AED",
+    description: "Fleurs d'hibiscus séchées du Sénégal pour préparer un bissap frais, riche en vitamine C.",
+    details: "Origine Sénégal\n100% naturel, sans additif\nSachet 250g\nÀ infuser froid ou chaud",
     isNew: false
   },
   {
@@ -78,6 +89,8 @@ const PRODUCTS = [
     price: 35, oldPrice: 48, discount: 27, rating: 4.7, reviews: 312,
     image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&q=80",
     badge: "Top", category: "boissons", delivery: "Livraison 24h UAE",
+    description: "Café Robusta moulu, torréfié artisanalement en Côte d'Ivoire, corsé et intense.",
+    details: "Origine Côte d'Ivoire\nTorréfaction artisanale\nMouture standard\nSachet 500g",
     isNew: false
   },
   {
@@ -85,6 +98,8 @@ const PRODUCTS = [
     price: 32, oldPrice: null, discount: null, rating: 4.9, reviews: 145,
     image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80",
     badge: "Nouveau", category: "epicerie", delivery: "Livraison gratuite dès 150 AED",
+    description: "Farine de fonio bio du Mali, céréale ancestrale sans gluten riche en fibres.",
+    details: "Origine Mali, agriculture biologique\nSans gluten\nRiche en fibres et minéraux\nSachet 1kg",
     isNew: true
   },
   {
@@ -92,6 +107,8 @@ const PRODUCTS = [
     price: 38, oldPrice: 55, discount: 31, rating: 4.5, reviews: 567,
     image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&q=80",
     badge: null, category: "beaute", delivery: "Livraison 48h tout UAE",
+    description: "Crème hydratante quotidienne au beurre de karité et à l'aloe vera, pour tous types de peau.",
+    details: "Karité et aloe vera\nHydratation 24h\nConvient à tous types de peau\nFlacon 200ml",
     isNew: false
   },
   {
@@ -99,6 +116,8 @@ const PRODUCTS = [
     price: 22, oldPrice: 32, discount: 31, rating: 4.7, reviews: 489,
     image: "https://images.unsplash.com/photo-1607006344380-b6775a0824a9?w=400&q=80",
     badge: "Top", category: "beaute", delivery: "Livraison 24h Abu Dhabi",
+    description: "Savon noir africain traditionnel du Ghana, à base de cendres de plantes et de beurre de karité.",
+    details: "Origine Ghana\nRecette traditionnelle akan\nExfoliant naturel\nBloc 250g",
     isNew: false
   },
   {
@@ -106,6 +125,8 @@ const PRODUCTS = [
     price: 19, oldPrice: 27, discount: 30, rating: 4.6, reviews: 203,
     image: "https://images.unsplash.com/photo-1612927601601-6638404737ce?w=400&q=80",
     badge: "Flash", category: "epicerie", delivery: "Livraison 24h UAE",
+    description: "Semoule de manioc fermenté et grillé, base de nombreux plats d'Afrique de l'Ouest.",
+    details: "Manioc fermenté et grillé\nSe consomme trempé ou en accompagnement\nSans additif\nSachet 1kg",
     isNew: false
   },
   {
@@ -113,6 +134,9 @@ const PRODUCTS = [
     price: 245, oldPrice: 340, discount: 28, rating: 4.6, reviews: 87,
     image: "https://images.unsplash.com/photo-1590735213920-68192a487bc2?w=400&q=80",
     badge: null, category: "mode", delivery: "Livraison 48h tout UAE",
+    description: "Boubou traditionnel homme brodé main, coupe ample confortable, tailles M à XXL.",
+    details: "Broderie main\nCoupe ample traditionnelle\nTailles M à XXL disponibles\nEntretien : lavage à froid conseillé",
+    colors: ["Blanc", "Bleu roi", "Bordeaux", "Noir"],
     isNew: false
   },
   {
@@ -120,6 +144,8 @@ const PRODUCTS = [
     price: 14, oldPrice: 20, discount: 30, rating: 4.7, reviews: 312,
     image: "https://images.unsplash.com/photo-1599909533730-3d2dcd64c2c1?w=400&q=80",
     badge: null, category: "epices", delivery: "Livraison gratuite dès 150 AED",
+    description: "Mélange d'épices yassa moulu du Sénégal, pour marinades et plats mijotés.",
+    details: "Origine Sénégal\nMélange d'épices traditionnel\nSans conservateur\nPot 100g",
     isNew: false
   },
   {
@@ -127,6 +153,8 @@ const PRODUCTS = [
     price: 165, oldPrice: 220, discount: 25, rating: 4.8, reviews: 56,
     image: "https://images.unsplash.com/photo-1604908815871-c6b58c7e85f4?w=400&q=80",
     badge: "Top", category: "cuisine", delivery: "Livraison 48h tout UAE",
+    description: "Mortier et pilon artisanal sculpté à la main dans du bois massif, 30cm.",
+    details: "Bois massif sculpté main\nDiamètre 30cm\nPièce unique artisanale\nEntretien : essuyer, ne pas immerger",
     isNew: false
   },
   {
@@ -134,6 +162,8 @@ const PRODUCTS = [
     price: 12, oldPrice: 16, discount: 25, rating: 4.5, reviews: 421,
     image: "https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&q=80",
     badge: "Flash", category: "snacks", delivery: "Livraison 24h Abu Dhabi",
+    description: "Chips de banane plantain frites et légèrement salées, croustillantes, sans additif.",
+    details: "Plantain frit à l'huile végétale\nLégèrement salé\nSans conservateur\nSachet 200g",
     isNew: false
   },
   {
@@ -141,6 +171,8 @@ const PRODUCTS = [
     price: 42, oldPrice: 58, discount: 28, rating: 4.9, reviews: 178,
     image: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&q=80",
     badge: "Nouveau", category: "epicerie", delivery: "Livraison gratuite dès 150 AED",
+    description: "Cacao en poudre pur non sucré du Ghana, idéal pâtisserie et boissons chocolatées.",
+    details: "Origine Ghana\n100% pur cacao, non sucré\nSans additif\nBoîte 500g",
     isNew: true
   },
   {
@@ -148,6 +180,8 @@ const PRODUCTS = [
     price: 28, oldPrice: null, discount: null, rating: 4.8, reviews: 1024,
     image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&q=80",
     badge: null, category: "epices", delivery: "Livraison 24h UAE",
+    description: "Cubes bouillon Maggi original, l'incontournable des cuisines africaines. Boîte de 60 cubes.",
+    details: "Boîte de 60 cubes\nSaveur bouillon original\nSe dissout facilement\nFormat familial",
     isNew: false
   },
   {
@@ -155,6 +189,8 @@ const PRODUCTS = [
     price: 24, oldPrice: 34, discount: 29, rating: 4.7, reviews: 287,
     image: "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=400&q=80",
     badge: "Hot", category: "boissons", delivery: "Livraison 24h Abu Dhabi",
+    description: "Thé touba sénégalais aromatisé au girofle et poivre de Guinée, boisson traditionnelle mouride.",
+    details: "Origine Sénégal\nAromatisé girofle et poivre\nSachet 200g\nÀ infuser fort et sucré",
     isNew: false
   },
   {
@@ -162,6 +198,8 @@ const PRODUCTS = [
     price: 95, oldPrice: 130, discount: 27, rating: 4.6, reviews: 42,
     image: "https://images.unsplash.com/photo-1604908554036-9be17b7c98c0?w=400&q=80",
     badge: null, category: "cuisine", delivery: "Livraison 48h tout UAE",
+    description: "Calebasse décorative artisanale, pièce unique sculptée et polie à la main.",
+    details: "Calebasse naturelle séchée\nSculptée et polie main\nGrand modèle\nUsage décoratif",
     isNew: false
   },
 ];
@@ -1379,6 +1417,9 @@ const ProductDetailModule = {
 
     const hasDiscount = product.discount && product.oldPrice;
     const related = PRODUCTS.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
+    const galleryImages = Array.isArray(product.images) && product.images.length
+      ? product.images
+      : [product.image, `${product.image}&blur=40`, `${product.image}&sat=-100`];
 
     root.innerHTML = `
       <nav class="breadcrumb" aria-label="Fil d'Ariane">
@@ -1391,14 +1432,13 @@ const ProductDetailModule = {
       <div class="pd-grid">
         <div class="pd-gallery">
           <div class="pd-main-img">
-            <img src="${product.image}" alt="${product.name}" />
+            <img src="${galleryImages[0]}" alt="${product.name}" />
             ${product.badge ? `<span class="product-badge ${product.badge.toLowerCase()}">${product.badge}</span>` : ''}
           </div>
+          ${galleryImages.length > 1 ? `
           <div class="pd-thumbs">
-            <button class="pd-thumb active"><img src="${product.image}" alt="" /></button>
-            <button class="pd-thumb"><img src="${product.image}&blur=40" alt="" /></button>
-            <button class="pd-thumb"><img src="${product.image}&sat=-100" alt="" /></button>
-          </div>
+            ${galleryImages.map((src, index) => `<button class="pd-thumb${index === 0 ? ' active' : ''}"><img src="${src}" alt="" /></button>`).join('')}
+          </div>` : ''}
         </div>
 
         <div class="pd-info">
@@ -1417,14 +1457,25 @@ const ProductDetailModule = {
 
           <p class="pd-delivery"><i data-lucide="truck"></i> ${product.delivery}</p>
 
+          ${product.colors?.length ? `
+          <div class="pd-colors">
+            <h3>Couleur</h3>
+            <div class="pd-color-list">
+              ${product.colors.map((color, index) => `<button type="button" class="pd-color-chip${index === 0 ? ' active' : ''}">${color}</button>`).join('')}
+            </div>
+          </div>` : ''}
+
           <div class="pd-desc">
             <h3>Description</h3>
-            <p>Produit authentique importé directement d'Afrique de l'Ouest. Sélectionné par nos équipes pour sa qualité et son origine garantie. Livré dans tout l'UAE avec respect de la chaîne du froid si nécessaire.</p>
+            <p>${product.description || "Produit authentique importé directement d'Afrique de l'Ouest. Sélectionné par nos équipes pour sa qualité et son origine garantie. Livré dans tout l'UAE avec respect de la chaîne du froid si nécessaire."}</p>
             <ul>
+              ${product.details
+                ? product.details.split('\n').map(line => line.trim()).filter(Boolean).map(line => `<li><i data-lucide="check"></i> ${line}</li>`).join('')
+                : `
               <li><i data-lucide="check"></i> 100% authentique, origine garantie</li>
               <li><i data-lucide="check"></i> Livraison express 24h Abu Dhabi & Dubai</li>
               <li><i data-lucide="check"></i> Paiement à la livraison disponible</li>
-              <li><i data-lucide="check"></i> Échange & remboursement sous 14 jours</li>
+              <li><i data-lucide="check"></i> Échange & remboursement sous 14 jours</li>`}
             </ul>
           </div>
 
