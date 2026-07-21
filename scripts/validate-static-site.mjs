@@ -51,10 +51,12 @@ const requiredFiles = [
   'functions/role-approval.js',
   'functions/commerce.js',
   'functions/tracking.js',
+  'functions/email-notifications.js',
   'functions/test/commerce.test.js',
   'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
+  'functions/test/email-notifications.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
   'functions/test/tracking.rules.test.js',
@@ -110,10 +112,12 @@ const jsFiles = [
   'functions/role-approval.js',
   'functions/commerce.js',
   'functions/tracking.js',
+  'functions/email-notifications.js',
   'functions/test/commerce.test.js',
   'functions/test/cart-core.test.js',
   'functions/test/identity.test.js',
   'functions/test/tracking.test.js',
+  'functions/test/email-notifications.test.js',
   'functions/test/database.rules.test.js',
   'functions/test/checkout-reservations.rules.test.js',
   'functions/test/tracking.rules.test.js'
@@ -301,6 +305,19 @@ async function validateEmploymentBackend() {
   if (!checkout.includes('exports.cleanupExpiredCheckoutReservations')) errors.push('Checkout must clean expired reservations');
   if (!checkoutCompat.includes("require('./checkout-v5')")) errors.push('Checkout compatibility module must route to v5');
   if (!checkoutCompat.includes('email_verified')) errors.push('Checkout must require verified Firebase email');
+  if (!checkout.includes('sendOrderConfirmationEmail(order, deliveryCode)')) errors.push('Checkout must send an order confirmation email on successful creation');
+  if (!checkoutCompat.includes('secrets: [SENDGRID_API_KEY]')) errors.push('The deployed checkout function must bind the SendGrid secret');
+
+  const emailNotifications = await readFile('functions/email-notifications.js', 'utf8');
+  for (const invariant of [
+    "defineSecret('SENDGRID_API_KEY')",
+    'SENDER_EMAIL',
+    'function escapeHtml',
+    'sgMail.setApiKey(SENDGRID_API_KEY.value())'
+  ]) {
+    if (!emailNotifications.includes(invariant)) errors.push(`email-notifications.js is missing invariant: ${invariant}`);
+  }
+  if (!emailNotifications.includes('catch (error)')) errors.push('Order confirmation email must fail closed without blocking checkout');
   if (!checkoutRuntime.includes('idempotencyKey: attempt.key')) errors.push('Checkout client must send an idempotency key');
   if (!checkoutRuntime.includes('cartRevision: Number(order.cartRevision)')) errors.push('Checkout client must send the synchronized cart revision');
   if (!checkoutRuntime.includes('button.disabled = true')) errors.push('Checkout client must block double submit');

@@ -13,6 +13,7 @@ const {
   aggregateRequestedItems,
   hashDeliveryCode
 } = require('./commerce');
+const { SENDGRID_API_KEY, sendOrderConfirmationEmail } = require('./email-notifications');
 
 if (!getApps().length) initializeApp();
 const db = getDatabase();
@@ -270,7 +271,7 @@ function deliveryJobFromOrder(order, now) {
   };
 }
 
-exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, async request => {
+exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20, secrets: [SENDGRID_API_KEY] }, async request => {
   const { uid, profile } = await requireCustomer(request);
   const data = request.data || {};
   const tenantId = tenantFor(profile, data.tenantId);
@@ -482,6 +483,8 @@ exports.createOrderDraft = onCall({ region: 'me-central1', maxInstances: 20 }, a
       if (!current || Number(current.revision || 0) !== accountCart.revision) return current;
       return { ...current, lines: {}, itemCount: 0, revision: accountCart.revision + 1, checkedOutOrderId: orderId, checkedOutAt: Date.now(), updatedAt: Date.now() };
     }, undefined, false).catch(error => console.error('Order committed but account cart cleanup must retry.', orderId, error));
+    // Best-effort: never let a SendGrid outage fail an already-committed order (see sendOrderConfirmationEmail's own try/catch).
+    await sendOrderConfirmationEmail(order, deliveryCode);
     return result;
   } catch (error) {
     await rollbackReservations(reservedProducts, orderId);
