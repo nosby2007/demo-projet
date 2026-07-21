@@ -321,7 +321,7 @@
             </div>
             <div class="form-row">
               <label class="form-field"><span>SKU</span><input name="sku" placeholder="BIS-001" /></label>
-              <label class="form-field"><span>Catégorie</span><select name="category"><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="beaute">Beauté</option><option value="maison">Maison</option><option value="services">Services</option></select></label>
+              <label class="form-field"><span>Catégorie</span><select name="category"><option value="epicerie">Épicerie</option><option value="boissons">Boissons</option><option value="epices">Épices</option><option value="mode">Mode Wax</option><option value="beaute">Beauté Karité</option><option value="cuisine">Cuisine</option><option value="snacks">Snacks</option><option value="maison">Maison</option><option value="services">Services</option></select></label>
             </div>
             <label class="form-field full"><span>Description</span><textarea name="description" rows="3" placeholder="Présentation courte du produit affichée sur sa fiche."></textarea></label>
             <label class="form-field full"><span>Détails</span><textarea name="details" rows="4" placeholder="Un point par ligne : composition, origine, entretien..."></textarea></label>
