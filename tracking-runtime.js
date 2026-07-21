@@ -147,6 +147,8 @@
     head.append(heading, select);
 
     const liveChip = create('span', 'tracking-live-chip offline', 'En attente du livreur');
+    const partyLine = create('p', 'tracking-party');
+    partyLine.hidden = true;
     const stepsList = create('ol', 'tracking-steps-live');
     const summary = create('div', 'tracking-summary');
     const etaBox = create('div'); etaBox.append(create('span', '', 'Arrivée estimée'), create('strong', '', '—'));
@@ -157,7 +159,7 @@
     const destinationButton = create('button', 'btn-link', 'Utiliser ma position comme point de livraison');
     destinationButton.type = 'button';
     const destinationStatus = create('p', 'tracking-muted', 'Le point est nécessaire pour afficher la distance et l’estimation.');
-    panel.append(head, liveChip, stepsList, summary, mapElement, destinationButton, destinationStatus);
+    panel.append(head, liveChip, partyLine, stepsList, summary, mapElement, destinationButton, destinationStatus);
     root.append(panel);
 
     let currentOrder = selected;
@@ -175,6 +177,11 @@
           return;
         }
         renderSteps(stepsList, tracking, order);
+        const parties = [];
+        if (tracking?.sellerName) parties.push(`Préparé par ${tracking.sellerName}`);
+        if (tracking?.courierName) parties.push(`Livreur : ${tracking.courierName}`);
+        partyLine.textContent = parties.join(' · ');
+        partyLine.hidden = !parties.length;
         const isLive = Boolean(tracking?.live && tracking?.courierLocation);
         liveChip.textContent = isLive ? 'Position du livreur en direct' : 'Progression synchronisée';
         liveChip.className = `tracking-live-chip${isLive ? '' : ' offline'}`;

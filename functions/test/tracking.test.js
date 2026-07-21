@@ -13,7 +13,8 @@ const {
   validateUaePoint,
   routeEstimate,
   courierSafeJob,
-  isStrictlyNewerSample
+  isStrictlyNewerSample,
+  sellerDisplayName
 } = require('../tracking');
 
 test('haversine distance is zero for the same point', () => {
@@ -69,4 +70,20 @@ test('courier sees customer contact only during their active transit', () => {
   assert.equal(delivered.customerName, undefined);
   assert.equal(delivered.courierPayout, 10);
   assert.equal(delivered.status, 'delivered');
+});
+
+test('seller display name deduplicates and joins per-item seller names', () => {
+  const order = {
+    items: [
+      { sellerUid: 's1', sellerName: 'Ma Boutique' },
+      { sellerUid: 's1', sellerName: 'Ma Boutique' },
+      { sellerUid: 's2', sellerName: 'Afro Saveurs' }
+    ]
+  };
+  assert.equal(sellerDisplayName(order), 'Ma Boutique · Afro Saveurs');
+});
+
+test('seller display name is empty for an order with no items', () => {
+  assert.equal(sellerDisplayName({}), '');
+  assert.equal(sellerDisplayName({ items: [] }), '');
 });
