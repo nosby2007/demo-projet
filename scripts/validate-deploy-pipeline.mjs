@@ -54,6 +54,7 @@ for (const [expected, message] of [
   ['/^sokiva-(dev|staging|prod)$/', 'The safe wrapper must allow only approved SOKIVA project IDs.'],
   ["'hosting'", 'Hosting must be an approved deployment scope.'],
   ["'hosting,database,functions'", 'The explicit full deployment scope must be supported.'],
+  ["'hosting,database,functions,storage'", 'The full deployment scope with Storage must be supported.'],
   ["process.env.FIREBASE_CONFIRM_FULL !== 'DEPLOY_FULL'", 'Every full deployment must require DEPLOY_FULL.'],
   ["'--project', projectId", 'Firebase deploy must always receive an explicit project.'],
   ["'--only', deployOnly", 'Firebase deploy must always receive an explicit scope.'],

@@ -139,10 +139,6 @@
     }
   };
 
-  function linesToList(value, max) {
-    return String(value || '').split('\n').map(line => line.trim()).filter(Boolean).slice(0, max);
-  }
-
   function csvToList(value, max) {
     return String(value || '').split(',').map(item => item.trim()).filter(Boolean).slice(0, max);
   }
@@ -157,7 +153,7 @@
         price: Number(product.price),
         category: product.category,
         stockAvailable: Number(product.stockAvailable || 0),
-        images: linesToList(product.images, 8),
+        images: Array.isArray(product.images) ? product.images : [],
         description: product.description,
         details: product.details,
         colors: csvToList(product.colors, 12),
@@ -325,7 +321,9 @@
             </div>
             <label class="form-field full"><span>Description</span><textarea name="description" rows="3" placeholder="Présentation courte du produit affichée sur sa fiche."></textarea></label>
             <label class="form-field full"><span>Détails</span><textarea name="details" rows="4" placeholder="Un point par ligne : composition, origine, entretien..."></textarea></label>
-            <label class="form-field full"><span>Images (une URL HTTPS par ligne, la première est la photo principale)</span><textarea name="images" rows="3" placeholder="https://..."></textarea></label>
+            <label class="form-field full"><span>Photos (JPEG/PNG/WEBP/GIF, 5 Mo max, 8 photos max — la première est la photo principale)</span><input type="file" data-image-input accept="image/jpeg,image/png,image/webp,image/gif" multiple /></label>
+            <div class="seller-image-preview" data-image-preview></div>
+            <small class="seller-image-status" data-image-status></small>
             <label class="form-field full"><span>Couleurs disponibles (séparées par des virgules)</span><input name="colors" placeholder="Rouge, Bleu, Noir" /></label>
             <label class="form-field full"><span>Promesse livraison</span><input name="delivery" value="Livraison UAE avec suivi" /></label>
             <button class="btn-primary" type="submit"><i data-lucide="send"></i> Soumettre pour validation</button>
@@ -359,10 +357,55 @@
         if (stock) stock.hidden = event.currentTarget.value === 'services';
       });
 
-      root.querySelector('#seller-product-form')?.addEventListener('submit', async event => {
+      let sellerProductImages = [];
+      const sellerForm = root.querySelector('#seller-product-form');
+
+      function renderSellerImagePreview() {
+        const preview = sellerForm.querySelector('[data-image-preview]');
+        if (!preview) return;
+        preview.innerHTML = sellerProductImages.map((url, index) => `
+          <span class="seller-image-thumb">
+            <img src="${MarketplacePages.escape(url)}" alt="" />
+            ${index === 0 ? '<em>Principale</em>' : ''}
+            <button type="button" data-image-remove="${index}" aria-label="Retirer"><i data-lucide="x"></i></button>
+          </span>`).join('');
+        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [preview] });
+        preview.querySelectorAll('[data-image-remove]').forEach(button => {
+          button.addEventListener('click', () => {
+            sellerProductImages.splice(Number(button.dataset.imageRemove), 1);
+            renderSellerImagePreview();
+          });
+        });
+      }
+
+      sellerForm?.querySelector('[data-image-input]')?.addEventListener('change', async event => {
+        const input = event.currentTarget;
+        const status = sellerForm.querySelector('[data-image-status]');
+        if (!input.files?.length) return;
+        if (sellerProductImages.length + input.files.length > (window.SokivaImageUpload?.maxFiles || 8)) {
+          Toast.show('8 photos maximum par produit.', 'error', 'alert-circle');
+          input.value = '';
+          return;
+        }
+        try {
+          const urls = await window.SokivaImageUpload.uploadFiles(input.files, file => {
+            if (status) status.textContent = `Envoi de ${file.name}...`;
+          });
+          sellerProductImages.push(...urls);
+          renderSellerImagePreview();
+          if (status) status.textContent = `${sellerProductImages.length} photo(s) importée(s).`;
+        } catch (error) {
+          Toast.show(error.message, 'error', 'alert-circle');
+          if (status) status.textContent = '';
+        } finally {
+          input.value = '';
+        }
+      });
+
+      sellerForm?.addEventListener('submit', async event => {
         event.preventDefault();
         try {
-          await MarketplaceData.saveProduct(this.formData(event.currentTarget));
+          await MarketplaceData.saveProduct({ ...this.formData(event.currentTarget), images: sellerProductImages });
           Toast.show('Produit soumis pour validation par l’administrateur', 'success', 'package-plus');
           await this.initSeller();
         } catch (error) {

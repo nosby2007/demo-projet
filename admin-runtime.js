@@ -6,7 +6,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
 (function enterpriseAdminRuntime() {
   const ROOT_ID = 'enterprise-admin-root';
   const TENANT_ID = 'lamylenoise';
-  const state = { data: null, reconciliation: null, loading: false, activeTab: 'overview', decision: null };
+  const state = { data: null, reconciliation: null, loading: false, activeTab: 'overview', decision: null, productImages: [] };
 
   function backend() {
     return window.SokivaFirebase || window.AfroMarketFirebase || null;
@@ -362,7 +362,9 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
           <label data-product-stock><span>Stock physique initial</span><input name="stockOnHand" type="number" min="0" max="100000" step="1" value="0" required /></label>
           <label><span>Description</span><textarea name="description" maxlength="2000" rows="3" placeholder="Présentation courte du produit affichée sur sa fiche."></textarea></label>
           <label><span>Détails</span><textarea name="details" maxlength="4000" rows="4" placeholder="Un point par ligne : composition, origine, entretien..."></textarea></label>
-          <label><span>Images (une URL HTTPS par ligne, la première est la photo principale)</span><textarea name="images" maxlength="4000" rows="3" placeholder="https://..."></textarea></label>
+          <label><span>Photos (JPEG/PNG/WEBP/GIF, 5 Mo max, 8 photos max — la première est la photo principale)</span><input type="file" data-image-input accept="image/jpeg,image/png,image/webp,image/gif" multiple /></label>
+          <div class="enterprise-admin-image-preview" data-image-preview></div>
+          <small class="enterprise-admin-image-status" data-image-status></small>
           <label><span>Couleurs disponibles (séparées par des virgules)</span><input name="colors" maxlength="400" placeholder="Rouge, Bleu, Noir" /></label>
           <label><span>Livraison</span><input name="delivery" maxlength="240" value="Livraison UAE avec suivi" /></label>
         </div>
@@ -541,8 +543,13 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     target.querySelectorAll('[data-role-review]').forEach(button => button.addEventListener('click', () => openDecision('review', button.dataset.roleReview)));
     target.querySelectorAll('[data-role-changes]').forEach(button => button.addEventListener('click', () => openDecision('changes', button.dataset.roleChanges)));
     target.querySelectorAll('[data-order-action]').forEach(button => button.addEventListener('click', () => openOrderDecision(button.dataset.orderAction, button.dataset.orderId)));
-    target.querySelector('[data-product-create]')?.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.showModal());
+    target.querySelector('[data-product-create]')?.addEventListener('click', () => {
+      const form = target.querySelector('#enterprise-admin-product-form');
+      if (form) resetProductImages(form);
+      document.getElementById('enterprise-admin-product-dialog')?.showModal();
+    });
     target.querySelectorAll('[data-product-close]').forEach(button => button.addEventListener('click', () => document.getElementById('enterprise-admin-product-dialog')?.close()));
+    target.querySelector('#enterprise-admin-product-form [data-image-input]')?.addEventListener('change', handleImageInput);
     target.querySelector('#enterprise-admin-product-form')?.addEventListener('submit', submitProduct);
     target.querySelector('#enterprise-admin-product-form select[name="category"]')?.addEventListener('change', event => { const stock = target.querySelector('[data-product-stock]'); if (stock) stock.hidden = event.currentTarget.value === 'services'; });
     target.querySelectorAll('[data-dialog-close]').forEach(button => button.addEventListener('click', closeDecision));
@@ -563,12 +570,59 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     }
   }
 
-  function linesToList(value, max) {
-    return String(value || '').split('\n').map(line => line.trim()).filter(Boolean).slice(0, max);
-  }
-
   function csvToList(value, max) {
     return String(value || '').split(',').map(item => item.trim()).filter(Boolean).slice(0, max);
+  }
+
+  function resetProductImages(form) {
+    state.productImages = [];
+    const preview = form.querySelector('[data-image-preview]');
+    const status = form.querySelector('[data-image-status]');
+    if (preview) preview.replaceChildren();
+    if (status) status.textContent = '';
+  }
+
+  function renderImagePreview(form) {
+    const preview = form.querySelector('[data-image-preview]');
+    if (!preview) return;
+    preview.innerHTML = state.productImages.map((url, index) => `
+      <span class="enterprise-admin-image-thumb">
+        <img src="${escape(url)}" alt="" />
+        ${index === 0 ? '<em>Principale</em>' : ''}
+        <button type="button" data-image-remove="${index}" aria-label="Retirer">${icon('x')}</button>
+      </span>`).join('');
+    refreshIcons(preview);
+    preview.querySelectorAll('[data-image-remove]').forEach(button => {
+      button.addEventListener('click', () => {
+        state.productImages.splice(Number(button.dataset.imageRemove), 1);
+        renderImagePreview(form);
+      });
+    });
+  }
+
+  async function handleImageInput(event) {
+    const input = event.currentTarget;
+    const form = input.closest('form');
+    const status = form.querySelector('[data-image-status]');
+    if (!input.files?.length) return;
+    if (state.productImages.length + input.files.length > (window.SokivaImageUpload?.maxFiles || 8)) {
+      notify('8 photos maximum par produit.', 'error', 'alert-circle');
+      input.value = '';
+      return;
+    }
+    try {
+      const urls = await window.SokivaImageUpload.uploadFiles(input.files, file => {
+        if (status) status.textContent = `Envoi de ${file.name}...`;
+      });
+      state.productImages.push(...urls);
+      renderImagePreview(form);
+      if (status) status.textContent = `${state.productImages.length} photo(s) importée(s).`;
+    } catch (error) {
+      notify(messageFrom(error, 'Import de photo impossible.'), 'error', 'alert-circle');
+      if (status) status.textContent = '';
+    } finally {
+      input.value = '';
+    }
   }
 
   async function submitProduct(event) {
@@ -586,13 +640,14 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
         category: values.category,
         price: Number(values.price),
         stockOnHand: values.category === 'services' ? 0 : Number(values.stockOnHand),
-        images: linesToList(values.images, 8),
+        images: state.productImages,
         description: values.description,
         details: values.details,
         colors: csvToList(values.colors, 12),
         delivery: values.delivery
       });
       form.reset();
+      resetProductImages(form);
       document.getElementById('enterprise-admin-product-dialog')?.close();
       notify(`Produit ${response.data.productId} publié dans la boutique.`, 'success', 'package-plus');
       await loadDashboard();

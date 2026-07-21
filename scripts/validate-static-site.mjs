@@ -32,6 +32,9 @@ const requiredFiles = [
   'role-sync-runtime.js',
   'role-request-runtime.js',
   'firebase-functions-config.js',
+  'firebase-storage-config.js',
+  'image-upload-runtime.js',
+  'storage.rules',
   'style.css',
   'firebase.json',
   'database.rules.json',
@@ -88,7 +91,9 @@ const jsFiles = [
   'tracking-runtime.js',
   'role-sync-runtime.js',
   'role-request-runtime.js',
+  'image-upload-runtime.js',
   'firebase-config.js',
+  'firebase-storage-config.js',
   'firebase-functions-config.js',
   'service-worker.js',
   'functions/main.js',
@@ -193,8 +198,15 @@ async function validateHtmlPages() {
   if (!account.includes('<script src="account-runtime.js"')) errors.push('account.html is missing Firebase-backed account runtime');
   const admin = await readFile('admin.html', 'utf8');
   if (!admin.includes('<script src="role-sync-runtime.js"')) errors.push('admin.html is missing Auth claims recovery runtime');
+  if (!admin.includes('<script src="image-upload-runtime.js"') || !admin.includes('<script src="firebase-storage-config.js"')) {
+    errors.push('admin.html is missing the trusted image upload runtime');
+  }
   const requestPage = await readFile('request.html', 'utf8');
   if (!requestPage.includes('<script src="role-request-runtime.js"')) errors.push('request.html is missing the trusted role request runtime');
+  const sellerPage = await readFile('seller.html', 'utf8');
+  if (!sellerPage.includes('<script src="image-upload-runtime.js"') || !sellerPage.includes('<script src="firebase-storage-config.js"')) {
+    errors.push('seller.html is missing the trusted image upload runtime');
+  }
 }
 
 async function validateFirebaseConfig() {
@@ -205,6 +217,26 @@ async function validateFirebaseConfig() {
   if (!hosting?.headers?.length) errors.push('firebase.json is missing hosting headers');
   if (!hosting?.rewrites?.some(rule => rule.source === '/health')) errors.push('firebase.json is missing /health rewrite');
   if (!hosting?.ignore?.includes('functions/**')) errors.push('Firebase Hosting must exclude functions/**');
+  if (firebaseConfig.storage?.rules !== 'storage.rules') errors.push('firebase.json must point storage.rules at the checked-in rules file');
+
+  const csp = hosting?.headers?.flatMap(rule => rule.headers || []).find(header => header.key === 'Content-Security-Policy')?.value || '';
+  if (!csp.includes('https://firebasestorage.googleapis.com')) {
+    errors.push('Content-Security-Policy must allow Firebase Storage image URLs (img-src/connect-src)');
+  }
+}
+
+async function validateStorageRules() {
+  const rules = await readFile('storage.rules', 'utf8');
+  for (const invariant of [
+    "request.auth != null",
+    "request.auth.uid == uid",
+    'request.resource.size < 5 * 1024 * 1024',
+    "request.resource.contentType.matches('image/.*')",
+    'allow read: if false',
+    'allow write: if false'
+  ]) {
+    if (!rules.includes(invariant)) errors.push(`storage.rules is missing invariant: ${invariant}`);
+  }
 }
 
 async function validateDatabaseRules() {
@@ -294,6 +326,12 @@ async function validateEmploymentBackend() {
     errors.push('role-request-runtime.js must not read or write Realtime Database paths directly.');
   }
 
+  const imageUploadRuntime = await readFile('image-upload-runtime.js', 'utf8');
+  for (const token of ['MAX_SIZE', 'ALLOWED_TYPES', 'contentType: file.type', 'getDownloadURL', 'window.SokivaImageUpload']) {
+    if (!imageUploadRuntime.includes(token)) errors.push(`image-upload-runtime.js is missing ${token}`);
+  }
+  if (!runtime.includes('window.SokivaImageUpload.uploadFiles')) errors.push('Seller product form must upload photos through the trusted Storage helper');
+
   if (!main.includes('...marketplace') || !main.includes('...checkout') || !main.includes('...catalog') || !main.includes('...roleApproval')) {
     errors.push('Deployed Functions must compose marketplace, checkout, catalogue and role approval modules');
   }
@@ -327,6 +365,7 @@ await Promise.all(esModuleFiles.map(validateEsModule));
 await validateHtmlPages();
 await validateFirebaseConfig();
 await validateDatabaseRules();
+await validateStorageRules();
 await validateEmploymentBackend();
 
 if (errors.length) {
