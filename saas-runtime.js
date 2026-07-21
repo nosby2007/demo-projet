@@ -501,6 +501,11 @@
       const session = await MarketplaceData.requireRole('customer');
       if (!session) return;
       const orders = await MarketplaceData.list('orders', MarketplaceData.localKeys.orders);
+      const HISTORY_STATUSES = ['delivered', 'cancelled', 'refunded'];
+      const activeOrders = orders.filter(order => !HISTORY_STATUSES.includes(order.status));
+      const historyOrders = orders
+        .filter(order => HISTORY_STATUSES.includes(order.status))
+        .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0));
       root.innerHTML = `
         <div class="role-kpis">
           <div class="stat-card"><i data-lucide="shopping-bag"></i><strong>${orders.length}</strong><span>Commandes</span></div>
@@ -508,8 +513,8 @@
           <div class="stat-card"><i data-lucide="map"></i><strong>${orders.filter(order => order.status === 'in_transit').length}</strong><span>En livraison</span></div>
         </div>
         <section class="ops-panel">
-          <h2>Suivi sécurisé</h2>
-          <div class="ops-table">${orders.map(order => `
+          <h2>Commandes en cours</h2>
+          <div class="ops-table">${activeOrders.map(order => `
             <article class="ops-row">
               <div>
                 <strong>${this.escape(order.id)}</strong>
@@ -518,7 +523,18 @@
                 ${['ready_for_pickup','in_transit'].includes(order.status) && order.deliveryCode ? `<p><strong>Code de remise : ${this.escape(order.deliveryCode)}</strong> — communiquez-le uniquement après réception.</p>` : ''}
               </div>
               ${['confirmed','preparing','ready_for_pickup'].includes(order.status) ? `<button class="btn-link danger" data-cancel-order="${this.escape(order.id)}">Annuler</button>` : ''}
-            </article>`).join('') || '<p class="muted">Aucune commande pour ce compte.</p>'}</div>
+            </article>`).join('') || '<p class="muted">Aucune commande en cours.</p>'}</div>
+        </section>
+        <section class="ops-panel">
+          <h2>Historique des commandes</h2>
+          <div class="ops-table">${historyOrders.map(order => `
+            <article class="ops-row">
+              <div>
+                <strong>${this.escape(order.id)}</strong>
+                <p>${MarketplaceData.money(order.total)} · ${this.statusText(order.status)}</p>
+                <small>${this.escape(order.emirate || '')} · ${this.formatDate(order.updatedAt || order.createdAt)}</small>
+              </div>
+            </article>`).join('') || '<p class="muted">Aucune commande terminée pour le moment.</p>'}</div>
         </section>`;
       if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [root] });
       root.querySelectorAll('[data-cancel-order]').forEach(button => {

@@ -128,7 +128,7 @@
 
   function buildCustomerTracker(root, orders) {
     stopSubscriptions();
-    const relevant = orders.filter(order => !['cancelled', 'refunded'].includes(order.status));
+    const relevant = orders.filter(order => !['delivered', 'cancelled', 'refunded'].includes(order.status));
     if (!relevant.length) return;
     const selected = relevant.find(order => order.status === 'in_transit') || relevant[0];
 
