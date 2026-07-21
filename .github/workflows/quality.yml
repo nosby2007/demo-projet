@@ -87,5 +87,5 @@ jobs:
       - name: Install Firebase CLI
         run: npm install --ignore-scripts
 
-      - name: Test Realtime Database rules in emulator
-        run: npx firebase emulators:exec --project sokiva-rules-test --only database "npm --prefix functions run test:rules"
+      - name: Test Realtime Database and Storage rules in emulator
+        run: npx firebase emulators:exec --project sokiva-rules-test --only database,storage "npm --prefix functions run test:rules"

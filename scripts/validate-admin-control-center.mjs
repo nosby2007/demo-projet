@@ -50,7 +50,7 @@ for (const [name, source] of [
   try { new vm.Script(source, { filename: name }); }
   catch (error) { errors.push(`Invalid JavaScript in ${name}: ${error.message}`); }
 }
-for (const invariant of ['data-product-create', 'enterprise-admin-product-form', "callable('submitProduct')", 'catalog.write']) {
+for (const invariant of ['data-product-create', 'enterprise-admin-product-form', "callable('submitProduct')", 'catalog.write', 'window.SokivaImageUpload.uploadFiles']) {
   requireText(adminRuntime, invariant, `Admin catalogue creation invariant missing: ${invariant}`);
 }
 

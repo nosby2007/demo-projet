@@ -13,7 +13,12 @@ const blockedProjects = new Set([
 ]);
 const approvedScopes = new Set([
   'hosting',
-  'hosting,database,functions'
+  'hosting,database,functions',
+  'hosting,database,functions,storage'
+]);
+const fullDeployScopes = new Set([
+  'hosting,database,functions',
+  'hosting,database,functions,storage'
 ]);
 
 if (!projectId) {
@@ -36,7 +41,7 @@ if (!approvedScopes.has(deployOnly)) {
   process.exit(1);
 }
 
-if (deployOnly === 'hosting,database,functions' && process.env.FIREBASE_CONFIRM_FULL !== 'DEPLOY_FULL') {
+if (fullDeployScopes.has(deployOnly) && process.env.FIREBASE_CONFIRM_FULL !== 'DEPLOY_FULL') {
   console.error('Full deployment requires FIREBASE_CONFIRM_FULL=DEPLOY_FULL.');
   process.exit(1);
 }
