@@ -57,6 +57,21 @@
     return String(raw).replace(/^FirebaseError:\s*/i, '');
   }
 
+  async function pruneUnavailableItem(error, tenantId) {
+    const productId = error?.details?.reason === 'product_unavailable' ? error.details.productId : null;
+    if (!productId) return;
+    try {
+      const response = await backend.functions.httpsCallable('updateAccountCart')({
+        tenantId,
+        action: 'remove',
+        productId
+      });
+      if (typeof CartModule !== 'undefined') CartModule.applyServerCart(response.data);
+    } catch (removeError) {
+      console.warn('Could not automatically remove the unavailable item from the cart.', removeError);
+    }
+  }
+
   async function attachDestination(orderId, location) {
     if (!location) return;
     try {
@@ -114,6 +129,7 @@
         button.removeAttribute('aria-busy');
         button.innerHTML = previousHtml || 'Confirmer la commande sécurisée';
       }
+      await pruneUnavailableItem(error, order.tenantId || 'lamylenoise');
       throw new Error(errorMessage(error));
     }
   };
