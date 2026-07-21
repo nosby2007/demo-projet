@@ -31,6 +31,8 @@ for (const [expected, message] of [
   ['persist-credentials: false', 'The deployment checkout must not persist the GitHub token.'],
   ['DEPLOY_FULL', 'Full deployments must require the stronger DEPLOY_FULL confirmation.'],
   ['echo "FIREBASE_CONFIRM_FULL=DEPLOY_FULL" >> "$GITHUB_ENV"', 'The workflow must pass the full-deploy confirmation to the safe wrapper.'],
+  ["'hosting,database,functions,storage'", 'The full deployment scope must include Storage rules so they actually reach production.'],
+  ['"$FIREBASE_DEPLOY_ONLY" = "hosting,database,functions,storage"', 'The DEPLOY_FULL confirmation gate must match the full deployment scope exactly.'],
   ['npm run build', 'The application must be revalidated before deployment.'],
   ['npm run test:functions', 'Cloud Functions must be revalidated before deployment.'],
   ['npm run deploy', 'The workflow must deploy through the safe wrapper.']
