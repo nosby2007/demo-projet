@@ -122,7 +122,7 @@ Choose:
 Confirmation values:
 
 - Hosting-only: `DEPLOY`
-- Hosting + Database rules + Functions: `DEPLOY_FULL`
+- Hosting + Database rules + Functions + Storage rules: `DEPLOY_FULL`
 
 The workflow validates that each GitHub Environment points to the matching Firebase project. For example, `production` cannot deploy unless its `FIREBASE_PROJECT_ID` is exactly `sokiva-prod`.
 
@@ -153,7 +153,7 @@ Full development deployment:
 
 ```bash
 FIREBASE_PROJECT_ID=sokiva-dev \
-FIREBASE_DEPLOY_ONLY=hosting,database,functions \
+FIREBASE_DEPLOY_ONLY=hosting,database,functions,storage \
 FIREBASE_CONFIRM_FULL=DEPLOY_FULL \
 npm run deploy
 ```
