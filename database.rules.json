@@ -63,6 +63,11 @@
       ".read": false,
       ".write": false
     },
+    "pendingCardPayments": {
+      ".read": false,
+      ".write": false,
+      ".indexOn": ["expiresAt", "tenantId", "customerUid"]
+    },
     "orders": {
       ".read": false,
       ".write": false,

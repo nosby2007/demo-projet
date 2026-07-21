@@ -560,6 +560,37 @@ exports.transitionOrder = onCall(async request => {
   return { orderId, status: nextStatus };
 });
 
+// Internal-only cancellation (no callable/auth context) for abandoned or failed card payments.
+async function cancelOrderInternal(orderId, paymentStatus) {
+  let problem = null;
+  const now = Date.now();
+  const transaction = await db.ref().transaction(current => {
+    problem = null;
+    const root = current || {};
+    const order = root.orders?.[orderId];
+    if (!order) {
+      problem = fail('not-found', 'Commande introuvable.');
+      return;
+    }
+    const cancellable = ['confirmed', 'preparing', 'ready_for_pickup'].includes(order.status);
+    if (!cancellable) {
+      problem = fail('failed-precondition', 'Commande non annulable.');
+      return;
+    }
+    releaseInventory(root, order);
+    if (paymentStatus) order.paymentStatus = paymentStatus;
+    synchronizeOrderStatus(root, order, 'cancelled', now);
+    cancelSellerLegs(root, order, now);
+    if (root.deliveryJobs?.[orderId]) {
+      root.deliveryJobs[orderId].status = 'cancelled';
+      root.deliveryJobs[orderId].updatedAt = now;
+    }
+    return root;
+  }, undefined, false);
+  return transaction.committed;
+}
+exports.cancelOrderInternal = cancelOrderInternal;
+
 exports.claimDeliveryJob = onCall(async request => {
   const uid = requireAuth(request);
   const profile = await requireRole(uid, ['courier']);

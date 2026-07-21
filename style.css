@@ -2544,6 +2544,15 @@ input, select {
 .pay-option input[type="radio"] { accent-color: var(--color-accent); }
 .pay-option i, .pay-option svg { color: var(--color-accent); width: 20px; height: 20px; }
 
+.card-payment-panel { display: flex; flex-direction: column; gap: 8px; margin-top: -4px; }
+.card-element {
+  padding: 12px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+.card-errors { color: var(--color-danger); font-size: var(--text-sm); min-height: 1em; }
+
 .co-submit {
   align-self: flex-end;
   min-width: 220px;

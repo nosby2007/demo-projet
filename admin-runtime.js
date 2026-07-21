@@ -62,7 +62,8 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
       pending_review: 'A verifier', active: 'Actif', disabled: 'Desactive',
       confirmed: 'Confirmee', preparing: 'En preparation', ready_for_pickup: 'Prete au retrait',
       in_transit: 'En livraison', delivered: 'Livree', cancelled: 'Annulee', refunded: 'Remboursee',
-      pending_cod: 'COD a collecter', paid: 'Paye', collected: 'Collecte', settled: 'Regle'
+      pending_cod: 'COD a collecter', pending_card: 'Carte en attente', payment_failed: 'Paiement echoue',
+      paid: 'Paye', collected: 'Collecte', settled: 'Regle'
     }[value] || value || 'Non defini';
   }
 
