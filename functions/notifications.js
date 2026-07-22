@@ -175,6 +175,7 @@ async function notifyCustomerStatus(order, status, createdAt) {
 
 async function notifyOrderCreated(order, createdAt) {
   const reference = shortOrderId(order.id);
+  const admins = await activeRoleUids(order.tenantId || DEFAULT_TENANT, 'admin');
   await Promise.all([
     writeNotification(order.customerUid, order, 'order_received', 'customer', {
       type: 'order_received',
@@ -187,6 +188,12 @@ async function notifyOrderCreated(order, createdAt) {
       title: 'Nouvelle commande',
       body: `Une nouvelle commande ${reference} attend votre préparation.`,
       priority: 'high'
+    }, createdAt),
+    notifyMany(admins, order, 'admin_new_order', 'admin', {
+      type: 'admin_order_received',
+      title: 'Nouvelle commande',
+      body: `La commande ${reference} vient d’être enregistrée.`,
+      priority: 'normal'
     }, createdAt)
   ]);
 }
