@@ -185,7 +185,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
       </article>`;
   }
 
-  function productRow(product, reason) {
+  function productRow(product, reason, moderatable = false) {
     return `
       <article class="enterprise-admin-record">
         <div class="enterprise-admin-record-main">
@@ -197,6 +197,10 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
           <small>${escape(reason)} · Stock ${Number(product.stockAvailable || 0)}</small>
         </div>
         <div class="enterprise-admin-record-money"><strong>${escape(money(product.price))}</strong></div>
+        ${moderatable ? `<div class="enterprise-admin-record-actions">
+          <button class="btn-link" type="button" data-product-approve="${escape(product.id)}">Approuver</button>
+          <button class="btn-link danger" type="button" data-product-reject="${escape(product.id)}">Rejeter</button>
+        </div>` : ''}
       </article>`;
   }
 
@@ -270,7 +274,7 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
         <div class="enterprise-admin-grid two">
           <article class="enterprise-admin-card">
             <header><div><span>Catalogue</span><h3>Produits et modération</h3></div>${canWriteCatalog ? `<button class="btn-primary" type="button" data-product-create>${icon('plus')} Ajouter un produit</button>` : `<small>${data.marketplace.pendingProductCount}</small>`}</header>
-            <div class="enterprise-admin-list">${data.marketplace.pendingProducts.map(product => productRow(product, 'Validation requise')).join('') || emptyState('badge-check', 'Aucun produit en attente', 'La file de moderation est a jour.')}</div>
+            <div class="enterprise-admin-list">${data.marketplace.pendingProducts.map(product => productRow(product, 'Validation requise', canWriteCatalog)).join('') || emptyState('badge-check', 'Aucun produit en attente', 'La file de moderation est a jour.')}</div>
           </article>
           <article class="enterprise-admin-card">
             <header><div><span>Inventaire</span><h3>Stock faible</h3></div><small>${data.marketplace.lowStockCount}</small></header>
@@ -480,6 +484,28 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     dialog.showModal();
   }
 
+  function openProductDecision(decision, productId) {
+    const dialog = document.getElementById('enterprise-admin-decision-dialog');
+    const title = document.getElementById('enterprise-admin-decision-title');
+    const copy = document.getElementById('enterprise-admin-decision-copy');
+    const reasonField = document.getElementById('enterprise-admin-reason-field');
+    const reason = document.getElementById('enterprise-admin-decision-reason');
+    const submit = document.getElementById('enterprise-admin-decision-submit');
+    const product = state.data?.marketplace?.pendingProducts?.find(item => item.id === productId);
+    if (!dialog || !product) return;
+    state.decision = { type: decision === 'approve' ? 'product-approve' : 'product-reject', productId };
+    const name = product.name || 'ce produit';
+    title.textContent = decision === 'approve' ? 'Approuver le produit' : 'Rejeter le produit';
+    copy.textContent = decision === 'approve'
+      ? `${name} sera publie dans la boutique.`
+      : `${name} sera rejete et restera masque de la boutique.`;
+    reasonField.hidden = true;
+    reason.required = false;
+    reason.value = '';
+    submit.textContent = decision === 'approve' ? 'Confirmer l approbation' : 'Confirmer le rejet';
+    dialog.showModal();
+  }
+
   function openOrderDecision(status, orderId) {
     const dialog = document.getElementById('enterprise-admin-decision-dialog');
     const title = document.getElementById('enterprise-admin-decision-title');
@@ -523,6 +549,17 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
       } else if (decision.type === 'changes') {
         await callable('requestRoleRequestChangesEnterprise')({ tenantId: TENANT_ID, requestId: decision.requestId, reason });
         notify('Demande de correction envoyee au candidat.', 'success', 'edit-3');
+      } else if (decision.type === 'product-approve' || decision.type === 'product-reject') {
+        await callable('reviewProduct')({
+          tenantId: TENANT_ID,
+          productId: decision.productId,
+          decision: decision.type === 'product-approve' ? 'approve' : 'reject'
+        });
+        notify(
+          decision.type === 'product-approve' ? 'Produit approuve et publie dans la boutique.' : 'Produit rejete.',
+          'success',
+          decision.type === 'product-approve' ? 'badge-check' : 'shield-x'
+        );
       } else {
         await callable('rejectRoleRequest')({ tenantId: TENANT_ID, requestId: decision.requestId, reason });
         notify('Candidature refusee et decision auditee.', 'success', 'shield-x');
@@ -544,6 +581,8 @@ window.SokivaEnterpriseAdmin = Object.freeze({ enabled: true, version: '3.0.0' }
     target.querySelectorAll('[data-role-review]').forEach(button => button.addEventListener('click', () => openDecision('review', button.dataset.roleReview)));
     target.querySelectorAll('[data-role-changes]').forEach(button => button.addEventListener('click', () => openDecision('changes', button.dataset.roleChanges)));
     target.querySelectorAll('[data-order-action]').forEach(button => button.addEventListener('click', () => openOrderDecision(button.dataset.orderAction, button.dataset.orderId)));
+    target.querySelectorAll('[data-product-approve]').forEach(button => button.addEventListener('click', () => openProductDecision('approve', button.dataset.productApprove)));
+    target.querySelectorAll('[data-product-reject]').forEach(button => button.addEventListener('click', () => openProductDecision('reject', button.dataset.productReject)));
     target.querySelector('[data-product-create]')?.addEventListener('click', () => {
       const form = target.querySelector('#enterprise-admin-product-form');
       if (form) resetProductImages(form);
