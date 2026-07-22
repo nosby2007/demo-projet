@@ -53,6 +53,9 @@ for (const [name, source] of [
 for (const invariant of ['data-product-create', 'enterprise-admin-product-form', "callable('submitProduct')", 'catalog.write', 'window.SokivaImageUpload.uploadFiles']) {
   requireText(adminRuntime, invariant, `Admin catalogue creation invariant missing: ${invariant}`);
 }
+for (const invariant of ['data-product-approve', 'data-product-reject', "callable('reviewProduct')"]) {
+  requireText(adminRuntime, invariant, `Admin product moderation invariant missing: ${invariant}`);
+}
 
 for (const invariant of [
   'getAdminCommandCenter',
