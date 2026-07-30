@@ -287,18 +287,23 @@
       renderList();
     });
     refreshBrowserStatus();
+    if (browserAlertsEnabled()) window.SokivaPush?.enable();
   }
 
   async function toggleBrowserAlerts() {
     if (!state.user || !('Notification' in window) || !('serviceWorker' in navigator)) return;
     if (browserAlertsEnabled()) {
       localStorage.removeItem(preferenceKey());
+      await window.SokivaPush?.disable();
       refreshBrowserStatus();
       return;
     }
     try {
       const permission = await Notification.requestPermission();
-      if (permission === 'granted') localStorage.setItem(preferenceKey(), 'enabled');
+      if (permission === 'granted') {
+        localStorage.setItem(preferenceKey(), 'enabled');
+        await window.SokivaPush?.enable();
+      }
     } catch (error) {
       console.warn('[SOKIVA] Notification permission unavailable', error);
     }

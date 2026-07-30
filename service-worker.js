@@ -36,6 +36,8 @@ const APP_SHELL = [
   '/checkout-runtime-v5.js',
   '/checkout-location-runtime.js',
   '/tracking-runtime.js',
+  '/push-config.js',
+  '/push-notification-runtime.js',
   '/notifications-runtime.js',
   '/role-sync-runtime.js',
   '/role-request-runtime.js',
@@ -57,6 +59,34 @@ const APP_SHELL = [
   '/404.html'
 ];
 const NOTIFICATION_PAGES = new Set(['customer.html', 'seller.html', 'courier.html', 'admin.html', 'account.html']);
+
+// Duplicated from firebase-config.js: this config is public/non-secret, but a service
+// worker can't load that DOM-oriented file, so the values are inlined here instead.
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js');
+  firebase.initializeApp({
+    apiKey: 'AIzaSyD3TwNnuwKbebGxjJTlVyknvyV267uR28w',
+    authDomain: 'sokiva-dev.firebaseapp.com',
+    databaseURL: 'https://sokiva-dev-default-rtdb.firebaseio.com',
+    projectId: 'sokiva-dev',
+    storageBucket: 'sokiva-dev.firebasestorage.app',
+    messagingSenderId: '669134589789',
+    appId: '1:669134589789:web:167daaa6a8979f416122b4'
+  });
+  firebase.messaging().onBackgroundMessage(payload => {
+    const notification = payload.notification || {};
+    const data = payload.data || {};
+    self.registration.showNotification(notification.title || 'SOKIVA', {
+      body: notification.body || '',
+      tag: data.orderId || undefined,
+      data: { deepLink: data.deepLink },
+      badge: '/favicon.ico'
+    });
+  });
+} catch (error) {
+  console.warn('[SOKIVA] Firebase Messaging unavailable in service worker', error);
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_VERSION).then(cache => cache.addAll(APP_SHELL)));

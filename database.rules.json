@@ -132,6 +132,10 @@
         ".indexOn": ["createdAt", "readAt"]
       }
     },
+    "pushTokens": {
+      ".read": false,
+      ".write": false
+    },
     "auditLogs": {
       ".read": false,
       ".write": false,

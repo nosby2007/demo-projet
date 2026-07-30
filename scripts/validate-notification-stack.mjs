@@ -9,6 +9,8 @@ const [
   main,
   rulesSource,
   runtime,
+  pushRuntime,
+  pushConfig,
   styles,
   serviceWorker,
   customerHtml,
@@ -21,6 +23,8 @@ const [
   read('functions/main.js'),
   read('database.rules.json'),
   read('notifications-runtime.js'),
+  read('push-notification-runtime.js'),
+  read('push-config.js'),
   read('notifications.css'),
   read('service-worker.js'),
   read('customer.html'),
@@ -33,6 +37,8 @@ const [
 for (const [name, source] of [
   ['functions/notifications.js', backend],
   ['notifications-runtime.js', runtime],
+  ['push-notification-runtime.js', pushRuntime],
+  ['push-config.js', pushConfig],
   ['service-worker.js', serviceWorker]
 ]) {
   try { new vm.Script(source, { filename: name }); }
@@ -47,16 +53,29 @@ for (const functionName of [
   'notifyOrderChanges',
   'notifyCourierNearby',
   'markNotificationRead',
-  'markAllNotificationsRead'
+  'markAllNotificationsRead',
+  'registerPushToken',
+  'unregisterPushToken'
 ]) {
   if (!backend.includes(`exports.${functionName}`)) errors.push(`Notification backend is missing ${functionName}.`);
   if (!main.includes(`${functionName}: notifications.${functionName}`)) errors.push(`Functions composition is missing ${functionName}.`);
 }
 
 for (const invariant of [
+  "require('firebase-admin/messaging')",
+  'getMessaging().sendEachForMulticast',
+  'pushTokens/${uid}',
+  "'messaging/registration-token-not-registered'",
+  'MAX_PUSH_TOKENS_PER_USER',
+  'hashToken'
+]) {
+  if (!backend.includes(invariant)) errors.push(`Push notification backend invariant missing: ${invariant}`);
+}
+
+for (const invariant of [
   "ref: '/orders/{orderId}'",
   "ref: '/orderTracking/{orderId}'",
-  'current => current || payload',
+  'if (current) return current;',
   "after.status !== 'in_transit'",
   'currentDistance > NEARBY_DISTANCE_KM',
   'previousDistance > NEARBY_DISTANCE_KM',
@@ -69,6 +88,10 @@ for (const invariant of [
 ]) {
   if (!backend.includes(invariant)) errors.push(`Notification invariant missing: ${invariant}`);
 }
+
+const pushTokensRule = rules.pushTokens || {};
+if (pushTokensRule['.read'] !== false) errors.push('Push tokens must reject direct browser reads.');
+if (pushTokensRule['.write'] !== false) errors.push('Push tokens must reject direct browser writes.');
 
 if (inboxRule['.write'] !== false) errors.push('Notification inboxes must reject direct browser writes.');
 const readRule = String(inboxRule['.read'] || '');
@@ -87,6 +110,12 @@ for (const html of [customerHtml, sellerHtml, courierHtml, adminHtml]) {
   if (html.indexOf('<script src="notifications-runtime.js"') < html.indexOf('<script src="app.js"')) {
     errors.push('Notification runtime must load after app.js so the shared header exists.');
   }
+  if (!html.includes('firebase-messaging-compat.js') || !html.includes('<script src="push-config.js"') || !html.includes('<script src="push-notification-runtime.js"')) {
+    errors.push('Every authenticated role workspace must load the Firebase Messaging SDK and push notification runtime.');
+  }
+  if (html.indexOf('<script src="push-notification-runtime.js"') > html.indexOf('<script src="notifications-runtime.js"')) {
+    errors.push('push-notification-runtime.js must load before notifications-runtime.js so window.SokivaPush exists when alerts are toggled.');
+  }
 }
 
 for (const invariant of [
@@ -100,7 +129,9 @@ for (const invariant of [
   'registration.showNotification',
   'safeDeepLink(notification.deepLink)',
   'document.createElement',
-  'textContent'
+  'textContent',
+  'window.SokivaPush?.enable()',
+  'window.SokivaPush?.disable()'
 ]) {
   if (!runtime.includes(invariant)) errors.push(`Notification client invariant missing: ${invariant}`);
 }
@@ -109,17 +140,33 @@ if (!styles.includes('.notification-drawer') || !styles.includes('.notification-
   errors.push('Notification drawer or unread styles are missing.');
 }
 
-for (const asset of ['/notifications-runtime.js', '/notifications.css']) {
+for (const asset of ['/notifications-runtime.js', '/notifications.css', '/push-config.js', '/push-notification-runtime.js']) {
   if (!serviceWorker.includes(`'${asset}'`)) errors.push(`PWA shell must cache ${asset}.`);
 }
 for (const invariant of [
   "self.addEventListener('notificationclick'",
   'safeNotificationUrl',
   'NOTIFICATION_PAGES',
-  'self.clients.openWindow(targetUrl)'
+  'self.clients.openWindow(targetUrl)',
+  'importScripts',
+  'firebase.messaging().onBackgroundMessage',
+  'self.registration.showNotification'
 ]) {
   if (!serviceWorker.includes(invariant)) errors.push(`Service worker notification navigation is missing: ${invariant}`);
 }
+
+for (const invariant of [
+  'firebase.messaging.isSupported()',
+  "callable('registerPushToken')",
+  "callable('unregisterPushToken')",
+  'messaging.getToken(',
+  'serviceWorkerRegistration',
+  'window.FCM_VAPID_KEY',
+  'window.SokivaPush = Object.freeze'
+]) {
+  if (!pushRuntime.includes(invariant)) errors.push(`Push notification client invariant missing: ${invariant}`);
+}
+if (!pushConfig.includes('window.FCM_VAPID_KEY')) errors.push('push-config.js must define window.FCM_VAPID_KEY.');
 
 if (!functionsPackage.includes('node --check notifications.js')) errors.push('Function syntax validation must include notifications.js.');
 if (!functionsPackage.includes('test/notifications.test.js')) errors.push('Function unit tests must include notifications.test.js.');

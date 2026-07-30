@@ -14,7 +14,8 @@ const {
   customerStatusSpec,
   shouldNotifyNearby,
   sellerUids,
-  isActiveRoleProfile
+  isActiveRoleProfile,
+  hashToken
 } = require('../notifications');
 
 test('notification IDs are deterministic and safe for Realtime Database keys', () => {
@@ -86,4 +87,12 @@ test('seller recipients exclude the internal catalogue account', () => {
     sellerUids({ sellerUids: { 'seller-a': true, catalog: true, 'seller-b': true } }).sort(),
     ['seller-a', 'seller-b']
   );
+});
+
+test('push token hashes are deterministic and safe for Realtime Database keys', () => {
+  const token = 'fcm-token-example:with-colon_and-dashes';
+  const hash = hashToken(token);
+  assert.equal(hash, hashToken(token));
+  assert.notEqual(hash, hashToken(`${token}x`));
+  assert.equal(/[.#$\[\]\/]/.test(hash), false);
 });

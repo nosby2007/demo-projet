@@ -49,6 +49,8 @@ module.exports = {
   notifyCourierNearby: notifications.notifyCourierNearby,
   markNotificationRead: notifications.markNotificationRead,
   markAllNotificationsRead: notifications.markAllNotificationsRead,
+  registerPushToken: notifications.registerPushToken,
+  unregisterPushToken: notifications.unregisterPushToken,
   registerCustomerProfile: identity.registerCustomerProfile,
   getMyIdentity: identity.getMyIdentity,
   updateMyProfile: identity.updateMyProfile
