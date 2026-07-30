@@ -1,7 +1,9 @@
 'use strict';
 
+const { createHash } = require('node:crypto');
 const { getApps, initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
+const { getMessaging } = require('firebase-admin/messaging');
 const { HttpsError, onCall } = require('firebase-functions/v2/https');
 const { onValueWritten } = require('firebase-functions/v2/database');
 
@@ -12,6 +14,7 @@ const DEFAULT_TENANT = 'lamylenoise';
 const DATABASE_REGION = 'us-central1';
 const MAX_ROLE_RECIPIENTS = 200;
 const MAX_MARK_ALL = 200;
+const MAX_PUSH_TOKENS_PER_USER = 12;
 const NEARBY_DISTANCE_KM = 1;
 
 function clean(value, max = 240) {
@@ -20,6 +23,10 @@ function clean(value, max = 240) {
 
 function safeKey(value, max = 220) {
   return clean(value, max).replace(/[.#$\[\]/]/g, '_');
+}
+
+function hashToken(token) {
+  return createHash('sha256').update(String(token)).digest('hex');
 }
 
 function shortOrderId(orderId) {
@@ -129,6 +136,45 @@ function isActiveRoleProfile(profile, tenantId, role) {
   );
 }
 
+async function sendPushToUser(uid, notification) {
+  const tokensSnapshot = await db.ref(`pushTokens/${uid}`).get();
+  const tokens = tokensSnapshot.val();
+  if (!tokens) return;
+  const tokenKeys = Object.keys(tokens);
+  if (!tokenKeys.length) return;
+
+  const message = {
+    tokens: tokenKeys.map(key => tokens[key].token),
+    notification: {
+      title: notification.title,
+      body: notification.body
+    },
+    data: {
+      deepLink: notification.deepLink,
+      orderId: clean(notification.orderId, 160),
+      type: clean(notification.type, 80)
+    },
+    webpush: {
+      fcmOptions: { link: notification.deepLink }
+    }
+  };
+
+  try {
+    const response = await getMessaging().sendEachForMulticast(message);
+    const staleUpdates = {};
+    response.responses.forEach((result, index) => {
+      if (result.success) return;
+      const code = result.error?.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        staleUpdates[`pushTokens/${uid}/${tokenKeys[index]}`] = null;
+      }
+    });
+    if (Object.keys(staleUpdates).length) await db.ref().update(staleUpdates);
+  } catch (error) {
+    console.error('Push notification dispatch failed.', uid, error);
+  }
+}
+
 async function writeNotification(uid, order, eventKey, role, spec, createdAt) {
   const recipientUid = clean(uid, 160);
   if (!recipientUid || recipientUid === 'catalog' || !order?.id || !spec) return null;
@@ -139,11 +185,18 @@ async function writeNotification(uid, order, eventKey, role, spec, createdAt) {
 
   const payload = buildNotification(order, eventKey, role, spec, createdAt);
   const ref = db.ref(`userNotifications/${recipientUid}/${payload.id}`);
-  const result = await ref.transaction(current => current || payload, undefined, false);
+  let isNew = false;
+  const result = await ref.transaction(current => {
+    if (current) return current;
+    isNew = true;
+    return payload;
+  }, undefined, false);
   if (!result.committed && !result.snapshot.exists()) {
     throw new Error(`Notification ${payload.id} non enregistrée.`);
   }
-  return result.snapshot.val() || null;
+  const stored = result.snapshot.val() || null;
+  if (isNew && stored) await sendPushToUser(recipientUid, stored);
+  return stored;
 }
 
 async function notifyMany(uids, order, eventKey, role, spec, createdAt) {
@@ -353,9 +406,36 @@ exports.markAllNotificationsRead = onCall({ region: 'me-central1', maxInstances:
   return { marked: Object.keys(updates).length, readAt: now };
 });
 
+exports.registerPushToken = onCall({ region: 'me-central1', maxInstances: 20 }, async request => {
+  const { uid } = await requireActiveUser(request);
+  const token = clean(request.data?.token, 400);
+  if (!token) throw new HttpsError('invalid-argument', 'Jeton push manquant.');
+  const key = hashToken(token);
+  const userAgent = clean(request.data?.userAgent, 300);
+  const now = Date.now();
+
+  await db.ref(`pushTokens/${uid}`).transaction(current => {
+    const tokens = { ...(current || {}) };
+    tokens[key] = { token, userAgent, createdAt: tokens[key]?.createdAt || now, updatedAt: now };
+    const entries = Object.entries(tokens).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
+    return Object.fromEntries(entries.slice(0, MAX_PUSH_TOKENS_PER_USER));
+  }, undefined, false);
+
+  return { registered: true };
+});
+
+exports.unregisterPushToken = onCall({ region: 'me-central1', maxInstances: 20 }, async request => {
+  const { uid } = await requireActiveUser(request);
+  const token = clean(request.data?.token, 400);
+  if (!token) throw new HttpsError('invalid-argument', 'Jeton push manquant.');
+  await db.ref(`pushTokens/${uid}/${hashToken(token)}`).remove();
+  return { unregistered: true };
+});
+
 exports.notificationId = notificationId;
 exports.buildNotification = buildNotification;
 exports.customerStatusSpec = customerStatusSpec;
 exports.shouldNotifyNearby = shouldNotifyNearby;
 exports.sellerUids = sellerUids;
 exports.isActiveRoleProfile = isActiveRoleProfile;
+exports.hashToken = hashToken;
