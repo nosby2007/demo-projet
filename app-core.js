@@ -277,6 +277,13 @@ const CartModule = {
     document.getElementById('cart-close').addEventListener('click', () => this.close());
     this.overlay.addEventListener('click', e => { if (e.target === this.overlay) this.close(); });
 
+    const checkoutLink = this.overlay.querySelector('.btn-checkout');
+    checkoutLink?.addEventListener('click', async e => {
+      e.preventDefault();
+      await this.whenReady();
+      window.location.href = checkoutLink.href;
+    });
+
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && this.overlay.classList.contains('open')) this.close();
     });
