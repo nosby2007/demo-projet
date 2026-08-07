@@ -1518,8 +1518,11 @@ const ProductDetailModule = {
     document.getElementById('pd-add').addEventListener('click', () => {
       for (let i = 0; i < qty; i++) CartModule.addItem(product);
     });
-    document.getElementById('pd-buy').addEventListener('click', () => {
+    document.getElementById('pd-buy').addEventListener('click', async event => {
+      event.preventDefault();
       for (let i = 0; i < qty; i++) CartModule.addItem(product);
+      await CartModule.whenReady();
+      window.location.href = 'checkout.html';
     });
 
     // Thumb switcher
