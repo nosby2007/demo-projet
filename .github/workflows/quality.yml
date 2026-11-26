@@ -1,0 +1,91 @@
+name: Sokiva marketplace quality gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Use Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Validate static application and security configuration
+        run: node scripts/validate-static-site.mjs
+
+      - name: Validate marketplace hardening regressions
+        run: node scripts/validate-hardening-v2.mjs
+
+      - name: Validate audit and traceability stack
+        run: node scripts/validate-audit-stack.mjs
+
+      - name: Validate live order tracking stack
+        run: node scripts/validate-tracking-stack.mjs
+
+      - name: Validate private notification stack
+        run: node scripts/validate-notification-stack.mjs
+
+      - name: Validate SOKIVA identity and frontend migration
+        run: node scripts/validate-identity-stack.mjs
+
+      - name: Validate enterprise operations control center
+        run: node scripts/validate-admin-control-center.mjs
+
+      - name: Validate Firebase deployment pipeline
+        run: node scripts/validate-deploy-pipeline.mjs
+
+      - name: Install backend test dependencies
+        working-directory: functions
+        run: npm install --ignore-scripts
+
+      - name: Validate Cloud Functions syntax
+        working-directory: functions
+        run: npm run test:syntax
+
+      - name: Test commerce units
+        working-directory: functions
+        run: node --test test/commerce.test.js
+
+      - name: Test audit privacy units
+        working-directory: functions
+        run: node --test test/audit.test.js
+
+      - name: Test live tracking units
+        working-directory: functions
+        run: node --test test/tracking.test.js
+
+      - name: Test notification units
+        working-directory: functions
+        run: node --test test/notifications.test.js
+
+      - name: Test identity and address units
+        working-directory: functions
+        run: node --test test/identity.test.js
+
+      - name: Test enterprise admin units
+        working-directory: functions
+        run: node --test test/admin-control-center.test.js
+
+      - name: Install Firebase CLI
+        run: npm install --ignore-scripts
+
+      - name: Test Realtime Database and Storage rules in emulator
+        run: npx firebase emulators:exec --project sokiva-rules-test --only database,storage "npm --prefix functions run test:rules"
