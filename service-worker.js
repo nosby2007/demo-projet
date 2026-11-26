@@ -1,5 +1,5 @@
 /* SOKIVA resilient offline shell and notification navigation */
-const CACHE_VERSION = 'sokiva-v2.13.0';
+const CACHE_VERSION = 'sokiva-v2.14.0';
 const APP_SHELL = [
   '/',
   '/index.html',
